@@ -8,6 +8,8 @@ import com.restaurant.platform.modules.auth.entity.User;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
 import com.restaurant.platform.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    private final UserDetailsService userDetailsService;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -38,7 +42,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 3. generate token
-        String token = jwtService.generateToken(user.getEmail());
+        UserDetails userDetails =
+                userDetailsService.loadUserByUsername(user.getEmail());
+
+        String token = jwtService.generateToken(userDetails);
 
         // 4. return
         return AuthResponse.builder()

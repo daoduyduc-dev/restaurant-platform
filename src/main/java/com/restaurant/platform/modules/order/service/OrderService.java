@@ -5,6 +5,7 @@ import com.restaurant.platform.modules.order.dto.request.AddOrderItemRequest;
 import com.restaurant.platform.modules.order.dto.request.CreateOrderRequest;
 import com.restaurant.platform.modules.order.dto.response.OrderResponse;
 
+import com.restaurant.platform.modules.reservation.entity.Reservation;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
@@ -26,4 +27,5 @@ public interface OrderService {
 
     OrderResponse pay(UUID orderId);
 
+    public OrderResponse createFromReservation(Reservation reservation);
 }

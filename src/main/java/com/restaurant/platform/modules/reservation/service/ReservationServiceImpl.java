@@ -4,6 +4,7 @@ import com.restaurant.platform.common.constant.ErrorCode;
 import com.restaurant.platform.common.exception.BadRequestException;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
 import com.restaurant.platform.common.response.PageResponse;
+import com.restaurant.platform.modules.order.service.OrderService;
 import com.restaurant.platform.modules.reservation.dto.ReservationRequest;
 import com.restaurant.platform.modules.reservation.dto.ReservationResponse;
 import com.restaurant.platform.modules.reservation.entity.Reservation;
@@ -34,6 +35,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationRepository reservationRepository;
     private final TableRepository tableRepository;
     private final ReservationMapper reservationMapper;
+    private final OrderService orderService;
 
     List<ReservationStatus> ACTIVE_STATUSES = List.of(
             RESERVED,
@@ -159,9 +161,10 @@ public class ReservationServiceImpl implements ReservationService {
         Table table = reservation.getTable();
 
         table.setStatus(TableStatus.OCCUPIED);
+
         tableRepository.save(table);
 
-        // TODO: publish event → create order
+        orderService.createFromReservation(reservation);
 
         return reservationMapper.toResponse(reservationRepository.save(reservation));
     }

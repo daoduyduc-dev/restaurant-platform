@@ -1,10 +1,14 @@
 package com.restaurant.platform.config;
 
 import com.restaurant.platform.security.JwtAuthenticationFilter;
+import com.restaurant.platform.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -14,44 +18,40 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private final JwtAuthenticationEntryPoint entryPoint;
+    private final AuthenticationProvider authenticationProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
+                // 🔥 1. Disable CSRF
                 .csrf(csrf -> csrf.disable())
 
+                // 🔥 2. Enable CORS
+                .cors(Customizer.withDefaults())
+
+                // 🔥 3. Stateless (QUAN TRỌNG NHẤT)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔥 4. Authorization
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/users").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // 🔥 THÊM ĐOẠN NÀY
+                // 🔥 5. Exception handling
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(401);
-                            response.setContentType("application/json");
-                            response.getWriter().write("""
-                    {
-                      "status": 401,
-                      "errorCode": "COMMON_401",
-                      "message": "Unauthorized"
-                    }
-                """);
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setStatus(403);
-                            response.setContentType("application/json");
-                            response.getWriter().write("""
-                    {
-                      "status": 403,
-                      "errorCode": "COMMON_403",
-                      "message": "Access denied"
-                    }
-                """);
-                        })
+                        .authenticationEntryPoint(entryPoint)
                 )
 
+                // 🔥 6. Provider
+                .authenticationProvider(authenticationProvider)
+
+                // 🔥 7. JWT filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

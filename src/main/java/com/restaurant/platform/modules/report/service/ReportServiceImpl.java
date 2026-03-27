@@ -15,6 +15,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,14 +33,28 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public RevenueReportResponse getRevenue() {
 
-        BigDecimal total = Optional.ofNullable(orderRepository.getTotalRevenue()).orElse(BigDecimal.ZERO);
-        BigDecimal today = Optional.ofNullable(orderRepository.getTodayRevenue()).orElse(BigDecimal.ZERO);
-        BigDecimal month = Optional.ofNullable(orderRepository.getMonthlyRevenue()).orElse(BigDecimal.ZERO);
+        LocalDate today = LocalDate.now();
+
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
+
+        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
+
+        BigDecimal total = Optional.ofNullable(orderRepository.getTotalRevenue())
+                .orElse(BigDecimal.ZERO);
+
+        BigDecimal todayRevenue = Optional.ofNullable(
+                orderRepository.getRevenueBetween(startOfDay, startOfNextDay)
+        ).orElse(BigDecimal.ZERO);
+
+        BigDecimal monthlyRevenue = Optional.ofNullable(
+                orderRepository.getRevenueBetween(startOfMonth, startOfNextDay)
+        ).orElse(BigDecimal.ZERO);
 
         return RevenueReportResponse.builder()
                 .totalRevenue(total)
-                .todayRevenue(today)
-                .monthlyRevenue(month)
+                .todayRevenue(todayRevenue)
+                .monthlyRevenue(monthlyRevenue)
                 .build();
     }
 

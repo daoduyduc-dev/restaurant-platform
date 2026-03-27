@@ -205,4 +205,16 @@ public class OrderServiceImpl implements OrderService {
 
         return response;
     }
+
+    @Override
+    public OrderResponse createFromReservation(Reservation reservation) {
+
+        Order order = Order.builder()
+                .table(reservation.getTable())
+                .status(OrderStatus.PENDING)
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        return orderMapper.toResponse(orderRepository.save(order));
+    }
 }

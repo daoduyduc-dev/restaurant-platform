@@ -55,12 +55,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
 
     @Query("""
-SELECT SUM(o.totalAmount)
-FROM Order o
-WHERE o.status = 'PAID'
-AND DATE(o.createdDate) = CURRENT_DATE
+    SELECT SUM(o.totalAmount)
+    FROM Order o
+    WHERE o.status = 'PAID'
+    AND o.createdDate >= :start
+    AND o.createdDate < :end
 """)
-    BigDecimal getTodayRevenue();
+    BigDecimal getTodayRevenue(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
     @Query("""
 SELECT SUM(o.totalAmount)
