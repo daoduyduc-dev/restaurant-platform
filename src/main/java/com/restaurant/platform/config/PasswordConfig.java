@@ -26,7 +26,7 @@ public class PasswordConfig {
                 new DaoAuthenticationProvider(userDetailsService); // 👈 FIX
 
         provider.setPasswordEncoder(passwordEncoder);
-
+        provider.setHideUserNotFoundExceptions(false);
         return provider;
     }
 }

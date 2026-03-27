@@ -7,6 +7,7 @@ import com.restaurant.platform.modules.report.dto.RevenueReportResponse;
 import com.restaurant.platform.modules.report.dto.TopSellingItemResponse;
 import com.restaurant.platform.modules.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/revenue")
+    @PreAuthorize("hasRole('MANAGER') and hasAuthority('REPORT_VIEW')")
     public ApiResponse<RevenueReportResponse> getRevenue() {
         return ApiResponse.success(reportService.getRevenue());
     }

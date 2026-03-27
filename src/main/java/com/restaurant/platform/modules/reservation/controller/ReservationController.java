@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class ReservationController {
 
     // ================= CREATE =================
     @PostMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER','RECEPTIONIST') and hasAuthority('RESERVATION_CREATE')")
     public ApiResponse<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
         return ApiResponse.success("Reservation created successfully",
                 reservationService.create(request));
@@ -67,6 +69,7 @@ public class ReservationController {
 
     // ================= CHECK-IN =================
     @PostMapping("/{id}/check-in")
+    @PreAuthorize("hasRole('RECEPTIONIST') and hasAuthority('RESERVATION_CHECKIN')")
     public ApiResponse<ReservationResponse> checkIn(@PathVariable UUID id) {
         return ApiResponse.success("Check-in successful",
                 reservationService.checkIn(id));
@@ -74,6 +77,7 @@ public class ReservationController {
 
     // ================= CANCEL =================
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('CUSTOMER','RECEPTIONIST') and hasAuthority('RESERVATION_CANCEL')")
     public ApiResponse<ReservationResponse> cancel(@PathVariable UUID id) {
         return ApiResponse.success("Reservation cancelled",
                 reservationService.cancel(id));

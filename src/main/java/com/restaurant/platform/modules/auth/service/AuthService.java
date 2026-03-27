@@ -1,9 +1,18 @@
 package com.restaurant.platform.modules.auth.service;
 
-import com.restaurant.platform.modules.auth.dto.AuthRequest;
-import com.restaurant.platform.modules.auth.dto.AuthResponse;
+import com.restaurant.platform.modules.auth.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 public interface AuthService {
 
     AuthResponse login(AuthRequest request);
+
+    void logout(HttpServletRequest request);
+
+    void changePassword(@Valid ChangePasswordRequest request);
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }

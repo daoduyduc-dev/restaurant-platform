@@ -17,7 +17,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER') and hasAuthority('DASHBOARD_VIEW')")
     public ApiResponse<DashboardResponse> getDashboard() {
         return ApiResponse.success(
                 "Dashboard fetched successfully",

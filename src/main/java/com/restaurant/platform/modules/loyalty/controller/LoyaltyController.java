@@ -23,7 +23,7 @@ public class LoyaltyController {
 
     // 🔥 xem điểm
     @GetMapping("/me")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasRole('CUSTOMER') and hasAuthority('LOYALTY_VIEW')")
     public ApiResponse<LoyaltyResponse> getMyPoints(
             @RequestParam UUID userId
     ) {
@@ -46,7 +46,7 @@ public class LoyaltyController {
 
     // 🔥 redeem
     @PostMapping("/redeem")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasRole('CUSTOMER') and hasAuthority('LOYALTY_REDEEM')")
     public ApiResponse<Void> redeem(
             @RequestParam UUID userId,
             @Valid @RequestBody RedeemRequest request

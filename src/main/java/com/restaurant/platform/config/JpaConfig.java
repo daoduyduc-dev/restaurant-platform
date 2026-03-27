@@ -14,6 +14,6 @@ public class JpaConfig {
 
     @Bean
     public AuditorAware<String> auditorProvider() {
-        return () -> Optional.of(SecurityUtil.getCurrentUsername());
+        return () -> Optional.ofNullable(SecurityUtil.getCurrentUsername());
     }
 }

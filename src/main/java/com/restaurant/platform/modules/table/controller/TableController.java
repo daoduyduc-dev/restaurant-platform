@@ -24,7 +24,7 @@ public class TableController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('TABLE_CREATE')")
     public ApiResponse<TableResponse> create(@Valid @RequestBody TableRequest request) {
         return ApiResponse.success("Table created successfully",
                 tableService.create(request));
@@ -32,7 +32,7 @@ public class TableController {
 
     // ================= GET ALL =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER') and hasAuthority('TABLE_VIEW')")
     public ApiResponse<List<TableResponse>> getAll() {
         return ApiResponse.success(tableService.getAllTables());
     }
@@ -72,7 +72,7 @@ public class TableController {
 
     // ================= UPDATE STATUS =================
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER')")
+    @PreAuthorize("hasAnyRole('WAITER','MANAGER') and hasAuthority('TABLE_UPDATE_STATUS')")
     public ApiResponse<TableResponse> updateStatus(
             @PathVariable UUID id,
             @RequestBody UpdateTableStatusRequest request

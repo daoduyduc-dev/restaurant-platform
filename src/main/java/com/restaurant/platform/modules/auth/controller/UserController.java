@@ -22,6 +22,7 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_CREATE')")
     public ApiResponse<UserResponse> createUser(
             @RequestBody @Valid UserCreateRequest request
     ) {
@@ -29,6 +30,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_UPDATE')")
     public ApiResponse<UserResponse> updateUser(
             @PathVariable UUID id,
             @RequestBody @Valid UserUpdateRequest request
@@ -36,7 +38,7 @@ public class UserController {
         return ApiResponse.success(userService.updateUser(id, request));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_DELETE')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> deleteUser(@PathVariable UUID id) {
@@ -44,7 +46,7 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_VIEW')")
     @GetMapping("/{name}")
     public ApiResponse<UserResponse> getUserByName(@PathVariable String name) {
         return ApiResponse.success(
