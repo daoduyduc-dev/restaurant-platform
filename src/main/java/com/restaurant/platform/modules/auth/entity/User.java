@@ -48,6 +48,7 @@ public class User extends SoftDeleteEntity {
     private String address;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @ManyToMany(fetch = FetchType.LAZY)

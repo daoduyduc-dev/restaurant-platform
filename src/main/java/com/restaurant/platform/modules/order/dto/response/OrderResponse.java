@@ -24,4 +24,6 @@ public class OrderResponse {
     private List<OrderItemResponse> items;
 
     private LocalDateTime createdAt;
+    private String assignedToId;
+    private String assignedToName;
 }

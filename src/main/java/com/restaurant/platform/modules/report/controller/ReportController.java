@@ -23,7 +23,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/revenue")
-    @PreAuthorize("hasRole('MANAGER') and hasAuthority('REPORT_VIEW')")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<RevenueReportResponse> getRevenue() {
         return ApiResponse.success(reportService.getRevenue());
     }

@@ -1,0 +1,478 @@
+﻿src/components/ui/Card.tsx(23,6): error TS2322: Type '{ children: ReactNode; onClick?: (() => void) | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; suppressContentEditableWarning?: boolean | undefined; ... 274 more ...; className: string; }' is not assignable to type 'Omit<HTMLMotionProps<"div">, "ref">'.
+  Types of property 'onDrag' are incompatible.
+    Type 'DragEventHandler<HTMLDivElement> | undefined' is not assignable to type '((event: MouseEvent | PointerEvent | TouchEvent, info: PanInfo) => void) | undefined'.
+      Type 'DragEventHandler<HTMLDivElement>' is not assignable to type '(event: MouseEvent | PointerEvent | TouchEvent, info: PanInfo) => void'.
+        Types of parameters 'event' and 'event' are incompatible.
+          Type 'MouseEvent | PointerEvent | TouchEvent' is not assignable to type 'DragEvent<HTMLDivElement>'.
+            Type 'MouseEvent' is missing the following properties from type 'DragEvent<HTMLDivElement>': dataTransfer, nativeEvent, isDefaultPrevented, isPropagationStopped, persist
+src/components/ui/DEMO.tsx(6,8): error TS6133: 'React' is declared but its value is never read.
+src/components/ui/DEMO.tsx(22,8): error TS2307: Cannot find module '@/components/ui' or its corresponding type declarations.
+src/components/ui/DEMO.tsx(72,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(83,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(105,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(122,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(129,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(149,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/DEMO.tsx(156,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/index.ts(19,15): error TS2724: '"./Select"' has no exported member named 'SelectProps'. Did you mean 'SelectGroup'?
+src/components/ui/Select.tsx(15,11): error TS2430: Interface 'SelectProps' incorrectly extends interface 'HTMLAttributes<HTMLDivElement>'.
+  Types of property 'onChange' are incompatible.
+    Type '((value: string | number) => void) | undefined' is not assignable to type 'ChangeEventHandler<HTMLDivElement, Element> | undefined'.
+      Type '(value: string | number) => void' is not assignable to type 'ChangeEventHandler<HTMLDivElement, Element>'.
+        Types of parameters 'value' and 'event' are incompatible.
+          Type 'ChangeEvent<HTMLDivElement, Element>' is not assignable to type 'string | number'.
+src/components/ui/Select.tsx(40,6): error TS6133: 'ref' is declared but its value is never read.
+src/features/auth/LoginPage.tsx(5,33): error TS6196: 'ApiResponse' is declared but never used.
+src/features/dashboard/AdminDashboard.tsx(5,35): error TS6133: 'Settings' is declared but its value is never read.
+src/features/dashboard/AdminDashboard.tsx(86,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(94,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(97,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(105,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(108,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(116,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(119,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(127,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(134,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(137,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(137,51): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(138,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(138,77): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(144,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(145,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(221,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(228,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(229,19): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(229,52): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(230,19): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(230,60): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(231,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(232,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/AdminDashboard.tsx(255,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(5,33): error TS6133: 'MapPin' is declared but its value is never read.
+src/features/dashboard/CustomerDashboard.tsx(5,58): error TS6133: 'Gift' is declared but its value is never read.
+src/features/dashboard/CustomerDashboard.tsx(99,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(119,31): error TS2339: Property 'totalPoints' does not exist on type 'LoyaltyDTO'.
+src/features/dashboard/CustomerDashboard.tsx(137,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(144,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(147,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(147,57): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(148,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(148,70): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(152,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(153,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(200,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(207,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(210,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(210,56): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(211,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(211,69): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(215,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(216,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/CustomerDashboard.tsx(252,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/DashboardPage.tsx(2,26): error TS6133: 'ROLE_ROUTES' is declared but its value is never read.
+src/features/dashboard/DashboardPage.tsx(9,1): error TS6133: 'UserRole' is declared but its value is never read.
+src/features/dashboard/KitchenDashboard.tsx(34,40): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/features/dashboard/KitchenDashboard.tsx(35,40): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/features/dashboard/KitchenDashboard.tsx(90,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(93,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(96,24): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(97,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(97,71): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(99,40): error TS2322: Type '"large"' is not assignable to type '"small" | "medium" | undefined'.
+src/features/dashboard/KitchenDashboard.tsx(101,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(102,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(113,29): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(158,30): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(164,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(171,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(174,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(177,24): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(178,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(178,63): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(180,37): error TS2322: Type '"large"' is not assignable to type '"small" | "medium" | undefined'.
+src/features/dashboard/KitchenDashboard.tsx(182,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(183,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(193,29): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(238,30): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/KitchenDashboard.tsx(244,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(5,10): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/features/dashboard/ManagerDashboard.tsx(9,86): error TS6133: 'BarChart' is declared but its value is never read.
+src/features/dashboard/ManagerDashboard.tsx(9,96): error TS6133: 'Bar' is declared but its value is never read.
+src/features/dashboard/ManagerDashboard.tsx(109,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(120,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(129,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(130,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(130,50): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(131,21): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(131,58): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(132,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(133,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(152,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(159,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(160,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(160,51): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(161,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(162,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(210,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(218,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(219,19): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(219,45): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(220,19): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(220,71): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(221,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(222,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ManagerDashboard.tsx(237,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(107,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(115,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(118,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(126,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(129,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(137,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(145,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(147,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(147,56): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(148,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(148,76): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(150,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(151,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(204,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(211,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(212,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(212,43): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(213,21): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(213,62): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(214,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(215,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/ReceptionistDashboard.tsx(247,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(66,39): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/features/dashboard/WaiterDashboard.tsx(67,38): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/features/dashboard/WaiterDashboard.tsx(104,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(112,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(115,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(123,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(126,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(134,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(141,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(144,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(147,24): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(148,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(148,76): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(151,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(152,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(199,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(206,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(209,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(209,49): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(210,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(210,73): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(214,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(215,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/dashboard/WaiterDashboard.tsx(261,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(39,13): error TS2345: Argument of type '(res: ApiResponse<LoyaltyDTO[]>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<LoyaltyDTO[]>': success, message
+src/features/loyalty/LoyaltyPage.tsx(40,31): error TS2339: Property 'data' does not exist on type 'LoyaltyDTO[]'.
+src/features/loyalty/LoyaltyPage.tsx(44,25): error TS2339: Property 'id' does not exist on type 'LoyaltyDTO'.
+src/features/loyalty/LoyaltyPage.tsx(47,29): error TS2339: Property 'totalPoints' does not exist on type 'LoyaltyDTO'.
+src/features/loyalty/LoyaltyPage.tsx(50,28): error TS2339: Property 'totalSpent' does not exist on type 'LoyaltyDTO'.
+src/features/loyalty/LoyaltyPage.tsx(50,53): error TS2339: Property 'totalSpent' does not exist on type 'LoyaltyDTO'.
+src/features/loyalty/LoyaltyPage.tsx(78,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(86,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(92,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(100,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(106,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(114,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(120,15): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(122,19): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(122,39): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(125,16): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(126,15): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/loyalty/LoyaltyPage.tsx(165,16): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/menu/MenuPage.tsx(30,42): error TS2345: Argument of type '(res: ApiResponse<PageResponse<MenuItemDTO> | MenuItemDTO[]>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<MenuItemDTO[] | PageResponse<MenuItemDTO>>': success, message
+src/features/menu/MenuPage.tsx(31,30): error TS2339: Property 'data' does not exist on type 'MenuItemDTO[] | PageResponse<MenuItemDTO>'.
+  Property 'data' does not exist on type 'MenuItemDTO[]'.
+src/features/menu/MenuPage.tsx(31,62): error TS2339: Property 'data' does not exist on type 'MenuItemDTO[] | PageResponse<MenuItemDTO>'.
+  Property 'data' does not exist on type 'MenuItemDTO[]'.
+src/features/menu/MenuPage.tsx(33,15): error TS6133: 'error' is declared but its value is never read.
+src/features/menu/MenuPage.tsx(41,33): error TS2345: Argument of type '(res: ApiResponse<any>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<any>': success, message
+src/features/orders/AdminOrderView.tsx(4,28): error TS6133: 'Timer' is declared but its value is never read.
+src/features/orders/AdminOrderView.tsx(61,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(66,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(74,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(76,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(76,117): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(81,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(82,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/AdminOrderView.tsx(109,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(5,23): error TS6133: 'Clock' is declared but its value is never read.
+src/features/orders/CustomerOrderView.tsx(56,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(56,32): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(56,62): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(56,75): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(57,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(71,68): error TS6133: 'i' is declared but its value is never read.
+src/features/orders/CustomerOrderView.tsx(101,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(109,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(109,30): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(109,56): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(109,69): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(110,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/CustomerOrderView.tsx(132,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/KitchenOrderView.tsx(4,26): error TS6133: 'Clock' is declared but its value is never read.
+src/features/orders/ManagerOrderView.tsx(5,36): error TS6133: 'Users' is declared but its value is never read.
+src/features/orders/ManagerOrderView.tsx(97,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(124,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(132,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(133,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(135,22): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(136,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(137,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(170,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(178,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(179,19): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(179,49): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(180,19): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(180,59): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(181,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(182,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ManagerOrderView.tsx(207,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(49,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(55,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(58,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(64,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(67,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(73,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(81,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(82,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(84,22): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(85,21): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(85,75): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(86,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(87,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(100,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(107,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(108,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(110,22): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(111,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(112,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/ReceptionistOrderView.tsx(125,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/orders/WaiterOrderView.tsx(5,44): error TS6133: 'Clock' is declared but its value is never read.
+src/features/orders/WaiterOrderView.tsx(5,51): error TS6133: 'ChevronRight' is declared but its value is never read.
+src/features/orders/WaiterOrderView.tsx(9,18): error TS6133: 'Card' is declared but its value is never read.
+src/features/payment/PaymentPage.tsx(5,24): error TS6133: 'Badge' is declared but its value is never read.
+src/features/payment/PaymentPage.tsx(26,29): error TS2345: Argument of type '(res: ApiResponse<any>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<any>': success, message
+src/features/payment/PaymentPage.tsx(43,44): error TS2345: Argument of type '(res: ApiResponse<PageResponse<OrderDTO> | OrderDTO[]>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<OrderDTO[] | PageResponse<OrderDTO>>': success, message
+src/features/payment/PaymentPage.tsx(44,31): error TS2339: Property 'data' does not exist on type 'OrderDTO[] | PageResponse<OrderDTO>'.
+  Property 'data' does not exist on type 'OrderDTO[]'.
+src/features/payment/PaymentPage.tsx(44,63): error TS2339: Property 'data' does not exist on type 'OrderDTO[] | PageResponse<OrderDTO>'.
+  Property 'data' does not exist on type 'OrderDTO[]'.
+src/features/payment/PaymentPage.tsx(54,22): error TS2339: Property 'price' does not exist on type 'OrderItemDTO'.
+src/features/payment/PaymentPage.tsx(142,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(146,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(146,43): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(166,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(167,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(193,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(194,17): error TS2339: Property 'Footer' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(207,18): error TS2339: Property 'Footer' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(212,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(213,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(213,48): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(214,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(215,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/payment/PaymentPage.tsx(239,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(22,11): error TS6133: 'user' is declared but its value is never read.
+src/features/profile/ProfilePage.tsx(114,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(207,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(215,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(216,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(216,54): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(217,21): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(217,62): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(218,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(219,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(268,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(274,21): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(275,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(275,55): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(276,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(276,67): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(277,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(278,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(286,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(292,21): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(293,23): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(293,52): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(294,23): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(294,65): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(295,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(296,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(306,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(312,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(313,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(313,50): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(314,21): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(314,69): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(315,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(316,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/profile/ProfilePage.tsx(331,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(3,47): error TS6133: 'BarChart3' is declared but its value is never read.
+src/features/report/ReportPage.tsx(6,24): error TS6133: 'Badge' is declared but its value is never read.
+src/features/report/ReportPage.tsx(39,38): error TS2345: Argument of type '(res: ApiResponse<RevenueReportDTO>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<RevenueReportDTO>': success, message
+src/features/report/ReportPage.tsx(40,20): error TS2339: Property 'data' does not exist on type 'RevenueReportDTO'.
+src/features/report/ReportPage.tsx(40,46): error TS2339: Property 'data' does not exist on type 'RevenueReportDTO'.
+src/features/report/ReportPage.tsx(46,45): error TS2345: Argument of type '(res: ApiResponse<PageResponse<OrderDTO> | OrderDTO[]>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<OrderDTO[] | PageResponse<OrderDTO>>': success, message
+src/features/report/ReportPage.tsx(47,31): error TS2339: Property 'data' does not exist on type 'OrderDTO[] | PageResponse<OrderDTO>'.
+  Property 'data' does not exist on type 'OrderDTO[]'.
+src/features/report/ReportPage.tsx(47,63): error TS2339: Property 'data' does not exist on type 'OrderDTO[] | PageResponse<OrderDTO>'.
+  Property 'data' does not exist on type 'OrderDTO[]'.
+src/features/report/ReportPage.tsx(112,13): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/features/report/ReportPage.tsx(115,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(123,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(131,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(133,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(133,47): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(136,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(137,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(150,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(154,17): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(155,19): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(155,53): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(156,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(157,17): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(170,38): error TS6133: 'entry' is declared but its value is never read.
+src/features/report/ReportPage.tsx(179,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(184,15): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(185,17): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(185,45): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(186,16): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(187,15): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/report/ReportPage.tsx(206,16): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/reservations/ReservationsPage.tsx(6,1): error TS6133: 'motion' is declared but its value is never read.
+src/features/reservations/ReservationsPage.tsx(12,7): error TS6133: 'STATUS_BADGE' is declared but its value is never read.
+src/features/reservations/ReservationsPage.tsx(45,29): error TS2339: Property 'data' does not exist on type 'PageResponse<ReservationDTO>'.
+src/features/reservations/ReservationsPage.tsx(55,34): error TS2339: Property 'data' does not exist on type 'TableDTO[]'.
+src/features/reservations/ReservationsPage.tsx(55,60): error TS2339: Property 'data' does not exist on type 'TableDTO[]'.
+src/features/reservations/ReservationsPage.tsx(132,15): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/reservations/ReservationsPage.tsx(183,54): error TS2367: This comparison appears to be unintentional because the types '"PENDING" | "CHECKED_IN" | "COMPLETED" | "CANCELLED" | "NO_SHOW"' and '"CONFIRMED"' have no overlap.
+src/features/reservations/ReservationsPage.tsx(223,16): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(2,60): error TS6133: 'Mail' is declared but its value is never read.
+src/features/settings/SettingsPage.tsx(2,66): error TS6133: 'Globe' is declared but its value is never read.
+src/features/settings/SettingsPage.tsx(84,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(99,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(99,54): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(100,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(100,72): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(103,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(104,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(126,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(133,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(148,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(148,52): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(149,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(149,84): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(152,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(153,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(180,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(187,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(202,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(202,51): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(203,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(203,79): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(206,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(207,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(220,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(227,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(242,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(242,55): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(243,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(243,71): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(246,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(247,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(260,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(267,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(282,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(282,48): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(283,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(283,71): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(286,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(287,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(315,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(322,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(337,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(337,56): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(338,25): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(338,71): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(341,20): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(342,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/settings/SettingsPage.tsx(350,20): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/staff/StaffPage.tsx(32,13): error TS2345: Argument of type '(res: ApiResponse<UserDTO[]>) => void' is not assignable to parameter of type '(value: AxiosResponse<any, any, {}>) => void | PromiseLike<void>'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Type 'AxiosResponse<any, any, {}>' is missing the following properties from type 'ApiResponse<UserDTO[]>': success, message
+src/features/staff/StaffPage.tsx(33,31): error TS2339: Property 'data' does not exist on type 'UserDTO[]'.
+src/features/staff/StaffPage.tsx(122,15): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/staff/StaffPage.tsx(137,23): error TS6133: 'roleStyle' is declared but its value is never read.
+src/features/staff/StaffPage.tsx(195,16): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(6,36): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/features/tables/AdminTableView.tsx(11,10): error TS6133: 'loading' is declared but its value is never read.
+src/features/tables/AdminTableView.tsx(52,11): error TS6133: 'rect' is declared but its value is never read.
+src/features/tables/AdminTableView.tsx(192,18): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(193,21): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(193,48): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(194,19): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(196,18): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/AdminTableView.tsx(225,19): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(84,21): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(87,28): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(87,66): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(88,28): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(88,84): error TS2339: Property 'Description' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(92,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(94,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/CustomerTableView.tsx(127,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(9,43): error TS6133: 'MapPin' is declared but its value is never read.
+src/features/tables/ManagerTableView.tsx(9,51): error TS6133: 'Search' is declared but its value is never read.
+src/features/tables/ManagerTableView.tsx(105,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(108,28): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(108,67): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(116,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(118,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(170,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(174,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(175,25): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(175,159): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(176,23): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(177,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ManagerTableView.tsx(209,23): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(72,21): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(75,28): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(75,67): error TS2339: Property 'Title' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(83,22): error TS2339: Property 'Header' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(85,21): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/ReceptionistTableView.tsx(154,22): error TS2339: Property 'Content' does not exist on type '({ className, variant, hover, children, ...rest }: CardProps) => Element'.
+src/features/tables/WaiterTableView.tsx(9,10): error TS6133: 'ClipboardList' is declared but its value is never read.
+src/features/tables/WaiterTableView.tsx(9,62): error TS6133: 'ChevronRight' is declared but its value is never read.
+src/features/tables/WaiterTableView.tsx(55,10): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(83,11): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(93,14): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(94,16): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(97,23): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(97,96): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(105,17): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(107,16): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(169,17): error TS2304: Cannot find name 'Card'.
+src/features/tables/WaiterTableView.tsx(170,15): error TS2304: Cannot find name 'Card'.
+src/NotFoundPage.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/utils/roleUtils.ts(1,1): error TS6133: 'useAuthStore' is declared but its value is never read.

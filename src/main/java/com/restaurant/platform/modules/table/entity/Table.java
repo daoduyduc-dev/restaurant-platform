@@ -30,4 +30,13 @@ public class Table extends SoftDeleteEntity {
 
     @Enumerated(EnumType.STRING)
     private TableStatus status;
+
+    @Column(name = "position_x")
+    private Double positionX;
+
+    @Column(name = "position_y")
+    private Double positionY;
+
+    @Column(name = "zone")
+    private String zone;
 }

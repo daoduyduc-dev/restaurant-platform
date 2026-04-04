@@ -4,5 +4,7 @@ public enum RoleName {
     ADMIN,
     MANAGER,
     WAITER,
+    RECEPTIONIST,
+    KITCHEN,
     CUSTOMER
 }

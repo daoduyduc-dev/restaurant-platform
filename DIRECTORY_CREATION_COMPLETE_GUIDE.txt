@@ -1,0 +1,213 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                ║
+║              RESTAURANT PLATFORM - DIRECTORY CREATION GUIDE                    ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📋 TABLE OF CONTENTS
+────────────────────────────────────────────────────────────────────────────────
+1. Quick Start (Easiest Method)
+2. Available Methods
+3. Directory Structure Details
+4. Verification Steps
+5. Troubleshooting
+
+════════════════════════════════════════════════════════════════════════════════
+
+⚡ QUICK START (EASIEST METHOD)
+────────────────────────────────────────────────────────────────────────────────
+
+1. Open Command Prompt (cmd.exe)
+
+2. Navigate to the repository:
+   cd D:\restaurant-platform
+
+3. Run the batch file:
+   CREATE_DIRECTORIES_NOW.bat
+
+   ✓ This will create all 7 directories
+   ✓ Verify they exist
+   ✓ Show a directory tree
+   ✓ Pause at the end so you can see the results
+
+════════════════════════════════════════════════════════════════════════════════
+
+📦 AVAILABLE METHODS
+────────────────────────────────────────────────────────────────────────────────
+
+METHOD 1: Batch File (Recommended - Most Reliable)
+──────────────────────────────────────────────────
+Command: CREATE_DIRECTORIES_NOW.bat
+Time:    < 1 second
+Pros:    - Works on all Windows systems
+         - No dependencies
+         - Shows tree visualization
+
+METHOD 2: Python Script
+───────────────────────
+Command: python DirectorySetup.py
+Time:    < 1 second
+Pros:    - Cross-platform compatible
+         - Clean output formatting
+Note:    Requires Python to be installed
+
+METHOD 3: Node.js Script
+────────────────────────
+Command: node DirectorySetup.js
+Time:    < 1 second
+Pros:    - Works if Node is installed
+         - Detailed output
+Note:    Requires Node.js to be installed
+
+METHOD 4: Manual Creation
+─────────────────────────
+If automated methods fail, create directories manually in Command Prompt:
+
+mkdir src\test\resources
+mkdir src\test\java\com\restaurant\platform\modules\auth
+mkdir src\test\java\com\restaurant\platform\modules\menu
+mkdir src\test\java\com\restaurant\platform\modules\order
+mkdir src\test\java\com\restaurant\platform\modules\loyalty
+mkdir src\test\java\com\restaurant\platform\modules\notification
+mkdir src\test\java\com\restaurant\platform\modules\reservation
+
+════════════════════════════════════════════════════════════════════════════════
+
+📁 DIRECTORY STRUCTURE DETAILS
+────────────────────────────────────────────────────────────────────────────────
+
+The following directory structure will be created:
+
+D:\restaurant-platform\
+└── src\
+    └── test\
+        ├── resources\
+        └── java\
+            └── com\
+                └── restaurant\
+                    └── platform\
+                        └── modules\
+                            ├── auth\
+                            ├── menu\
+                            ├── order\
+                            ├── loyalty\
+                            ├── notification\
+                            └── reservation\
+
+TOTAL DIRECTORIES TO CREATE: 7
+────────────────────────────
+
+1. src\test\resources
+   Purpose: Contains test resources and test data files
+
+2. src\test\java\com\restaurant\platform\modules\auth
+   Purpose: Authentication module tests
+
+3. src\test\java\com\restaurant\platform\modules\menu
+   Purpose: Menu management module tests
+
+4. src\test\java\com\restaurant\platform\modules\order
+   Purpose: Order processing module tests
+
+5. src\test\java\com\restaurant\platform\modules\loyalty
+   Purpose: Loyalty program module tests
+
+6. src\test\java\com\restaurant\platform\modules\notification
+   Purpose: Notification system module tests
+
+7. src\test\java\com\restaurant\platform\modules\reservation
+   Purpose: Reservation system module tests
+
+════════════════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION STEPS
+────────────────────────────────────────────────────────────────────────────────
+
+After running any creation method, verify the directories exist:
+
+STEP 1: In Command Prompt, navigate to the repository
+   cd D:\restaurant-platform
+
+STEP 2: List the directory structure
+   dir /B /S src\test
+
+STEP 3: View the directory tree
+   tree src\test
+
+EXPECTED OUTPUT should show:
+   └─auth
+   └─menu
+   └─loyalty
+   └─notification
+   └─order
+   └─reservation
+   └─resources
+
+Or manually check in Windows Explorer:
+   1. Open Windows Explorer
+   2. Navigate to: D:\restaurant-platform\src\test
+   3. Verify you see a "java" folder and a "resources" folder
+   4. Open java\com\restaurant\platform\modules
+   5. Verify you see all 6 module folders
+
+════════════════════════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: "CREATE_DIRECTORIES_NOW.bat" not found
+──────────────────────────────────────────────
+Solution: Make sure you're in the D:\restaurant-platform directory
+Command:  cd D:\restaurant-platform
+Then:     CREATE_DIRECTORIES_NOW.bat
+
+
+PROBLEM: Access Denied error
+────────────────────────────
+Solution 1: Run Command Prompt as Administrator
+          Right-click cmd.exe and select "Run as administrator"
+
+Solution 2: Check file permissions on D:\restaurant-platform
+          Right-click the folder → Properties → Security
+          Make sure your user has "Modify" permission
+
+
+PROBLEM: Batch file doesn't show tree at the end
+─────────────────────────────────────────────────
+Solution: View the tree manually with:
+          tree /F src\test
+
+
+PROBLEM: Directories still don't exist after running script
+──────────────────────────────────────────────────────────
+Solution 1: Try the Python method:
+            python DirectorySetup.py
+
+Solution 2: Try the Node.js method:
+            node DirectorySetup.js
+
+Solution 3: Create manually using mkdir commands (see METHOD 4 above)
+
+
+PROBLEM: Python or Node.js not installed
+─────────────────────────────────────────
+Solution: Use the Batch file method (CREATE_DIRECTORIES_NOW.bat)
+         This works on all Windows systems without dependencies
+
+════════════════════════════════════════════════════════════════════════════════
+
+📞 NEED HELP?
+────────────────────────────────────────────────────────────────────────────────
+
+✓ All 7 directories created?
+  → You're all set! Ready to add test files.
+
+✗ Still having issues?
+  → Try running CREATE_DIRECTORIES_NOW.bat with Administrator privileges
+  → Check that D:\restaurant-platform exists and is accessible
+  → Verify you have write permissions to that directory
+
+════════════════════════════════════════════════════════════════════════════════
+Last Updated: 2024
+Restaurant Platform Project
+════════════════════════════════════════════════════════════════════════════════

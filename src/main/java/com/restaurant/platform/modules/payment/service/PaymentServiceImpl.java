@@ -2,6 +2,7 @@ package com.restaurant.platform.modules.payment.service;
 
 import com.restaurant.platform.common.constant.ErrorCode;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
+import com.restaurant.platform.common.EmailService;
 import com.restaurant.platform.modules.order.entity.Order;
 import com.restaurant.platform.modules.order.enums.OrderStatus;
 import com.restaurant.platform.modules.order.repository.OrderRepository;
@@ -13,8 +14,11 @@ import com.restaurant.platform.modules.payment.enums.PaymentStatus;
 import com.restaurant.platform.modules.payment.mapper.PaymentMapper;
 import com.restaurant.platform.modules.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +28,16 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final PaymentMapper paymentMapper;
+    private final EmailService emailService;
+
+    @Value("${payment.gateway.vnpay.url:https://sandbox.vnpayment.vn/paymentgate/Embedded}")
+    private String vnpayUrl;
+
+    @Value("${payment.gateway.momo.url:https://test-payment.momo.vn/web/paymentgateway}")
+    private String momoUrl;
+
+    @Value("${payment.gateway.default.url:https://payment-gateway.restaurant.local/callback}")
+    private String defaultUrl;
 
     @Override
     public PaymentResponse create(CreatePaymentRequest request) {
@@ -39,31 +53,53 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(order.getTotalAmount())
                 .build();
 
-        // 🔥 fake URL (sau này gắn VNPay/Momo)
-        payment.setPaymentUrl("https://sandbox-payment.com/" + payment.getId());
+        payment = paymentRepository.save(payment);
+
+        payment.setPaymentUrl(generatePaymentUrl(payment, request.getMethod()));
 
         return paymentMapper.toResponse(paymentRepository.save(payment));
+    }
+
+    private String generatePaymentUrl(Payment payment, String method) {
+        String token = payment.getId().toString();
+        if ("VNPAY".equalsIgnoreCase(method)) {
+            return vnpayUrl + "?token=" + token;
+        } else if ("MOMO".equalsIgnoreCase(method)) {
+            return momoUrl + "?token=" + token;
+        } else {
+            return defaultUrl.endsWith("/") ? defaultUrl + token : defaultUrl + "/" + token;
+        }
     }
 
     @Override
     public PaymentResponse handleCallback(String transactionId, boolean success) {
 
-        Payment payment = paymentRepository.findAll().stream()
-                .filter(p -> transactionId.equals(p.getTransactionId()))
-                .findFirst()
+        if (transactionId == null || transactionId.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    ErrorCode.PAYMENT_NOT_FOUND, "Transaction ID cannot be empty");
+        }
+
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        ErrorCode.PAYMENT_NOT_FOUND, "Payment not found"));
+                        ErrorCode.PAYMENT_NOT_FOUND, "Payment not found for transaction ID: " + transactionId));
+
+        // Idempotency: only process if payment is in PENDING status
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            return paymentMapper.toResponse(payment);
+        }
 
         if (success) {
             payment.setStatus(PaymentStatus.SUCCESS);
 
-            // 🔥 update order
             Order order = payment.getOrder();
-            order.setStatus(OrderStatus.PAID);
+            if (order != null) {
+                order.setStatus(OrderStatus.PAID);
+                orderRepository.save(order);
+            }
         } else {
             payment.setStatus(PaymentStatus.FAILED);
         }
 
-        return paymentMapper.toResponse(payment);
+        return paymentMapper.toResponse(paymentRepository.save(payment));
     }
 }

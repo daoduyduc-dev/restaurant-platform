@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 @Getter
 @Setter
@@ -17,5 +18,6 @@ import lombok.experimental.SuperBuilder;
 public class SoftDeleteEntity extends AuditableEntity {
 
     @Column(name = "is_deleted")
+    @Builder.Default
     private Boolean deleted = false;
 }

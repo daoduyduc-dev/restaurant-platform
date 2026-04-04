@@ -19,6 +19,8 @@ public interface TableService {
     TableResponse getTableByName(String tableName);
 
     List<TableResponse> getAllTables();
+    
+    List<TableResponse> getTablesByStatus(List<TableStatus> statuses);
 
     TableResponse update(UUID id, TableRequest tableRequest);
 

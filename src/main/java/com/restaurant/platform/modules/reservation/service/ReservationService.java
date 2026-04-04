@@ -17,6 +17,8 @@ public interface ReservationService {
     ReservationResponse getById(UUID id);
 
     PageResponse<ReservationResponse> getAll(Pageable pageable);
+    
+    List<ReservationResponse> getAllByStatus(List<ReservationStatus> statuses);
 
     PageResponse<ReservationResponse> getByCustomerName(String name, Pageable pageable);
 

@@ -3,6 +3,7 @@ package com.restaurant.platform.common.constant;
 public final class ErrorCode {
 
 
+    public static final String INVALID_INPUT = "";
 
     private ErrorCode() {}
 
@@ -52,6 +53,10 @@ public final class ErrorCode {
     // ================= LOYALTY =================
     public static final String LOYALTY_NOT_FOUND = "LOYALTY_404";
     public static final String LOYALTY_INVALID = "LOYALTY_400";
+
+    // ================= NOTIFICATION =================
+    public static final String NOTIFICATION_NOT_FOUND = "NOTIFICATION_404";
+    public static final String NOTIFICATION_INVALID = "NOTIFICATION_400";
 
     // ================= VALIDATION =================
     public static final String VALIDATION_ERROR = "VALIDATION_400";

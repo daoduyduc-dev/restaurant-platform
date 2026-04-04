@@ -11,9 +11,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,24 +24,62 @@ import java.util.UUID;
 public class OrderController {
 
     private final OrderService orderService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private void notifyKitchen(OrderResponse order) {
+        // Publish to global orders topic
+        messagingTemplate.convertAndSend("/topic/orders", order);
+
+        // Publish to role-specific topics so clients can subscribe by role for lighter traffic
+        String status = order.getStatus() != null ? order.getStatus().toUpperCase() : "";
+
+        // Kitchen cares about NEW/PENDING/COOKING
+        if (status.equals("OPEN") || status.equals("PENDING") || status.equals("COOKING")) {
+            messagingTemplate.convertAndSend("/topic/orders/role/KITCHEN", order);
+        }
+
+        // Waiters care about READY -> to serve
+        if (status.equals("READY")) {
+            messagingTemplate.convertAndSend("/topic/orders/role/WAITER", order);
+        }
+
+        // Managers/Admins may subscribe to overall metrics or specific order updates
+        messagingTemplate.convertAndSend("/topic/orders/role/MANAGER", order);
+
+        // Also publish a per-order channel for clients that need only that order
+        if (order.getId() != null) {
+            messagingTemplate.convertAndSend("/topic/order/" + order.getId().toString(), order);
+        }
+    }
 
     // ================= CREATE =================
     @PostMapping
     @PreAuthorize("hasAnyRole('WAITER','RECEPTIONIST') and hasAuthority('ORDER_CREATE')")
     public ApiResponse<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
-        return ApiResponse.success("Order created successfully",
-                orderService.create(request));
+        OrderResponse order = orderService.create(request);
+        notifyKitchen(order);
+        return ApiResponse.success("Order created successfully", order);
     }
 
     // ================= GET =================
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<OrderResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(orderService.getById(id));
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<PageResponse<OrderResponse>> getAll(Pageable pageable) {
         return ApiResponse.success(orderService.getAll(pageable));
+    }
+    
+    @GetMapping(params = "status")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<OrderResponse>> getByStatus(
+            @RequestParam List<com.restaurant.platform.modules.order.enums.OrderStatus> status
+    ) {
+        return ApiResponse.success(orderService.getAllByStatus(status));
     }
 
     // ================= ADD ITEM =================
@@ -49,8 +89,9 @@ public class OrderController {
             @PathVariable UUID id,
             @Valid @RequestBody AddOrderItemRequest request
     ) {
-        return ApiResponse.success("Item added successfully",
-                orderService.addItem(id, request));
+        OrderResponse order = orderService.addItem(id, request);
+        notifyKitchen(order);
+        return ApiResponse.success("Item added successfully", order);
     }
 
     // ================= UPDATE ITEM =================
@@ -61,8 +102,9 @@ public class OrderController {
             @PathVariable UUID itemId,
             @RequestParam Integer quantity
     ) {
-        return ApiResponse.success("Item updated successfully",
-                orderService.updateItem(id, itemId, quantity));
+        OrderResponse order = orderService.updateItem(id, itemId, quantity);
+        notifyKitchen(order);
+        return ApiResponse.success("Item updated successfully", order);
     }
 
     // ================= REMOVE ITEM =================
@@ -73,6 +115,10 @@ public class OrderController {
             @PathVariable UUID itemId
     ) {
         orderService.removeItem(id, itemId);
+        // Note: Can't easily send the updated order since we only return Void from service.
+        // We'll leave it as is or fetch getById
+        OrderResponse order = orderService.getById(id);
+        notifyKitchen(order);
         return ApiResponse.successMessage("Item removed successfully");
     }
 
@@ -80,7 +126,29 @@ public class OrderController {
     @PostMapping("/{id}/pay")
     @PreAuthorize("hasAnyRole('WAITER','MANAGER') and hasAuthority('ORDER_PAY')")
     public ApiResponse<OrderResponse> pay(@PathVariable UUID id) {
-        return ApiResponse.success("Order paid successfully",
-                orderService.pay(id));
+        OrderResponse order = orderService.pay(id);
+        notifyKitchen(order);
+        return ApiResponse.success("Order paid successfully", order);
+    }
+
+    // ================= UPDATE STATUS =================
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('WAITER','MANAGER','RECEPTIONIST','KITCHEN') and hasAnyAuthority('ORDER_UPDATE', 'ORDER_KITCHEN_UPDATE')")
+    public ApiResponse<OrderResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam com.restaurant.platform.modules.order.enums.OrderStatus status
+    ) {
+        OrderResponse order = orderService.updateStatus(id, status);
+        notifyKitchen(order);
+        return ApiResponse.success("Order status updated successfully", order);
+    }
+
+    // ================= ASSIGN =================
+    @PostMapping("/{id}/assign")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN') and hasAuthority('ORDER_ASSIGN')")
+    public ApiResponse<OrderResponse> assign(@PathVariable UUID id, @RequestBody com.restaurant.platform.modules.order.dto.request.AssignOrderRequest request) {
+        OrderResponse order = orderService.assign(id, request.getUserId());
+        notifyKitchen(order);
+        return ApiResponse.success("Order assigned successfully", order);
     }
 }

@@ -9,6 +9,9 @@ import com.restaurant.platform.modules.auth.repository.BlacklistRepository;
 import com.restaurant.platform.modules.auth.repository.PasswordResetRepository;
 import com.restaurant.platform.modules.auth.repository.RefreshTokenRepository;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
+import com.restaurant.platform.common.exception.ResourceNotFoundException;
+import com.restaurant.platform.common.exception.UnauthorizedException;
+import com.restaurant.platform.common.EmailService;
 import com.restaurant.platform.security.JwtService;
 import com.restaurant.platform.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetRepository resetRepo;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -49,25 +53,38 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        UserDetails user = (UserDetails) auth.getPrincipal();
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-        String accessToken = jwtService.generateToken(user);
+        String accessToken = jwtService.generateToken(userDetails);
 
-        RefreshToken refreshToken = createRefreshToken(user.getUsername());
+        RefreshToken refreshToken = createRefreshToken(userDetails.getUsername());
+
+        // Fetch full user for response
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
+
+
+        List<String> roleNames = user.getRoles().stream()
+                .map(r -> r.getName().name())
+                .toList();
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
+                .userId(user.getId().toString())
+                .name(user.getName())
+                .email(user.getEmail())
+                .roles(roleNames)
                 .build();
     }
 
     public AuthResponse refresh(String token) {
 
         RefreshToken rt = refreshRepo.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid"));
+                .orElseThrow(() -> new UnauthorizedException("INVALID_TOKEN", "Invalid refresh token"));
 
         if (rt.isRevoked() || rt.getExpiryDate().isBefore(Instant.now())) {
-            throw new RuntimeException("Expired");
+            throw new UnauthorizedException("TOKEN_EXPIRED", "Refresh token has expired");
         }
 
         String newAccess = jwtService.generateToken(
@@ -119,14 +136,12 @@ public class AuthServiceImpl implements AuthService {
         String username = SecurityUtils.getCurrentUsername();
 
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
 
-        // check old password
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new RuntimeException("Old password incorrect");
+            throw new UnauthorizedException("INVALID_PASSWORD", "Old password is incorrect");
         }
 
-        // set new password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     }
 
@@ -134,7 +149,7 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
 
         String token = UUID.randomUUID().toString();
 
@@ -146,22 +161,21 @@ public class AuthServiceImpl implements AuthService {
 
         resetRepo.save(reset);
 
-        // TODO: gửi email
-        System.out.println("Reset link: http://localhost:3000/reset?token=" + token);
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
     }
 
     @Override
     public void resetPassword(ResetPasswordRequest request) {
 
         PasswordResetToken token = resetRepo.findByToken(request.getToken())
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElseThrow(() -> new UnauthorizedException("INVALID_TOKEN", "Invalid reset token"));
 
         if (token.isUsed() || token.getExpiryDate().isBefore(Instant.now())) {
-            throw new RuntimeException("Token expired");
+            throw new UnauthorizedException("TOKEN_EXPIRED", "Password reset token has expired");
         }
 
         User user = userRepository.findByEmail(token.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
 

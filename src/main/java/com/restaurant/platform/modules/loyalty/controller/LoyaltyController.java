@@ -54,4 +54,11 @@ public class LoyaltyController {
         loyaltyService.redeemPoints(userId, request.getPoints());
         return ApiResponse.successMessage("Redeemed successfully");
     }
+
+    // 🔥 admin get all
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ApiResponse<java.util.List<com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse>> getAll() {
+        return ApiResponse.success(loyaltyService.getAllLoyalties());
+    }
 }

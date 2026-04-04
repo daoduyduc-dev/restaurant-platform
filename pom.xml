@@ -102,33 +102,32 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa-test</artifactId>
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security-test</artifactId>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket-test</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok-mapstruct-binding</artifactId>
             <version>0.2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
         </dependency>
     </dependencies>
 
@@ -166,6 +165,71 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+
+            <!-- Create test directories -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete file="${basedir}/src/main/java/com/restaurant/platform/modules/reservation/dto/UpdateReservationStatusReques.java" failonerror="false"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-test-directories</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${basedir}/src/test/resources"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/auth"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/menu"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/order"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/loyalty"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/notification"/>
+                                <mkdir dir="${basedir}/src/test/java/com/restaurant/platform/modules/reservation"/>
+                                <echo message="✓ src/test/resources"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/auth"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/menu"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/order"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/loyalty"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/notification"/>
+                                <echo message="✓ src/test/java/com/restaurant/platform/modules/reservation"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Compile and run CreateTestDirectories -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>test-dir-execution</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Spring Boot -->

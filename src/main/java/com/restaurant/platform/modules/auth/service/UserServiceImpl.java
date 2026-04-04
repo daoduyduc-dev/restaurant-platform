@@ -3,6 +3,7 @@ package com.restaurant.platform.modules.auth.service;
 import com.restaurant.platform.common.constant.ErrorCode;
 import com.restaurant.platform.common.exception.BadRequestException;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
+import com.restaurant.platform.common.EmailService;
 import com.restaurant.platform.modules.auth.dto.UserCreateRequest;
 import com.restaurant.platform.modules.auth.dto.UserResponse;
 import com.restaurant.platform.modules.auth.dto.UserUpdateRequest;
@@ -30,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -43,10 +45,8 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toEntity(request);
 
-        // encode password
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // set roles
         Set<Role> roles = request.getRoles().stream()
                 .map(roleName -> roleRepository.findByName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException(
@@ -56,8 +56,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toSet());
 
         user.setRoles(roles);
+        User savedUser = userRepository.save(user);
 
-        return userMapper.toResponse(userRepository.save(user));
+        emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getName());
+
+        return userMapper.toResponse(savedUser);
     }
 
     @Override

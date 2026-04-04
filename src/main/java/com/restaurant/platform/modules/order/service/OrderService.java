@@ -6,9 +6,11 @@ import com.restaurant.platform.modules.order.dto.request.CreateOrderRequest;
 import com.restaurant.platform.modules.order.dto.response.OrderResponse;
 
 import com.restaurant.platform.modules.reservation.entity.Reservation;
+import com.restaurant.platform.modules.order.enums.OrderStatus;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
@@ -18,6 +20,8 @@ public interface OrderService {
     OrderResponse getById(UUID id);
 
     PageResponse<OrderResponse> getAll(Pageable pageable);
+    
+    List<OrderResponse> getAllByStatus(List<OrderStatus> statuses);
 
     OrderResponse addItem(UUID orderId, AddOrderItemRequest request);
 
@@ -27,5 +31,9 @@ public interface OrderService {
 
     OrderResponse pay(UUID orderId);
 
-    public OrderResponse createFromReservation(Reservation reservation);
+    OrderResponse updateStatus(UUID orderId, OrderStatus status);
+
+    OrderResponse createFromReservation(Reservation reservation);
+    
+    OrderResponse assign(UUID orderId, UUID userId);
 }

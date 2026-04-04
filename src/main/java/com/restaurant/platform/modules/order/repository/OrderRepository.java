@@ -26,6 +26,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     // 🔥 3. Lấy tất cả order theo status
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+    
+    // 🔥 3b. Lấy orders theo danh sách statuses
+    List<Order> findByStatusIn(List<OrderStatus> statuses);
 
     // 🔥 4. Lấy order theo reservation
     Optional<Order> findByReservationId(UUID reservationId);
@@ -73,5 +76,8 @@ WHERE o.status = 'PAID'
 AND MONTH(o.createdDate) = MONTH(CURRENT_DATE)
 """)
     BigDecimal getMonthlyRevenue();
+
+    @Query("SELECT o FROM Order o WHERE o.status = :status AND o.createdDate < :threshold")
+    List<Order> findByStatusAndCreatedDateBefore(@Param("status") OrderStatus status, @Param("threshold") java.time.LocalDateTime threshold);
 
 }

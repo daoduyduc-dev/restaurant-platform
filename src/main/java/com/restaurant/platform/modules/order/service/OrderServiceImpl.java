@@ -28,6 +28,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.restaurant.platform.modules.auth.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -43,6 +45,8 @@ public class OrderServiceImpl implements OrderService {
     private final MenuItemRepository menuItemRepository;
     private final TableRepository tableRepository;
     private final ReservationRepository reservationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
@@ -78,7 +82,37 @@ public class OrderServiceImpl implements OrderService {
 
         table.setStatus(TableStatus.OCCUPIED);
 
-        return mapToResponse(orderRepository.save(order));
+        // Persist table status explicitly to avoid race conditions
+        tableRepository.save(table);
+
+        // Persist order
+        order = orderRepository.save(order);
+
+        // Notify kitchen staff of new order (lightweight notification)
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_CREATED",
+                    "orderId", order.getId().toString(),
+                    "tableId", table.getId().toString(),
+                    "message", "New order created",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+        } catch (Exception ignored) {
+        }
+
+        // Publish updated table status to table topic
+        try {
+            var tableDto = java.util.Map.of(
+                    "id", table.getId().toString(),
+                    "name", table.getName(),
+                    "capacity", table.getCapacity(),
+                    "status", table.getStatus().name()
+            );
+            messagingTemplate.convertAndSend("/topic/tables", tableDto);
+        } catch (Exception ignored) {}
+
+        return mapToResponse(order);
     }
 
     // ================= GET =================
@@ -99,6 +133,14 @@ public class OrderServiceImpl implements OrderService {
         return new PageResponse<>(page.map(this::mapToResponse));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getAllByStatus(List<OrderStatus> statuses) {
+        return orderRepository.findByStatusIn(statuses).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     // ================= ADD ITEM =================
     @Override
     public OrderResponse addItem(UUID orderId, AddOrderItemRequest request) {
@@ -108,6 +150,12 @@ public class OrderServiceImpl implements OrderService {
         MenuItem menuItem = menuItemRepository.findById(request.getMenuItemId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.MENU_ITEM_NOT_FOUND, "Menu item not found"));
+
+        if (!menuItem.getAvailable()) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Menu item is not available");
+        }
 
         // 🔥 merge item nếu đã tồn tại
         OrderItem existing = order.getItems().stream()
@@ -130,12 +178,30 @@ public class OrderServiceImpl implements OrderService {
 
         recalculate(order);
 
+        // Notify kitchen that order has been updated
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_UPDATED",
+                    "orderId", order.getId().toString(),
+                    "message", "Order items updated",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+        } catch (Exception ignored) {
+        }
+
         return mapToResponse(order);
     }
 
     // ================= UPDATE ITEM =================
     @Override
     public OrderResponse updateItem(UUID orderId, UUID orderItemId, Integer quantity) {
+
+        if (quantity == null || quantity <= 0) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Quantity must be greater than 0");
+        }
 
         OrderItem item = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -144,6 +210,19 @@ public class OrderServiceImpl implements OrderService {
         item.setQuantity(quantity);
 
         recalculate(item.getOrder());
+
+        // Notify kitchen of item quantity change
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_ITEM_UPDATED",
+                    "orderId", item.getOrder().getId().toString(),
+                    "itemId", orderItemId.toString(),
+                    "quantity", quantity.toString(),
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+        } catch (Exception ignored) {
+        }
 
         return mapToResponse(item.getOrder());
     }
@@ -161,6 +240,17 @@ public class OrderServiceImpl implements OrderService {
         order.getItems().remove(item);
 
         recalculate(order);
+
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_ITEM_REMOVED",
+                    "orderId", order.getId().toString(),
+                    "itemId", orderItemId.toString(),
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+        } catch (Exception ignored) {
+        }
     }
 
     // ================= PAY =================
@@ -169,12 +259,93 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = getOrderOrThrow(orderId);
 
+        if (order.getItems().isEmpty()) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Cannot pay order without items");
+        }
+
         order.setStatus(OrderStatus.PAID);
 
         Table table = order.getTable();
         table.setStatus(TableStatus.AVAILABLE);
+        // Persist table status explicitly
+        tableRepository.save(table);
 
-        return mapToResponse(order);
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_PAID",
+                    "orderId", order.getId().toString(),
+                    "message", "Order has been paid",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/RECEPTIONIST", payload);
+            messagingTemplate.convertAndSend("/topic/notifications/role/WAITER", payload);
+        } catch (Exception ignored) {
+        }
+
+        // publish table update
+        try {
+            var tableDto = java.util.Map.of(
+                    "id", table.getId().toString(),
+                    "name", table.getName(),
+                    "capacity", table.getCapacity(),
+                    "status", table.getStatus().name()
+            );
+            messagingTemplate.convertAndSend("/topic/tables", tableDto);
+        } catch (Exception ignored) {}
+
+        return mapToResponse(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponse updateStatus(UUID orderId, OrderStatus status) {
+        Order order = getOrderOrThrow(orderId);
+        order.setStatus(status);
+            if (status == OrderStatus.PAID) {
+                Table table = order.getTable();
+                table.setStatus(TableStatus.AVAILABLE);
+                tableRepository.save(table);
+                try {
+                    var tableDto = java.util.Map.of(
+                            "id", table.getId().toString(),
+                            "name", table.getName(),
+                            "capacity", table.getCapacity(),
+                            "status", table.getStatus().name()
+                    );
+                    messagingTemplate.convertAndSend("/topic/tables", tableDto);
+                } catch (Exception ignored) {}
+            }
+        Order saved = orderRepository.save(order);
+
+        // Notify role-specific channels for status changes
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_STATUS_CHANGED",
+                    "orderId", saved.getId().toString(),
+                    "status", status.name(),
+                    "timestamp", java.time.Instant.now().toString()
+            );
+
+            if (status == OrderStatus.READY) {
+                messagingTemplate.convertAndSend("/topic/notifications/role/WAITER", payload);
+            } else if (status == OrderStatus.COOKING || status == OrderStatus.PENDING || status == OrderStatus.OPEN) {
+                messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+            }
+
+            messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
+            // Send to assigned user directly if present
+            try {
+                var assigned = saved.getAssignedTo();
+                if (assigned != null && assigned.getId() != null) {
+                    messagingTemplate.convertAndSendToUser(assigned.getId().toString(), "/queue/notifications", payload);
+                }
+            } catch (Exception ignored) {
+            }
+        } catch (Exception ignored) {
+        }
+
+        return mapToResponse(saved);
     }
 
     // ================= HELPER =================
@@ -216,5 +387,31 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         return orderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponse assign(UUID orderId, UUID userId) {
+        Order order = getOrderOrThrow(orderId);
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND, "User not found"));
+
+        order.setAssignedTo(user);
+        Order saved = orderRepository.save(order);
+
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_ASSIGNED",
+                    "orderId", saved.getId().toString(),
+                    "message", "You have been assigned an order",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            if (user.getId() != null) {
+                messagingTemplate.convertAndSendToUser(user.getId().toString(), "/queue/notifications", payload);
+            }
+            messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
+        } catch (Exception ignored) {}
+
+        return mapToResponse(saved);
     }
 }

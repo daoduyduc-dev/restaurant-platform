@@ -34,6 +34,7 @@ public class Permission extends AuditableEntity {
     private PermissionModule module;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)

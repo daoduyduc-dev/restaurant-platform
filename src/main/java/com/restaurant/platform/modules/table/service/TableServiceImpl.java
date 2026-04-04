@@ -76,6 +76,15 @@ public class TableServiceImpl implements TableService {
                 .map(tableMapper::toResponse)
                 .toList();
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<TableResponse> getTablesByStatus(List<TableStatus> statuses) {
+        return tableRepository.findByStatusIn(statuses)
+                .stream()
+                .map(tableMapper::toResponse)
+                .toList();
+    }
 
     @Override
     public TableResponse update(UUID id, TableRequest tableRequest) {

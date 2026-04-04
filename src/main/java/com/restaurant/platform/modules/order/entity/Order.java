@@ -4,6 +4,7 @@ import com.restaurant.platform.common.base.SoftDeleteEntity;
 import com.restaurant.platform.modules.order.enums.OrderStatus;
 import com.restaurant.platform.modules.reservation.entity.Reservation;
 import com.restaurant.platform.modules.table.entity.Table;
+import com.restaurant.platform.modules.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -47,6 +48,10 @@ public class Order extends SoftDeleteEntity {
 
         @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<OrderItem> items = new ArrayList<>();
+
+            @ManyToOne(fetch = FetchType.LAZY)
+            @JoinColumn(name = "assigned_to")
+            private User assignedTo;
 
         public void addItem(OrderItem item) {
                 items.add(item);

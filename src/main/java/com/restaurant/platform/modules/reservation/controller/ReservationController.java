@@ -14,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -39,9 +40,14 @@ public class ReservationController {
 
     // ================= GET ALL =================
     @GetMapping
-    public ApiResponse<PageResponse<ReservationResponse>> getAll(
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<?> getAll(
+            @RequestParam(required = false) List<com.restaurant.platform.modules.reservation.enums.ReservationStatus> status,
             @PageableDefault(sort = "createdDate") Pageable pageable
     ) {
+        if (status != null && !status.isEmpty()) {
+            return ApiResponse.success(reservationService.getAllByStatus(status));
+        }
         return ApiResponse.success(reservationService.getAll(pageable));
     }
 

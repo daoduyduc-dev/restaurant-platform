@@ -32,21 +32,26 @@ public class TableController {
 
     // ================= GET ALL =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER') and hasAuthority('TABLE_VIEW')")
-    public ApiResponse<List<TableResponse>> getAll() {
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<TableResponse>> getAll(
+            @RequestParam(required = false) List<com.restaurant.platform.modules.table.enums.TableStatus> status
+    ) {
+        if (status != null && !status.isEmpty()) {
+            return ApiResponse.success(tableService.getTablesByStatus(status));
+        }
         return ApiResponse.success(tableService.getAllTables());
     }
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER','RECEPTIONIST')")
     public ApiResponse<TableResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(tableService.getTableById(id));
     }
 
     // ================= GET BY NAME =================
     @GetMapping("/name/{name}")
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER','RECEPTIONIST')")
     public ApiResponse<TableResponse> getByName(@PathVariable String name) {
         return ApiResponse.success(tableService.getTableByName(name));
     }

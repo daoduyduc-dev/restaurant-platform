@@ -27,6 +27,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     long count();
     Long countByStatus(ReservationStatus status);
+    
+    List<Reservation> findByStatusIn(List<ReservationStatus> statuses);
 
     @Query("""
 SELECT COUNT(r)

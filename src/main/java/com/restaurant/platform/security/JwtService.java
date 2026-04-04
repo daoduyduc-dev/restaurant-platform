@@ -1,6 +1,7 @@
 package com.restaurant.platform.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -44,5 +45,14 @@ public class JwtService {
 
     public Date extractExpiry(String token) {
         return extractClaims(token).getExpiration();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Date expiration = extractExpiry(token);
+            return expiration != null && expiration.after(new Date());
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 }

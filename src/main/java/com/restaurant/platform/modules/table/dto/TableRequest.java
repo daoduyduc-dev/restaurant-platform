@@ -13,4 +13,8 @@ public class TableRequest {
 
     @Min(1)
     private int capacity;
+
+    private Double positionX;
+    private Double positionY;
+    private String zone;
 }

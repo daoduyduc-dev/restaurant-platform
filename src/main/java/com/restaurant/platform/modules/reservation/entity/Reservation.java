@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @jakarta.persistence.Table(
         name = "reservations",
         indexes = {
-                @Index(name = "idx_table_time", columnList = "tableId,reservationTime")
+                @Index(name = "idx_table_time", columnList = "table_id,reservation_time")
         }
 )
 @Getter

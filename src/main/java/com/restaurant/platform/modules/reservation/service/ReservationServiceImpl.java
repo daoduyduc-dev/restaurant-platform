@@ -16,6 +16,8 @@ import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
 import com.restaurant.platform.modules.table.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.restaurant.platform.modules.table.mapper.TableMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,10 +38,11 @@ public class ReservationServiceImpl implements ReservationService {
     private final TableRepository tableRepository;
     private final ReservationMapper reservationMapper;
     private final OrderService orderService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final TableMapper tableMapper;
 
     List<ReservationStatus> ACTIVE_STATUSES = List.of(
             RESERVED,
-            COMPLETED,
             CHECKED_IN
     );
 
@@ -116,6 +119,15 @@ public class ReservationServiceImpl implements ReservationService {
 
         return new PageResponse<>(mapped);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getAllByStatus(List<ReservationStatus> statuses) {
+        return reservationRepository.findByStatusIn(statuses)
+                .stream()
+                .map(reservationMapper::toResponse)
+                .toList();
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -166,7 +178,20 @@ public class ReservationServiceImpl implements ReservationService {
 
         orderService.createFromReservation(reservation);
 
-        return reservationMapper.toResponse(reservationRepository.save(reservation));
+        try {
+            var tableDto = tableMapper.toResponse(table);
+            messagingTemplate.convertAndSend("/topic/tables", tableDto);
+        } catch (Exception ignored) {
+        }
+
+        Reservation saved = reservationRepository.save(reservation);
+
+        try {
+            var resDto = reservationMapper.toResponse(saved);
+            messagingTemplate.convertAndSend("/topic/reservations", resDto);
+        } catch (Exception ignored) {}
+
+        return reservationMapper.toResponse(saved);
     }
 
     @Override

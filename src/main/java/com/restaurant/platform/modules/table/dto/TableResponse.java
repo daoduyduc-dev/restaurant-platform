@@ -17,4 +17,8 @@ public class TableResponse {
     private int capacity;
 
     private TableStatus status;
+
+    private Double positionX;
+    private Double positionY;
+    private String zone;
 }

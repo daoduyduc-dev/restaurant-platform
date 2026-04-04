@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Directory Creation Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .directory-list {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .directory-list ol {
+            margin: 10px 0;
+        }
+        .directory-list li {
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 8px;
+            border-radius: 3px;
+        }
+        .option {
+            background-color: #e8f4f8;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+            border-left: 4px solid #2980b9;
+        }
+        .option h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .option code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #c0392b;
+        }
+        .command-box {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .checkmark { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ Test Directory Creation Guide</h1>
+        
+        <div class="info">
+            <strong>Location:</strong> D:\restaurant-platform
+        </div>
+
+        <h2>📋 Directories to Create (7 Total)</h2>
+        <div class="directory-list">
+            <ol>
+                <li>src\test\resources</li>
+                <li>src\test\java\com\restaurant\platform\modules\auth</li>
+                <li>src\test\java\com\restaurant\platform\modules\menu</li>
+                <li>src\test\java\com\restaurant\platform\modules\order</li>
+                <li>src\test\java\com\restaurant\platform\modules\loyalty</li>
+                <li>src\test\java\com\restaurant\platform\modules\notification</li>
+                <li>src\test\java\com\restaurant\platform\modules\reservation</li>
+            </ol>
+        </div>
+
+        <h2>✨ Execution Options</h2>
+
+        <div class="option">
+            <h3><span class="checkmark">✓</span> Option 1: Run Batch File (Recommended)</h3>
+            <p><strong>Files:</strong> <code>RUN_THIS_FIRST.bat</code></p>
+            <p><strong>Steps:</strong></p>
+            <ol>
+                <li>Open File Explorer and navigate to: <code>D:\restaurant-platform</code></li>
+                <li>Double-click on <code>RUN_THIS_FIRST.bat</code></li>
+                <li>A Command Prompt window will open and execute automatically</li>
+                <li>You will see the directory tree displayed</li>
+                <li>Press any key to close the window when complete</li>
+            </ol>
+            <p><strong>Advantages:</strong> Simple, no installation required, built into Windows</p>
+        </div>
+
+        <div class="option">
+            <h3><span class="checkmark">✓</span> Option 2: Run VBScript</h3>
+            <p><strong>Files:</strong> <code>CreateDirsAndShowTree.vbs</code></p>
+            <p><strong>Steps:</strong></p>
+            <ol>
+                <li>Open File Explorer and navigate to: <code>D:\restaurant-platform</code></li>
+                <li>Double-click on <code>CreateDirsAndShowTree.vbs</code></li>
+                <li>The script will execute automatically</li>
+                <li>Dialog boxes will show progress and results</li>
+            </ol>
+            <p><strong>Advantages:</strong> Self-contained, no command line window</p>
+        </div>
+
+        <div class="option">
+            <h3><span class="checkmark">✓</span> Option 3: Manual Command Prompt</h3>
+            <p><strong>Steps:</strong></p>
+            <ol>
+                <li>Press <code>Win + R</code></li>
+                <li>Type: <code>cmd</code> and press Enter</li>
+                <li>Copy and paste the following commands:
+                    <div class="command-box">cd /d D:\restaurant-platform</div>
+                    <div class="command-box">mkdir src\test\resources</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\auth</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\menu</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\order</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\loyalty</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\notification</div>
+                    <div class="command-box">mkdir src\test\java\com\restaurant\platform\modules\reservation</div>
+                    <div class="command-box">tree src\test /F</div>
+                </li>
+                <li>Press Enter after each command</li>
+            </ol>
+            <p><strong>Advantages:</strong> Complete control, can verify each step</p>
+        </div>
+
+        <div class="option">
+            <h3><span class="checkmark">✓</span> Option 4: Use Existing Node.js Script</h3>
+            <p><strong>Files:</strong> <code>create_dirs_now.js</code></p>
+            <p><strong>Steps:</strong></p>
+            <ol>
+                <li>Open Command Prompt</li>
+                <li>Navigate to: <code>D:\restaurant-platform</code></li>
+                <li>Run: <code>node create_dirs_now.js</code></li>
+            </ol>
+            <p><strong>Requirements:</strong> Node.js must be installed</p>
+        </div>
+
+        <div class="option">
+            <h3><span class="checkmark">✓</span> Option 5: Use Existing Python Script</h3>
+            <p><strong>Files:</strong> <code>create_test_dirs.py</code></p>
+            <p><strong>Steps:</strong></p>
+            <ol>
+                <li>Open Command Prompt</li>
+                <li>Navigate to: <code>D:\restaurant-platform</code></li>
+                <li>Run: <code>python create_test_dirs.py</code></li>
+            </ol>
+            <p><strong>Requirements:</strong> Python must be installed</p>
+        </div>
+
+        <h2>📊 Expected Output</h2>
+        <div class="success">
+            <strong>After execution, you should see:</strong>
+            <pre>
+[OK] Created: src\test\resources
+[OK] Created: src\test\java\com\restaurant\platform\modules\auth
+[OK] Created: src\test\java\com\restaurant\platform\modules\menu
+[OK] Created: src\test\java\com\restaurant\platform\modules\order
+[OK] Created: src\test\java\com\restaurant\platform\modules\loyalty
+[OK] Created: src\test\java\com\restaurant\platform\modules\notification
+[OK] Created: src\test\java\com\restaurant\platform\modules\reservation
+
+==========================================
+All 7 directories created successfully!
+==========================================
+
+Directory Tree for: D:\restaurant-platform\src\test
+
+D:\RESTAURANT-PLATFORM\SRC\TEST
+├── java
+│   └── com
+│       └── restaurant
+│           └── platform
+│               ├── RestaurantPlatformApplicationTests.java
+│               └── modules
+│                   ├── auth
+│                   ├── menu
+│                   ├── order
+│                   ├── loyalty
+│                   ├── notification
+│                   └── reservation
+└── resources
+            </pre>
+        </div>
+
+        <h2>✅ Verification</h2>
+        <p>To verify all directories were created successfully:</p>
+        <ol>
+            <li>Open File Explorer</li>
+            <li>Navigate to: <code>D:\restaurant-platform\src\test\java\com\restaurant\platform\modules</code></li>
+            <li>You should see 6 subdirectories:
+                <ul>
+                    <li>auth</li>
+                    <li>menu</li>
+                    <li>order</li>
+                    <li>loyalty</li>
+                    <li>notification</li>
+                    <li>reservation</li>
+                </ul>
+            </li>
+            <li>Also verify: <code>D:\restaurant-platform\src\test\resources</code> exists</li>
+        </ol>
+
+        <h2>🆘 Troubleshooting</h2>
+        <div class="warning">
+            <strong>If directories already exist:</strong> The scripts use the <code>mkdir</code> command which will not fail if directories already exist. They will simply be skipped.
+        </div>
+
+        <div class="warning">
+            <strong>If you get "Access Denied" error:</strong>
+            <ol>
+                <li>Right-click the batch file and select "Run as Administrator"</li>
+                <li>Or open Command Prompt as Administrator first, then run commands</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>If "tree" command is not found:</strong> Use File Explorer to verify the directories were created, or use: <code>dir /S src\test</code> instead.
+        </div>
+
+        <hr style="margin: 30px 0; border: none; border-top: 2px solid #ecf0f1;">
+
+        <p style="text-align: center; color: #7f8c8d;">
+            <strong>Created:</strong> Test Directory Setup Guide<br>
+            <strong>Location:</strong> D:\restaurant-platform<br>
+            <strong>Status:</strong> Ready to execute
+        </p>
+    </div>
+</body>
+</html>
