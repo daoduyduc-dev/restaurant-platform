@@ -143,7 +143,7 @@
 
 .input-field:focus {
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .input-field:hover:not(:focus) {
@@ -161,7 +161,7 @@
 }
 
 .input-error:focus {
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  box-shadow: 0 0 0 3px hsla(0, 85%, 60%, 0.15);
 }
 
 .input-success {
@@ -169,7 +169,7 @@
 }
 
 .input-success:focus {
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  box-shadow: 0 0 0 3px hsla(204, 100%, 40%, 0.15);
 }
 
 .input-message {
@@ -224,7 +224,7 @@
 
 .textarea-field:focus {
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .textarea-field:hover:not(:focus) {
@@ -242,7 +242,7 @@
 }
 
 .textarea-error:focus {
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  box-shadow: 0 0 0 3px hsla(0, 85%, 60%, 0.15);
 }
 
 .textarea-success {
@@ -250,7 +250,7 @@
 }
 
 .textarea-success:focus {
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  box-shadow: 0 0 0 3px hsla(204, 100%, 40%, 0.15);
 }
 
 .textarea-footer {
@@ -302,7 +302,7 @@
 .checkbox-input:focus {
   outline: none;
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .checkbox-input:checked {
@@ -403,7 +403,7 @@
 .radio-input:focus {
   outline: none;
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .radio-input:checked {
@@ -495,12 +495,12 @@
 .select-trigger:focus-visible {
   outline: none;
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .select-trigger.select-open {
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .select-trigger.select-error {
@@ -508,7 +508,7 @@
 }
 
 .select-trigger.select-error:focus-visible {
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  box-shadow: 0 0 0 3px hsla(0, 85%, 60%, 0.15);
 }
 
 .select-value {
@@ -683,25 +683,25 @@
 .badge-success {
   background: var(--teal-bg);
   color: var(--teal);
-  border: 1px solid rgba(13, 148, 136, 0.3);
+  border: 1px solid hsla(204, 100%, 40%, 0.24);
 }
 
 .badge-warning {
   background: var(--amber-bg);
   color: var(--amber);
-  border: 1px solid rgba(217, 119, 6, 0.3);
+  border: 1px solid hsla(30, 100%, 50%, 0.24);
 }
 
 .badge-error {
   background: var(--rose-bg);
   color: var(--rose);
-  border: 1px solid rgba(225, 29, 72, 0.3);
+  border: 1px solid hsla(0, 85%, 60%, 0.24);
 }
 
 .badge-info {
-  background: var(--orange-100);
-  color: var(--orange-600);
-  border: 1px solid rgba(197, 160, 51, 0.3);
+  background: hsl(221 100% 96%);
+  color: var(--info);
+  border: 1px solid hsla(226, 100%, 63%, 0.22);
 }
 
 .badge-neutral {
@@ -856,7 +856,7 @@
 
 .search-bar:focus-within {
   border-color: var(--orange-600);
-  box-shadow: 0 0 0 3px rgba(197, 160, 51, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .search-bar input {

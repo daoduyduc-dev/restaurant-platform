@@ -2,56 +2,108 @@
 @import './styles/components.css';
 
 :root {
-  /* ═══════════════════════════════════════════════
-     2026 LUXURY OBSIDIAN DESIGN SYSTEM
-     Michelin-grade POS / SaaS aesthetic
-     ═══════════════════════════════════════════════ */
+  /* Semantic palette */
+  --background: hsl(240 10% 98%);
+  --foreground: hsl(215 28% 27%);
 
-  /* ═══════════════════════════════════════════════
-     2026 ELEGANT PORCELAIN & GOLD DESIGN SYSTEM
-     Michelin-grade POS / SaaS Light Aesthetic
-     ═══════════════════════════════════════════════ */
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(215 28% 27%);
 
-  /* Semantic Light Palette */
-  --bg-sidebar: #FFFFFF;    /* Crisp White Sidebar */
-  --bg-main: #FDFBF7;       /* Porcelain Off-White Background */
-  --bg-card: #FFFFFF;       /* White Cards */
-  --border-main: #EFECE6;   /* Warm Soft Gray Border */
-  --border-hover: #D1D5DB;  /* Hover Gray Border */
-  --text-muted: #6B7280;    /* Muted Text */
-  --text-main: #374151;     /* Main Body Text (Charcoal) */
-  --text-heading: #111827;  /* Deep Slate (Headers) */
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(215 28% 27%);
 
-  /* Gold Palette (Primary Accents) */
-  --orange-600: #C5A033; /* Vibrant Gold (Primary) */
-  --orange-500: #D4AF37; /* Metallic Gold */
-  --orange-400: #E2C25D; /* Light Gold */
-  --orange-100: #FDF6E3; /* Gold tinted BG */
-  --orange-50:  #FFFDF5; /* Faint Gold BG */
+  --primary: hsl(30 100% 50%);
+  --primary-light: hsl(30 100% 60%);
+  --primary-dark: hsl(30 100% 40%);
+  --primary-foreground: hsl(0 0% 100%);
 
-  /* Neutral Palette */
-  --cream: #FAF9F6;
-  --cream-warm: #F8F5F0;
-  --white: #FFFFFF;
-  --gray-50: #F9FAFB;
-  --gray-100: #F3F4F6;
-  --gray-200: #E5E7EB;
-  --gray-300: #D1D5DB;
-  --gray-400: #9CA3AF;
-  --gray-500: #6B7280;
-  --gray-600: #4B5563;
-  --gray-700: #374151;
-  --gray-800: #1F2937;
+  --secondary: hsl(240 5% 96%);
+  --secondary-foreground: hsl(240 6% 10%);
 
-  /* Semantic Colors (Softened for light mode) */
-  --teal: #0D9488;
-  --teal-bg: rgba(13, 148, 136, 0.1);
-  --amber: #D97706;
-  --amber-bg: rgba(217, 119, 6, 0.1);
-  --rose: #E11D48;
-  --rose-bg: rgba(225, 29, 72, 0.1);
-  --emerald: #059669;
-  --emerald-bg: rgba(5, 150, 105, 0.1);
+  --muted: hsl(240 5% 96%);
+  --muted-foreground: hsl(215 18% 47%);
+
+  --accent: hsl(204 94% 94%);
+  --accent-foreground: hsl(204 100% 40%);
+
+  --destructive: hsl(0 85% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  --success: hsl(142 76% 36%);
+  --success-foreground: hsl(0 0% 98%);
+
+  --info: hsl(226 100% 63%);
+
+  --border: hsl(214 32% 91%);
+  --input: hsl(210 40% 96%);
+  --ring: hsl(30 100% 50%);
+  --radius: 0.5rem;
+
+  /* App aliases for existing components */
+  --bg-sidebar: var(--card);
+  --bg-main: var(--background);
+  --bg-card: var(--card);
+  --bg-secondary: var(--secondary);
+  --border-main: var(--border);
+  --border-hover: hsl(214 24% 82%);
+  --text-muted: var(--muted-foreground);
+  --text-main: var(--foreground);
+  --text-heading: hsl(215 32% 20%);
+  --primary-soft: hsl(30 100% 95%);
+  --primary-soft-hover: hsl(30 100% 92%);
+  --primary-glow: hsla(30, 100%, 50%, 0.14);
+  --accent-soft: hsl(204 94% 94%);
+  --accent-strong: hsl(204 100% 40%);
+  --danger-soft: hsl(0 100% 97%);
+  --surface-hero: linear-gradient(135deg, hsl(214 45% 99%) 0%, hsl(240 10% 98%) 52%, hsl(204 55% 96%) 100%);
+  --surface-hero-panel: linear-gradient(160deg, hsl(215 32% 20%) 0%, hsl(215 28% 27%) 52%, hsl(204 100% 40%) 100%);
+  --gradient-primary: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  --gradient-info: linear-gradient(135deg, hsl(204 100% 40%) 0%, hsl(204 100% 48%) 100%);
+  --gradient-danger: linear-gradient(135deg, hsl(0 85% 60%) 0%, hsl(0 90% 72%) 100%);
+  --gradient-violet: linear-gradient(135deg, hsl(252 83% 67%) 0%, hsl(263 85% 74%) 100%);
+  --role-admin: var(--rose);
+  --role-admin-bg: hsl(0 100% 97%);
+  --role-manager: var(--primary);
+  --role-manager-bg: var(--primary-soft);
+  --role-receptionist: var(--accent-strong);
+  --role-receptionist-bg: var(--accent-soft);
+  --role-kitchen: hsl(252 83% 67%);
+  --role-kitchen-bg: hsl(252 100% 97%);
+  --role-waiter: hsl(226 100% 63%);
+  --role-waiter-bg: hsl(221 100% 96%);
+  --role-customer: var(--emerald);
+  --role-customer-bg: var(--emerald-bg);
+
+  /* Primary palette */
+  --orange-600: hsl(30 100% 40%);
+  --orange-500: hsl(30 100% 50%);
+  --orange-400: hsl(30 100% 60%);
+  --orange-100: hsl(30 100% 95%);
+  --orange-50: hsl(32 100% 98%);
+
+  /* Neutral palette */
+  --cream: hsl(240 10% 98%);
+  --cream-warm: hsl(240 8% 97%);
+  --white: hsl(0 0% 100%);
+  --gray-50: hsl(240 10% 98%);
+  --gray-100: hsl(240 5% 96%);
+  --gray-200: hsl(214 32% 91%);
+  --gray-300: hsl(214 24% 82%);
+  --gray-400: hsl(215 14% 65%);
+  --gray-500: hsl(215 18% 47%);
+  --gray-600: hsl(215 23% 37%);
+  --gray-700: hsl(215 28% 27%);
+  --gray-800: hsl(215 32% 20%);
+
+  /* Semantic colors */
+  --teal: hsl(204 100% 40%);
+  --teal-bg: hsl(204 94% 94%);
+  --amber: hsl(30 100% 50%);
+  --amber-bg: hsl(30 100% 95%);
+  --rose: hsl(0 85% 60%);
+  --rose-bg: hsl(0 100% 97%);
+  --emerald: hsl(142 76% 36%);
+  --emerald-bg: hsl(142 60% 95%);
 
   /* Typography Scale */
   --text-xs: 0.75rem;    /* 12px */
@@ -88,8 +140,8 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04);
-  --shadow-glow-orange: 0 8px 16px rgba(212, 175, 55, 0.25); /* Gold Soft Glow */
-  --shadow-glow-teal: 0 8px 16px rgba(13, 148, 136, 0.2);
+  --shadow-glow-orange: 0 8px 16px hsla(30, 100%, 50%, 0.22);
+  --shadow-glow-teal: 0 8px 16px hsla(204, 100%, 40%, 0.18);
 
   /* Transitions */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -420,7 +472,7 @@ h1, h2, h3, h4, h5, h6 {
 .badge-success { background: var(--teal-bg); color: var(--teal); }
 .badge-warning { background: var(--amber-bg); color: var(--amber); }
 .badge-danger { background: var(--rose-bg); color: var(--rose); }
-.badge-info { background: rgba(59, 130, 246, 0.08); color: #3B82F6; }
+.badge-info { background: hsl(221 100% 96%); color: var(--info); }
 .badge-neutral { background: var(--gray-100); color: var(--gray-600); }
 
 /* ═══ KANBAN ═══ */
@@ -600,7 +652,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: linear-gradient(135deg, #FAF5E4 0%, #FDFBF7 50%, #F0EDE5 100%);
+  background: var(--surface-hero);
   position: relative;
   overflow: hidden;
 }
@@ -692,19 +744,19 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ═══ GRADIENT BACKGROUNDS ═══ */
 .gradient-gold {
-  background: linear-gradient(135deg, var(--orange-600) 0%, var(--orange-400) 100%);
+  background: var(--gradient-primary);
 }
 
 .gradient-teal {
-  background: linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
+  background: var(--gradient-info);
 }
 
 .gradient-rose {
-  background: linear-gradient(135deg, #E11D48 0%, #FB7185 100%);
+  background: var(--gradient-danger);
 }
 
 .gradient-purple {
-  background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  background: var(--gradient-violet);
 }
 
 /* ═══ HOVER EFFECTS ═══ */
@@ -897,7 +949,7 @@ input:focus:not(:focus-visible) {
 
 .search-bar:focus-within {
   border-color: var(--orange-500);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .search-bar input {

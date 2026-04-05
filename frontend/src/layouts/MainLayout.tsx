@@ -197,9 +197,9 @@ export const MainLayout = () => {
         </nav>
 
         <div className="sidebar-footer">
-          <div style={{ padding: '8px 12px', marginBottom: '8px', borderRadius: 'var(--r-md)', background: 'rgba(212, 175, 55, 0.1)' }}>
+          <div style={{ padding: '8px 12px', marginBottom: '8px', borderRadius: 'var(--r-md)', background: 'var(--primary-soft)' }}>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: '2px' }}>Logged in as</div>
-            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--orange-500)' }}>{primaryRole}</div>
+            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--primary)' }}>{primaryRole}</div>
           </div>
           <NavLink
             to="/profile"
@@ -227,7 +227,7 @@ export const MainLayout = () => {
       <div className="main-content">
         <header className="top-bar">
           <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
-            <h2 style={{ fontSize:'var(--text-xl)', fontFamily:'var(--font-serif)', color:'var(--orange-600)', letterSpacing:'0.01em' }}>
+            <h2 style={{ fontSize:'var(--text-xl)', fontFamily:'var(--font-serif)', color:'var(--primary-dark)', letterSpacing:'0.01em' }}>
               {getCurrentTitle()}
             </h2>
           </div>
@@ -244,7 +244,7 @@ export const MainLayout = () => {
             >
               <Bell size={18} />
               {notifCount > 0 && (
-                <div style={{ position: 'absolute', top: 4, right: 4, background: 'var(--rose)', color: '#fff', borderRadius: 8, padding: '2px 6px', fontSize: 11, fontWeight: 700 }}>
+                <div style={{ position: 'absolute', top: 4, right: 4, background: 'var(--rose)', color: 'white', borderRadius: 8, padding: '2px 6px', fontSize: 11, fontWeight: 700 }}>
                   {notifCount}
                 </div>
               )}
@@ -262,7 +262,7 @@ export const MainLayout = () => {
               <div className="avatar">{initials}</div>
               <div>
                 <div style={{ fontSize:'var(--text-sm)', fontWeight:600, lineHeight:1.2, color:'var(--text-heading)' }}>{user?.name || 'User'}</div>
-                <div style={{ fontSize:'var(--text-xs)', color:'var(--orange-600)' }}>{primaryRole}</div>
+                <div style={{ fontSize:'var(--text-xs)', color:'var(--primary-dark)' }}>{primaryRole}</div>
               </div>
             </div>
           </div>

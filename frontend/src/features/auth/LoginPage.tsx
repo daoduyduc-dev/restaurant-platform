@@ -42,7 +42,7 @@ export const LoginPage = () => {
       if (msg) {
         setError(msg);
       } else {
-        setError('Backend server is not available. Please ensure the server is running on port 8080.');
+        setError('Backend server is not available. Please ensure the backend is running and the API URL is correct.');
       }
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ export const LoginPage = () => {
       if (msg) {
         setError(msg);
       } else {
-        setError('Backend server is not available. Please ensure the server is running on port 8080.');
+        setError('Backend server is not available. Please ensure the backend is running and the API URL is correct.');
       }
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export const LoginPage = () => {
           width: '500px',
           height: '500px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--primary-glow) 0%, transparent 70%)',
         }} />
         <div style={{
           position: 'absolute',
@@ -102,7 +102,7 @@ export const LoginPage = () => {
           width: '600px',
           height: '600px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, hsla(204, 100%, 40%, 0.10) 0%, transparent 70%)',
         }} />
       </div>
 
@@ -111,7 +111,7 @@ export const LoginPage = () => {
         gridTemplateColumns: '1fr 1fr', 
         maxWidth: '1000px', 
         width: '90%',
-        background: 'white',
+        background: 'var(--white)',
         borderRadius: 'var(--r-3xl)',
         overflow: 'hidden',
         boxShadow: 'var(--shadow-xl)',
@@ -124,7 +124,7 @@ export const LoginPage = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           style={{
-            background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+            background: 'var(--surface-hero-panel)',
             padding: 'var(--sp-12)',
             display: 'flex',
             flexDirection: 'column',
@@ -142,7 +142,7 @@ export const LoginPage = () => {
               width: '200px',
               height: '200px',
               borderRadius: '50%',
-              border: '2px solid rgba(212, 175, 55, 0.3)',
+              border: '2px solid hsla(30, 100%, 78%, 0.45)',
             }} />
             <div style={{
               position: 'absolute',
@@ -151,7 +151,7 @@ export const LoginPage = () => {
               width: '150px',
               height: '150px',
               borderRadius: '50%',
-              border: '2px solid rgba(212, 175, 55, 0.2)',
+              border: '2px solid hsla(204, 100%, 75%, 0.22)',
             }} />
           </div>
 
@@ -160,12 +160,12 @@ export const LoginPage = () => {
               width: '80px', 
               height: '80px', 
               borderRadius: 'var(--r-2xl)', 
-              background: 'linear-gradient(135deg, var(--orange-600), var(--orange-500))', 
+              background: 'var(--gradient-primary)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
               marginBottom: 'var(--sp-6)',
-              boxShadow: '0 8px 24px rgba(212, 175, 55, 0.3)'
+              boxShadow: '0 10px 28px var(--primary-glow)'
             }}>
               <UtensilsCrossed size={40} color="white" />
             </div>
@@ -217,7 +217,7 @@ export const LoginPage = () => {
                 style={{ 
                   padding: 'var(--sp-3)', 
                   background: 'rgba(239, 68, 68, 0.1)', 
-                  color: 'var(--red-500)', 
+                  color: 'var(--rose)', 
                   borderRadius: 'var(--r-md)', 
                   fontSize: 'var(--text-sm)', 
                   fontWeight: 500,
@@ -259,7 +259,7 @@ export const LoginPage = () => {
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = 'var(--orange-500)';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.1)';
+                    e.target.style.boxShadow = '0 0 0 3px var(--primary-glow)';
                   }}
                   onBlur={(e) => {
                     e.target.style.borderColor = 'var(--border-main)';
@@ -300,7 +300,7 @@ export const LoginPage = () => {
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = 'var(--orange-500)';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.1)';
+                    e.target.style.boxShadow = '0 0 0 3px var(--primary-glow)';
                   }}
                   onBlur={(e) => {
                     e.target.style.borderColor = 'var(--border-main)';
@@ -333,8 +333,8 @@ export const LoginPage = () => {
               style={{
                 width: '100%',
                 padding: 'var(--sp-3)',
-                background: loading ? 'var(--gray-300)' : 'linear-gradient(135deg, var(--orange-600), var(--orange-500))',
-                color: 'white',
+                background: loading ? 'var(--gray-300)' : 'var(--gradient-primary)',
+                color: 'var(--primary-foreground)',
                 border: 'none',
                 borderRadius: 'var(--r-md)',
                 fontSize: 'var(--text-base)',
@@ -398,7 +398,7 @@ export const LoginPage = () => {
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--orange-500)';
-                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212, 175, 55, 0.05)';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-soft)';
                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
