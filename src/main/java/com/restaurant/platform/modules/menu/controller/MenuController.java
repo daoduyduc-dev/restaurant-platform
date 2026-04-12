@@ -21,7 +21,7 @@ public class MenuController {
     private final MenuService menuService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('MENU_CREATE')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<MenuItemResponse> create(
             @Valid @RequestBody CreateMenuItemRequest request
     ) {
@@ -48,7 +48,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('MENU_DELETE')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         menuService.delete(id);
         return ApiResponse.successMessage("Deleted successfully");

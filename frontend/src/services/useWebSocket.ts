@@ -20,9 +20,9 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const host = window.location.host;
-    const socketUrl = `${protocol}//${host}/ws`;
+    const socketUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(accessToken)}`;
 
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
@@ -43,7 +43,6 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
 
     client.onConnect = () => {
       setConnected(true);
-      console.log('WebSocket connected to:', topic);
 
       const topics = Array.isArray(topic) ? topic : [topic];
 

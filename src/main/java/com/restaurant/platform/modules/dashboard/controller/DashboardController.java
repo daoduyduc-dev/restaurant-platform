@@ -1,6 +1,8 @@
 package com.restaurant.platform.modules.dashboard.controller;
 
 import com.restaurant.platform.common.response.ApiResponse;
+import com.restaurant.platform.modules.dashboard.dto.DashboardResponse;
+import com.restaurant.platform.modules.dashboard.service.DashboardService;
 import com.restaurant.platform.modules.order.dto.response.OrderResponse;
 import com.restaurant.platform.modules.order.enums.OrderStatus;
 import com.restaurant.platform.modules.order.mapper.OrderMapper;
@@ -18,8 +20,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardController {
 
+    private final DashboardService dashboardService;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ApiResponse<DashboardResponse> getDashboard() {
+        return ApiResponse.success(dashboardService.getDashboard());
+    }
 
     // Alerts: orders stuck in a status longer than threshold (minutes)
     @GetMapping("/alerts")

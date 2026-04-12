@@ -8,6 +8,37 @@ import type { Variants } from 'framer-motion';
 import { Button, Card, Badge } from '../../components/ui';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
+const normalizeDashboard = (payload: any): DashboardDTO => ({
+  revenue: {
+    todayRevenue: Number(payload?.revenue?.todayRevenue ?? 0),
+    yesterdayRevenue: Number(payload?.revenue?.yesterdayRevenue ?? 0),
+    growthPercent: Number(payload?.revenue?.growthPercent ?? 0),
+  },
+  orders: {
+    todayOrders: Number(payload?.orders?.todayOrders ?? 0),
+    activeOrders: Number(payload?.orders?.activeOrders ?? payload?.orders?.openOrders ?? 0),
+    completedOrders: Number(payload?.orders?.completedOrders ?? payload?.orders?.paidOrders ?? 0),
+  },
+  tables: {
+    total: Number(payload?.tables?.total ?? payload?.tables?.totalTables ?? 0),
+    available: Number(payload?.tables?.available ?? payload?.tables?.availableTables ?? 0),
+    occupied: Number(payload?.tables?.occupied ?? payload?.tables?.occupiedTables ?? 0),
+    reserved: Number(payload?.tables?.reserved ?? 0),
+  },
+  reservations: {
+    todayTotal: Number(payload?.reservations?.todayTotal ?? payload?.reservations?.totalReservations ?? 0),
+    pending: Number(payload?.reservations?.pending ?? 0),
+    confirmed: Number(payload?.reservations?.confirmed ?? payload?.reservations?.cancelledReservations ?? 0),
+  },
+});
+
+const normalizeTopItems = (items: any[]): TopSellingItemDTO[] =>
+  items.map((item) => ({
+    menuItemName: item?.menuItemName ?? item?.name ?? 'Unknown Item',
+    totalQuantity: Number(item?.totalQuantity ?? 0),
+    totalRevenue: Number(item?.totalRevenue ?? 0),
+  }));
+
 const container: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -35,7 +66,7 @@ export const ManagerDashboard = () => {
   const fetchDashboard = async () => {
     try {
       const res = await api.get('/dashboard');
-      if (res.data.data) setDashboard(res.data.data);
+      if (res.data.data) setDashboard(normalizeDashboard(res.data.data));
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
     }
@@ -44,7 +75,7 @@ export const ManagerDashboard = () => {
   const fetchTopItems = async () => {
     try {
       const res = await api.get('/reports/top-selling?limit=5');
-      if (res.data.data) setTopItems(res.data.data);
+      if (res.data.data) setTopItems(normalizeTopItems(res.data.data));
     } catch (error) {
       console.error('Failed to fetch top items:', error);
     }
@@ -122,7 +153,7 @@ export const ManagerDashboard = () => {
         ))}
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-6)', marginTop: 'var(--sp-6)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-6)', marginTop: 'var(--sp-6)', minWidth: 0 }}>
         {/* Revenue Chart */}
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
@@ -130,9 +161,10 @@ export const ManagerDashboard = () => {
               <Card.Title>Revenue Overview</Card.Title>
               <Card.Description>Performance trends</Card.Description>
             </Card.Header>
-            <Card.Content style={{ height: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData.length > 0 ? revenueData : [{ name: 'No data', revenue: 0 }]}>
+            <Card.Content style={{ minWidth: 0 }}>
+              <div style={{ width: '100%', minWidth: 0, height: 300 }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={revenueData.length > 0 ? revenueData : [{ name: 'No data', revenue: 0 }]}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-main)" vertical={false} />
                   <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)' }} axisLine={false} />
                   <YAxis stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)' }} axisLine={false} />
@@ -147,8 +179,9 @@ export const ManagerDashboard = () => {
                       <stop offset="95%" stopColor="var(--orange-500)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                </AreaChart>
-              </ResponsiveContainer>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </Card.Content>
           </Card>
         </motion.div>

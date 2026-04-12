@@ -13,6 +13,13 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(BaseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBaseException(BaseException e) {
+        log.warn("Application exception [{}]: {}", e.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(new ApiResponse<>(false, e.getMessage(), null));
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException e) {
         log.warn("Bad credentials: {}", e.getMessage());

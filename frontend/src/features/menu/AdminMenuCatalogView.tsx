@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../../services/api';
 import type { MenuItemDTO, ApiResponse, PageResponse } from '../../services/types';
 import { Search, Plus, Filter, Star, Trash2 } from 'lucide-react';
@@ -7,18 +8,18 @@ import { Button, Input, Modal, Badge } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 
 const MOCK: MenuItemDTO[] = [
-  { id:'1', name:'Truffle Ribeye Steak', categoryName:'Main Course', categoryId:'', price:85, isAvailable:true, imageUrl:'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop', description:'', preparationTime:25 },
-  { id:'2', name:'Lobster Ravioli', categoryName:'Main Course', categoryId:'', price:42, isAvailable:true, imageUrl:'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop', description:'', preparationTime:20 },
-  { id:'3', name:'Wagyu Beef Tartare', categoryName:'Appetizer', categoryId:'', price:36, isAvailable:true, imageUrl:'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop', description:'', preparationTime:12 },
-  { id:'4', name:'Chocolate Soufflé', categoryName:'Dessert', categoryId:'', price:24, isAvailable:true, imageUrl:'https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop', description:'', preparationTime:18 },
+  { id: '1', name: 'Truffle Ribeye Steak', categoryName: 'Main Course', categoryId: '', price: 85, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop', description: '', preparationTime: 25 },
+  { id: '2', name: 'Lobster Ravioli', categoryName: 'Main Course', categoryId: '', price: 42, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop', description: '', preparationTime: 20 },
+  { id: '3', name: 'Wagyu Beef Tartare', categoryName: 'Appetizer', categoryId: '', price: 36, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop', description: '', preparationTime: 12 },
+  { id: '4', name: 'Chocolate Soufflé', categoryName: 'Dessert', categoryId: '', price: 24, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop', description: '', preparationTime: 18 },
 ];
 
 export const AdminMenuCatalogView = () => {
   const [items, setItems] = useState<MenuItemDTO[]>(MOCK);
   const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', categoryId: '', imageUrl: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', categoryId: '', imageUrl: '', preparationTime: '' });
   const [loading, setLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItemDTO | null>(null);
@@ -27,8 +28,9 @@ export const AdminMenuCatalogView = () => {
   const [editLoading, setEditLoading] = useState(false);
 
   const fetchMenu = () => {
-    api.get('/menu?page=0&size=50').then((res: ApiResponse<PageResponse<MenuItemDTO> | MenuItemDTO[]>) => {
-      const data = (res.data.data as any)?.items || res.data.data;
+    api.get<ApiResponse<PageResponse<MenuItemDTO> | MenuItemDTO[]>>('/menu?page=0&size=50').then((res) => {
+      const responseData = res.data.data;
+      const data = Array.isArray(responseData) ? responseData : responseData.items;
       if (Array.isArray(data) && data.length > 0) setItems(data);
     }).catch((error: Error) => {
       toast.error('Failed to fetch menu items');
@@ -38,7 +40,7 @@ export const AdminMenuCatalogView = () => {
   useEffect(() => {
     fetchMenu();
     // Assuming backend endpoint /categories exists for dropdown
-    api.get('/categories').then((res: ApiResponse<any>) => {
+    api.get<ApiResponse<any>>('/categories').then((res) => {
       if (res.data.data) setCategories(res.data.data);
     }).catch((error: Error) => {
       console.error('Failed to fetch categories:', error);
@@ -50,15 +52,22 @@ export const AdminMenuCatalogView = () => {
     setLoading(true);
     try {
       await api.post('/menu', {
-        ...formData,
-        price: parseFloat(formData.price)
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        price: parseFloat(formData.price),
+        categoryId: formData.categoryId,
+        imageUrl: formData.imageUrl.trim() || null,
+        preparationTime: formData.preparationTime ? parseInt(formData.preparationTime, 10) : null,
       });
       toast.success('Menu item created');
       setIsModalOpen(false);
-      setFormData({ name: '', description: '', price: '', categoryId: '', imageUrl: '' });
+      setFormData({ name: '', description: '', price: '', categoryId: '', imageUrl: '', preparationTime: '' });
       fetchMenu();
     } catch (error) {
-      toast.error('Failed to create menu item');
+      const message = axios.isAxiosError<ApiResponse<null>>(error)
+        ? error.response?.data?.message || 'Failed to create menu item'
+        : 'Failed to create menu item';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -109,14 +118,14 @@ export const AdminMenuCatalogView = () => {
           <h1>Menu Catalog</h1>
           <p>Manage your culinary offerings.</p>
         </div>
-        <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Input
             type="text"
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search size={16} />}
-            style={{ width: '240px' }}
+            style={{ width: '240px', paddingLeft: "36px" }}
           />
           <Button variant="secondary" size="medium" onClick={() => setShowFilter(!showFilter)}><Filter size={16} /> {showFilter ? 'Hide Filter' : 'Filter'}</Button>
           <Button variant="primary" size="medium" onClick={() => setIsModalOpen(true)}><Plus size={16} /> Add Item</Button>
@@ -125,7 +134,7 @@ export const AdminMenuCatalogView = () => {
 
       <div className="item-grid">
         {filtered.map(item => (
-          <motion.div 
+          <motion.div
             key={item.id}
             whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
             transition={{ duration: 0.2 }}
@@ -137,11 +146,11 @@ export const AdminMenuCatalogView = () => {
               border: '1px solid var(--border-main)',
               transition: 'all 250ms var(--ease-out)'
             }}>
-              <div style={{ position:'relative', overflow:'hidden', height: '200px' }}>
-                <img 
-                  src={item.imageUrl || 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop'} 
-                  alt={item.name} 
-                  style={{ 
+              <div style={{ position: 'relative', overflow: 'hidden', height: '200px' }}>
+                <img
+                  src={item.imageUrl || 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop'}
+                  alt={item.name}
+                  style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
@@ -155,23 +164,23 @@ export const AdminMenuCatalogView = () => {
                     (e.target as HTMLImageElement).style.transform = 'scale(1)';
                   }}
                 />
-                <div style={{ position:'absolute', top:'12px', left:'12px' }}>
+                <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
                   <Badge variant={item.isAvailable ? 'success' : 'error'} size="small">
                     {item.isAvailable ? 'Available' : 'Out of Stock'}
                   </Badge>
                 </div>
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.1 }}
                   onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.name); }}
-                  style={{ 
-                    position:'absolute', 
-                    top:'10px', 
-                    right:'10px', 
-                    width:'32px', 
-                    height:'32px', 
-                    borderRadius:'var(--r-full)', 
-                    background:'rgba(255,100,100,0.9)', 
-                    color:'white',
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--r-full)',
+                    background: 'rgba(255,100,100,0.9)',
+                    color: 'white',
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
@@ -185,14 +194,14 @@ export const AdminMenuCatalogView = () => {
                 </motion.button>
               </div>
               <div style={{ padding: 'var(--sp-4)' }}>
-                <div style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:'4px' }}>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
                   {item.categoryName}
                 </div>
-                <h3 style={{ fontSize:'var(--text-lg)', fontWeight:700, marginBottom:'12px', lineHeight:1.3 }}>{item.name}</h3>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ fontSize:'var(--text-xl)', fontWeight:800, color:'var(--orange-600)' }}>${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
-                  <div style={{ display:'flex', gap:'2px', color:'var(--amber)' }}>
-                    {[1,2,3,4,5].map(i => <Star key={i} size={14} fill={i <= 4 ? 'currentColor' : 'none'} />)}
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '12px', lineHeight: 1.3 }}>{item.name}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--orange-600)' }}>${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
+                  <div style={{ display: 'flex', gap: '2px', color: 'var(--amber)' }}>
+                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill={i <= 4 ? 'currentColor' : 'none'} />)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--sp-3)' }}>
@@ -211,7 +220,7 @@ export const AdminMenuCatalogView = () => {
               label="Name"
               required
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Wagyu Steak"
             />
           </div>
@@ -222,15 +231,15 @@ export const AdminMenuCatalogView = () => {
               required
               step="0.01"
               value={formData.price}
-              onChange={(e) => setFormData({...formData, price: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               placeholder="0.00"
             />
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Category</label>
-              <select 
-                required 
+              <select
+                required
                 value={formData.categoryId}
-                onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -248,10 +257,18 @@ export const AdminMenuCatalogView = () => {
             </div>
           </div>
           <Input
+            label="Preparation Time (minutes)"
+            type="number"
+            min="1"
+            value={formData.preparationTime}
+            onChange={(e) => setFormData({ ...formData, preparationTime: e.target.value })}
+            placeholder="e.g. 15"
+          />
+          <Input
             label="Image URL"
             type="url"
             value={formData.imageUrl}
-            onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             placeholder="https://..."
           />
           <div>
@@ -259,7 +276,7 @@ export const AdminMenuCatalogView = () => {
             <textarea
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Brief description..."
               style={{
                 width: '100%',

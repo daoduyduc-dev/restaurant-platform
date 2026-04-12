@@ -93,7 +93,7 @@ export const CustomerTableView = () => {
       return;
     }
     if (!validateForm()) {
-      toast.error('Vui lòng kiểm tra lại thông tin đặt bàn');
+      toast.error('Please double-check your reservation information.');
       return;
     }
 
