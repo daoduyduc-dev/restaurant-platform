@@ -3,12 +3,15 @@ package com.restaurant.platform.modules.menu.mapper;
 import com.restaurant.platform.modules.menu.dto.CreateMenuItemRequest;
 import com.restaurant.platform.modules.menu.dto.MenuItemResponse;
 import com.restaurant.platform.modules.menu.entity.MenuItem;
+import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(
         componentModel = "spring",
-        builder = @org.mapstruct.Builder(disableBuilder = true)
+        builder = @Builder(disableBuilder = true),
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface MenuMapper {
 

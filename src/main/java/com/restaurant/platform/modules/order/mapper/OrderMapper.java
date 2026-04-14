@@ -7,6 +7,7 @@ import org.mapstruct.*;
 
 @Mapper(
         componentModel = "spring",
+        uses = OrderItemMapper.class,
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface OrderMapper {

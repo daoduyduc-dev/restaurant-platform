@@ -5,8 +5,12 @@ import com.restaurant.platform.modules.loyalty.dto.LoyaltyTransactionResponse;
 import com.restaurant.platform.modules.loyalty.entity.LoyaltyAccount;
 import com.restaurant.platform.modules.loyalty.entity.LoyaltyTransaction;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
 public interface LoyaltyMapper {
 
     LoyaltyResponse toResponse(LoyaltyAccount account);

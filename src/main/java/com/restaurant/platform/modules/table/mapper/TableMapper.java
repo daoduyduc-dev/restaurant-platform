@@ -5,7 +5,10 @@ import com.restaurant.platform.modules.table.dto.TableResponse;
 import com.restaurant.platform.modules.table.entity.Table;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
 public interface TableMapper {
 
     // Entity → Response
