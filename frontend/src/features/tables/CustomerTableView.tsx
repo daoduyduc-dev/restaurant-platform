@@ -13,13 +13,15 @@ export const CustomerTableView = () => {
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [selectedTable, setSelectedTable] = useState<TableDTO | null>(null);
-  
+  const [availableTables, setAvailableTables] = useState<Set<string>>(new Set());
+
   // Booking form state
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('19:00');
   const [guests, setGuests] = useState(2);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   const fetchTables = async () => {
     try {
@@ -31,9 +33,37 @@ export const CustomerTableView = () => {
   useEffect(() => { fetchTables(); }, []);
   useWebSocket<any>('/topic/tables', () => fetchTables());
 
+  // Check available tables for selected date/time
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (!date || !time) return;
+      
+      setCheckingAvailability(true);
+      try {
+        const reservationTime = `${date}T${time}:00`;
+        const res = await api.get('/reservations/available-tables', {
+          params: {
+            reservationTime,
+            numberOfGuests: guests
+          }
+        });
+        const availableIds = new Set((res.data.data || []).map((t: TableDTO) => t.id));
+        setAvailableTables(availableIds);
+      } catch (error) {
+        console.error('Failed to check availability:', error);
+        // If endpoint fails, fall back to status-based availability
+        setAvailableTables(new Set(tables.filter(t => t.status === 'AVAILABLE').map(t => t.id)));
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+
+    checkAvailability();
+  }, [date, time, guests, tables]);
+
   const handleTableClick = (table: TableDTO) => {
-    if (table.status !== 'AVAILABLE') {
-       toast.error('This table is not available right now. Please select a green table.');
+    if (!availableTables.has(table.id)) {
+       toast.error('This table is not available for the selected date/time. Please choose a different table or time.');
        return;
     }
     setSelectedTable(table);
@@ -65,11 +95,30 @@ export const CustomerTableView = () => {
         
         <Card variant="elevated" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <FloorPlan
-            tables={tables}
+            tables={tables.map(t => ({
+              ...t,
+              status: availableTables.has(t.id) ? 'AVAILABLE' : 'OCCUPIED'
+            }))}
             selectedId={selectedTable?.id}
             onTableClick={handleTableClick}
-            dimUnavailable={true} // Customer view dimms unavailable tables
+            dimUnavailable={true}
           />
+          {checkingAvailability && (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(255,255,255,0.9)',
+              padding: 'var(--sp-4)',
+              borderRadius: 'var(--r-lg)',
+              boxShadow: 'var(--shadow-lg)',
+              zIndex: 10,
+            }}>
+              <div className="spinner" />
+              <p style={{ marginTop: 'var(--sp-2)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Checking availability...</p>
+            </div>
+          )}
         </Card>
       </div>
 

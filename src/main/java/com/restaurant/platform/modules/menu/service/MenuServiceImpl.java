@@ -61,6 +61,12 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    public PageResponse<MenuItemResponse> getByCategory(UUID categoryId, Pageable pageable) {
+        Page<MenuItem> page = menuRepo.findByCategoryId(categoryId, pageable);
+        return new PageResponse<>(page.map(mapper::toResponse));
+    }
+
+    @Override
     public MenuItemResponse getById(UUID id) {
 
         MenuItem item = menuRepo.findById(id)
@@ -78,6 +84,16 @@ public class MenuServiceImpl implements MenuService {
                         ErrorCode.NOT_FOUND, "Menu item not found"));
 
         item.setDeleted(true); // soft delete
+        menuRepo.save(item);
+    }
+
+    @Override
+    public void updateImage(UUID id, String imageUrl) {
+        MenuItem item = menuRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.NOT_FOUND, "Menu item not found"));
+        
+        item.setImageUrl(imageUrl);
         menuRepo.save(item);
     }
 }

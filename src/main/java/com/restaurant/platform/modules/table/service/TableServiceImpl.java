@@ -87,6 +87,27 @@ public class TableServiceImpl implements TableService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<TableResponse> getTablesByFloor(Integer floor) {
+        return tableRepository.findByFloor(floor)
+                .stream()
+                .map(tableMapper::toResponse)
+                .toList();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Integer> getAvailableFloors() {
+        return tableRepository.findAll()
+                .stream()
+                .map(Table::getFloor)
+                .filter(f -> f != null)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    @Override
     public TableResponse update(UUID id, TableRequest tableRequest) {
         Table table = getTableOrThrow(id);
 

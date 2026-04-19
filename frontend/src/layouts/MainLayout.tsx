@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList, CreditCard,
   UtensilsCrossed as MenuIcon2, PieChart, Calendar,
-  Award, BarChart3, Users, LogOut, Settings, Bell, Search, UserCircle,
+  Award, BarChart3, Users, LogOut, Settings, Search, UserCircle,
   ChefHat
 } from 'lucide-react';
 import { getPrimaryRole, type UserRole } from '../utils/roleUtils';
 import { useWebSocket } from '../services/useWebSocket';
 import { useState, useMemo } from 'react';
+import { NotificationBell } from '../components/NotificationBell';
 
 interface NavSection {
   section: string;
@@ -125,22 +126,7 @@ export const MainLayout = () => {
   const logout = useAuthStore(s => s.logout);
   const roles = user?.roles || [];
   const primaryRole = getPrimaryRole(roles);
-  const [notifCount, setNotifCount] = useState(0);
-
   const NAV = useMemo(() => buildNav(primaryRole), [primaryRole]);
-
-  // subscribe to notifications
-  const notifTopics = useMemo(() => {
-    const topics: string[] = [];
-    if (user?.id) topics.push(`/topic/notifications/${user.id}`);
-    if (user?.roles) user.roles.forEach(r => topics.push(`/topic/notifications/role/${r}`));
-    if (user) topics.push(`/user/queue/notifications`);
-    return topics;
-  }, [user?.id, user?.roles]);
-
-  useWebSocket<any>(notifTopics, () => {
-    setNotifCount(c => c + 1);
-  });
 
   const getCurrentTitle = () => {
     for (const sec of NAV) {
@@ -236,19 +222,7 @@ export const MainLayout = () => {
               <Search size={16} color="var(--text-muted)" />
               <input placeholder="Search..." />
             </div>
-            <button 
-              className="btn btn-ghost" 
-              style={{ padding:'8px', borderRadius:'var(--r-md)', position: 'relative' }}
-              onClick={() => { setNotifCount(0); navigate('/notifications'); }}
-              title="Notifications"
-            >
-              <Bell size={18} />
-              {notifCount > 0 && (
-                <div style={{ position: 'absolute', top: 4, right: 4, background: 'var(--rose)', color: '#fff', borderRadius: 8, padding: '2px 6px', fontSize: 11, fontWeight: 700 }}>
-                  {notifCount}
-                </div>
-              )}
-            </button>
+            <NotificationBell />
             <button 
               className="btn btn-ghost" 
               style={{ padding:'8px', borderRadius:'var(--r-md)' }}

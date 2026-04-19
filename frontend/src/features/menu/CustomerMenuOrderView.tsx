@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import type { MenuItemDTO } from '../../services/types';
-import { Search, Plus, Filter, ShoppingCart, Minus, CreditCard } from 'lucide-react';
+import { Search, Plus, Filter, ShoppingCart, Minus, CreditCard, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Input, Badge, Card } from '../../components/ui';
 import { toast } from '../../store/toastStore';
@@ -15,6 +15,8 @@ export const CustomerMenuOrderView = () => {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [categories, setCategories] = useState<{id: string, name: string, icon?: string, color?: string}[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     api.get('/menu?page=0&size=50').then((res) => {
@@ -22,6 +24,12 @@ export const CustomerMenuOrderView = () => {
       if (Array.isArray(data)) setItems(data.filter(i => i.isAvailable));
     }).catch(() => {
       toast.error('Failed to fetch menu items');
+    });
+    
+    api.get('/categories').then((res) => {
+      if (res.data.data) setCategories(res.data.data);
+    }).catch(() => {
+      console.error('Failed to fetch categories');
     });
   }, []);
 
@@ -67,7 +75,11 @@ export const CustomerMenuOrderView = () => {
     }
   };
 
-  const filtered = search ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : items;
+  const filtered = search
+    ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    : selectedCategory
+    ? items.filter(i => i.categoryId === selectedCategory)
+    : items;
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
 
   return (
@@ -81,7 +93,10 @@ export const CustomerMenuOrderView = () => {
            </div>
            <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
               <Input
-                 type="text" placeholder="Search menu..." value={search} onChange={(e) => setSearch(e.target.value)}
+                 type="text" placeholder="Search menu..." value={search} onChange={(e) => {
+                   setSearch(e.target.value);
+                   setSelectedCategory(null);
+                 }}
                  icon={<Search size={16} />} style={{ width: 240 }}
               />
               <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'}>
@@ -89,6 +104,41 @@ export const CustomerMenuOrderView = () => {
               </Button>
            </div>
         </div>
+
+        {/* Category Filter */}
+        {categories.length > 0 && (
+          <div style={{
+            display: 'flex',
+            gap: 'var(--sp-2)',
+            marginBottom: 'var(--sp-6)',
+            flexWrap: 'wrap',
+            alignItems: 'center'
+          }}>
+            <Tag size={16} style={{ color: 'var(--text-muted)' }} />
+            <Button
+              variant={!selectedCategory ? 'primary' : 'outline'}
+              size="small"
+              onClick={() => setSelectedCategory(null)}
+            >
+              All
+            </Button>
+            {categories.map(cat => (
+              <Button
+                key={cat.id}
+                variant={selectedCategory === cat.id ? 'primary' : 'outline'}
+                size="small"
+                onClick={() => setSelectedCategory(cat.id)}
+                style={{
+                  borderColor: cat.color || undefined,
+                  color: cat.color || undefined,
+                }}
+              >
+                {cat.icon && <span style={{ marginRight: '4px' }}>{cat.icon}</span>}
+                {cat.name}
+              </Button>
+            ))}
+          </div>
+        )}
 
         <div className="item-grid" style={{ overflowY: 'auto', paddingBottom: 'var(--sp-6)' }}>
            {filtered.map(item => (

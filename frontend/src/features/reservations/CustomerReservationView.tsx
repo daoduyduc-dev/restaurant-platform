@@ -5,6 +5,7 @@ import { useWebSocket } from '../../services/useWebSocket';
 import { Calendar, Clock, MapPin, Users, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button, Card, Badge } from '../../components/ui';
+import { toast } from '../../store/toastStore';
 
 export const CustomerReservationView = () => {
   const [reservations, setReservations] = useState<ReservationDTO[]>([]);
@@ -18,9 +19,20 @@ export const CustomerReservationView = () => {
   };
 
   useEffect(() => { fetchReservations(); }, []);
-  // Assuming a generic endpoint since customer is filtered by backend, or just filtering client side.
-  // Actually, backend needs to support /reservations/my, but if not, we filter by their phone number or something.
-  // We'll assume the endpoint works or returns their own.
+
+  const handleCancel = async (id: string, customerName: string) => {
+    if (!window.confirm(`Are you sure you want to cancel the reservation for ${customerName}?`)) {
+      return;
+    }
+    
+    try {
+      await api.post(`/reservations/${id}/cancel`);
+      toast.success('Reservation cancelled successfully');
+      fetchReservations();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to cancel reservation');
+    }
+  };
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--sp-16)' }}><div className="spinner" /></div>;
 
@@ -64,7 +76,7 @@ export const CustomerReservationView = () => {
                      </div>
                   </div>
                   {res.status === 'PENDING' && (
-                     <Button variant="danger" size="small">Cancel Booking</Button>
+                     <Button variant="danger" size="small" onClick={() => handleCancel(res.id, res.customerName)}>Cancel Booking</Button>
                   )}
                 </Card.Content>
               </Card>

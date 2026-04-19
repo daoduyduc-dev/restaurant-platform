@@ -24,4 +24,10 @@ public class Category extends SoftDeleteEntity {
     private String name;
 
     private String description;
+    
+    private String icon;
+    
+    private String color;
+    
+    private Integer sortOrder;
 }

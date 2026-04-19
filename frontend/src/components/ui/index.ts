@@ -36,6 +36,9 @@ export { Badge } from './Badge';
 
 export { ToastContainer } from './Toast';
 
+export { ImageUpload } from './ImageUpload';
+export type { ImageUploadProps } from './ImageUpload';
+
 // All exports summary:
 // ==================
 // Buttons:        Button

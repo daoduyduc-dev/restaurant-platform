@@ -34,12 +34,23 @@ public class TableController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TableResponse>> getAll(
-            @RequestParam(required = false) List<com.restaurant.platform.modules.table.enums.TableStatus> status
+            @RequestParam(required = false) List<com.restaurant.platform.modules.table.enums.TableStatus> status,
+            @RequestParam(required = false) Integer floor
     ) {
+        if (floor != null) {
+            return ApiResponse.success(tableService.getTablesByFloor(floor));
+        }
         if (status != null && !status.isEmpty()) {
             return ApiResponse.success(tableService.getTablesByStatus(status));
         }
         return ApiResponse.success(tableService.getAllTables());
+    }
+
+    // ================= GET FLOORS =================
+    @GetMapping("/floors")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<Integer>> getAvailableFloors() {
+        return ApiResponse.success(tableService.getAvailableFloors());
     }
 
     // ================= GET BY ID =================

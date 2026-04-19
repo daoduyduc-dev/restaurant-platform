@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import type { OrderDTO } from '../../services/types';
+import type { OrderDTO, MenuItemDTO } from '../../services/types';
 import { ClipboardList, Bell, CheckCircle, Clock, ChevronRight, Zap, Timer } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { useWebSocket } from '../../services/useWebSocket';
-import { Button, Card, Badge } from '../../components/ui';
+import { Button, Card, Badge, Modal, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 
 const container: Variants = {
@@ -37,6 +37,10 @@ export const WaiterOrderView = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDTO | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItemDTO[]>([]);
+  const [addMenuId, setAddMenuId] = useState('');
+  const [addQty, setAddQty] = useState(1);
 
   const fetchOrders = async () => {
     try {
@@ -49,9 +53,49 @@ export const WaiterOrderView = () => {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  useWebSocket<OrderDTO>(['/topic/orders', '/topic/orders/role/WAITER'], () => {
+  useWebSocket<OrderDTO>(['/topic/orders', '/topic/orders/role/WAITER'], (newOrder) => {
     fetchOrders();
+    if (selectedOrder?.id === newOrder?.id) {
+       setSelectedOrder(newOrder); // Update modal if open
+    }
   });
+
+  const fetchMenu = async () => {
+     if (menuItems.length === 0) {
+        try {
+           const res = await api.get('/menu');
+           setMenuItems(res.data.data?.items || res.data.data || []);
+        } catch { console.error('failed fetching menu') }
+     }
+  };
+
+  const handleOpenOrder = (order: OrderDTO) => {
+     setSelectedOrder(order);
+     fetchMenu();
+  };
+
+  const handleAddItem = async () => {
+     if (!selectedOrder || !addMenuId || addQty < 1) return;
+     try {
+        await api.post(`/orders/${selectedOrder.id}/items`, {
+           menuItemId: addMenuId,
+           quantity: addQty
+        });
+        toast.success('Item added');
+        setAddMenuId('');
+        setAddQty(1);
+        fetchOrders(); // The WS updates selectedOrder too, but we can refetch just in case
+     } catch { toast.error('Failed to add item'); }
+  };
+
+  const handleRemoveItem = async (itemId: string) => {
+     if (!selectedOrder) return;
+     try {
+        await api.delete(`/orders/${selectedOrder.id}/items/${itemId}`);
+        toast.success('Item removed');
+        fetchOrders();
+     } catch { toast.error('Failed to remove item'); }
+  };
 
   const handleMarkServed = async (id: string) => {
     try {
@@ -138,6 +182,7 @@ export const WaiterOrderView = () => {
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
+                  onClick={() => handleOpenOrder(order)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-2)' }}>
                     <span style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 'var(--text-base)' }}>
@@ -151,7 +196,7 @@ export const WaiterOrderView = () => {
                     {order.items?.length || 0} items · ${(order.totalAmount || 0).toFixed(2)}
                   </div>
                   {col.key === 'READY' && (
-                    <Button variant="primary" size="small" style={{ width: '100%', marginTop: 'var(--sp-2)' }} onClick={() => handleMarkServed(order.id)}>
+                    <Button variant="primary" size="small" style={{ width: '100%', marginTop: 'var(--sp-2)' }} onClick={(e) => { e.stopPropagation(); handleMarkServed(order.id); }}>
                       <CheckCircle size={14} /> Mark Served
                     </Button>
                   )}
@@ -161,6 +206,68 @@ export const WaiterOrderView = () => {
           </div>
         ))}
       </motion.div>
+
+      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={selectedOrder ? `Order Details - ${selectedOrder.tableName}` : ''}>
+        {selectedOrder && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                   <Badge variant="neutral">{selectedOrder.status}</Badge>
+                   <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 8 }}>
+                      Total: ${(selectedOrder.totalAmount || 0).toFixed(2)}
+                   </span>
+                </div>
+             </div>
+
+             <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid var(--border-main)', borderRadius: 'var(--r-md)', padding: 'var(--sp-2)' }}>
+                {selectedOrder.items?.map(item => (
+                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--sp-2)', borderBottom: '1px solid var(--gray-100)' }}>
+                      <div>
+                         <div style={{ fontWeight: 600 }}>{item.quantity}x {item.menuItemName}</div>
+                         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>${(item.unitPrice || 0).toFixed(2)} each</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                         <div style={{ fontWeight: 600 }}>${(item.subtotal || 0).toFixed(2)}</div>
+                         {['OPEN', 'PENDING'].includes(selectedOrder.status) && (
+                           <Button variant="ghost" size="small" style={{ color: 'var(--rose)', padding: '4px 8px' }} onClick={() => handleRemoveItem(item.id)}>Remove</Button>
+                         )}
+                      </div>
+                   </div>
+                ))}
+                {(!selectedOrder.items || selectedOrder.items.length === 0) && (
+                   <div style={{ padding: 'var(--sp-4)', textAlign: 'center', color: 'var(--text-muted)' }}>No items yet.</div>
+                )}
+             </div>
+
+             {['OPEN', 'PENDING'].includes(selectedOrder.status) && (
+                <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'flex-end', background: 'var(--gray-50)', padding: 'var(--sp-3)', borderRadius: 'var(--r-md)' }}>
+                   <div style={{ flex: 1 }}>
+                     <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Add Item</label>
+                     <select 
+                       value={addMenuId} 
+                       onChange={e => setAddMenuId(e.target.value)}
+                       style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-main)', borderRadius: 'var(--r-sm)' }}
+                     >
+                        <option value="">-- Select Menu Item --</option>
+                        {menuItems.map(m => (
+                           <option key={m.id} value={m.id}>{m.name} - ${(m.price||0).toFixed(2)}</option>
+                        ))}
+                     </select>
+                   </div>
+                   <div style={{ width: 80 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Qty</label>
+                      <Input type="number" min={1} value={addQty as any} onChange={e => setAddQty(parseInt(e.target.value)||1)} />
+                   </div>
+                   <Button variant="primary" onClick={handleAddItem} disabled={!addMenuId}>Add</Button>
+                </div>
+             )}
+
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--sp-2)' }}>
+                <Button variant="ghost" onClick={() => setSelectedOrder(null)}>Close</Button>
+             </div>
+          </div>
+        )}
+      </Modal>
     </motion.div>
   );
 };

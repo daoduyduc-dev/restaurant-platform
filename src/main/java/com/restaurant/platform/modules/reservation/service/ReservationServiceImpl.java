@@ -12,9 +12,12 @@ import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.reservation.mapper.ReservationMapper;
 import com.restaurant.platform.modules.reservation.repository.ReservationRepository;
 import com.restaurant.platform.modules.reservation.service.ReservationService;
+import com.restaurant.platform.modules.table.dto.TableResponse;
 import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
 import com.restaurant.platform.modules.table.repository.TableRepository;
+import com.restaurant.platform.modules.auth.entity.User;
+import com.restaurant.platform.modules.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.restaurant.platform.modules.table.mapper.TableMapper;
@@ -40,6 +43,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final OrderService orderService;
     private final SimpMessagingTemplate messagingTemplate;
     private final TableMapper tableMapper;
+    private final UserRepository userRepository;
 
     List<ReservationStatus> ACTIVE_STATUSES = List.of(
             RESERVED,
@@ -147,6 +151,37 @@ public class ReservationServiceImpl implements ReservationService {
                 reservationRepository.findByPhoneContaining(phone, pageable);
 
         return new PageResponse<>(page.map(reservationMapper::toResponse));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ReservationResponse> getMyReservations(String email, Pageable pageable) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
+        
+        Page<Reservation> page = reservationRepository.findByUserId(user.getId(), pageable);
+        return new PageResponse<>(page.map(reservationMapper::toResponse));
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<TableResponse> getAvailableTables(LocalDateTime reservationTime, int numberOfGuests) {
+        // Get all available tables with sufficient capacity
+        List<Table> allAvailableTables = tableRepository.findByStatusIn(List.of(TableStatus.AVAILABLE));
+        
+        // Filter by capacity and check time conflicts
+        return allAvailableTables.stream()
+                .filter(table -> table.getCapacity() >= numberOfGuests)
+                .filter(table -> {
+                    // Check for time conflicts
+                    LocalDateTime start = reservationTime.minusHours(2);
+                    LocalDateTime end = reservationTime.plusHours(2);
+                    
+                    return !reservationRepository.existsByTableAndReservationTimeBetweenAndStatusIn(
+                            table, start, end, ACTIVE_STATUSES);
+                })
+                .map(tableMapper::toResponse)
+                .toList();
     }
 
     @Override

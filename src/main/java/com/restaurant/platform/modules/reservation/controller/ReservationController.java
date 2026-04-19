@@ -5,15 +5,20 @@ import com.restaurant.platform.common.response.PageResponse;
 import com.restaurant.platform.modules.reservation.dto.ReservationRequest;
 import com.restaurant.platform.modules.reservation.dto.ReservationResponse;
 import com.restaurant.platform.modules.reservation.service.ReservationService;
+import com.restaurant.platform.modules.table.dto.TableResponse;
+import com.restaurant.platform.modules.table.service.TableService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +28,7 @@ import java.util.UUID;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final TableService tableService;
 
     // ================= CREATE =================
     @PostMapping
@@ -87,5 +93,25 @@ public class ReservationController {
     public ApiResponse<ReservationResponse> cancel(@PathVariable UUID id) {
         return ApiResponse.success("Reservation cancelled",
                 reservationService.cancel(id));
+    }
+    
+    // ================= GET MY RESERVATIONS =================
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ApiResponse<PageResponse<ReservationResponse>> getMyReservations(
+            Authentication authentication,
+            @PageableDefault(sort = "reservationTime") Pageable pageable
+    ) {
+        return ApiResponse.success(reservationService.getMyReservations(authentication.getName(), pageable));
+    }
+    
+    // ================= GET AVAILABLE TABLES =================
+    @GetMapping("/available-tables")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<TableResponse>> getAvailableTables(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime reservationTime,
+            @RequestParam int numberOfGuests
+    ) {
+        return ApiResponse.success(reservationService.getAvailableTables(reservationTime, numberOfGuests));
     }
 }

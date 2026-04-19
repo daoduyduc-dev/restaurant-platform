@@ -5,7 +5,8 @@ import type { TableDTO, OrderDTO } from '../../services/types';
 import { FloorPlan } from './FloorPlan';
 import { useWebSocket } from '../../services/useWebSocket';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Badge, Button } from '../../components/ui';
+import { Card, Badge, Button, Modal, Input } from '../../components/ui';
+import { toast } from '../../store/toastStore';
 import { BarChart3, AlertTriangle, Clock, MapPin, Search } from 'lucide-react';
 
 function getMinutes(dateStr: string) {
@@ -17,6 +18,8 @@ export const ManagerTableView = () => {
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [activeOrders, setActiveOrders] = useState<Record<string, OrderDTO>>({});
   const [selectedTable, setSelectedTable] = useState<TableDTO | null>(null);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+  const [editingTable, setEditingTable] = useState<Partial<TableDTO> | null>(null);
 
   const fetchData = async () => {
     try {
@@ -41,6 +44,33 @@ export const ManagerTableView = () => {
 
   const handleTableClick = (table: TableDTO) => setSelectedTable(table);
 
+  const handleSaveTable = async () => {
+    try {
+      if (editingTable?.id) {
+        await api.put(`/tables/${editingTable.id}`, editingTable);
+      } else {
+        await api.post('/tables', editingTable);
+      }
+      setIsTableModalOpen(false);
+      fetchData();
+      toast.success('Table saved successfully');
+    } catch {
+      toast.error('Failed to save table');
+    }
+  };
+
+  const handleDeleteTable = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this table?')) return;
+    try {
+      await api.delete(`/tables/${id}`);
+      setSelectedTable(null);
+      fetchData();
+      toast.success('Table deleted');
+    } catch {
+      toast.error('Failed to delete table');
+    }
+  };
+
   const totalSeats = tables.reduce((sum, t) => sum + t.capacity, 0);
   const occupiedSeats = tables.filter(t => t.status === 'OCCUPIED').reduce((sum, t) => sum + t.capacity, 0);
   const occupancyRate = totalSeats > 0 ? Math.round((occupiedSeats / totalSeats) * 100) : 0;
@@ -63,10 +93,13 @@ export const ManagerTableView = () => {
             <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Operations Map</h1>
             <p style={{ margin: 0, color: 'var(--text-muted)' }}>Monitor floor utilization and address bottlenecks.</p>
           </div>
-          <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
              <Badge variant={occupancyRate > 80 ? 'warning' : 'success'}>
                 {occupancyRate}% Occupancy ({occupiedSeats}/{totalSeats} seats)
              </Badge>
+             <Button variant="primary" size="small" onClick={() => { setEditingTable({ name: '', capacity: 2, status: 'AVAILABLE' }); setIsTableModalOpen(true); }}>
+                Add Table
+             </Button>
           </div>
         </div>
         
@@ -111,7 +144,11 @@ export const ManagerTableView = () => {
                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedTable.capacity} seats</span>
                      </div>
                    </div>
-                   <button onClick={() => setSelectedTable(null)} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize: 24 }}>×</button>
+                   <div style={{ display: 'flex', gap: 4 }}>
+                     <Button variant="ghost" size="small" onClick={() => { setEditingTable(selectedTable); setIsTableModalOpen(true); }}>Edit</Button>
+                     <Button variant="ghost" size="small" style={{ color: 'var(--red-500)' }} onClick={() => handleDeleteTable(selectedTable.id)}>Delete</Button>
+                     <button onClick={() => setSelectedTable(null)} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize: 24, marginLeft: 8 }}>×</button>
+                   </div>
                  </div>
               </Card.Header>
 
@@ -211,6 +248,27 @@ export const ManagerTableView = () => {
           )}
         </motion.div>
       </AnimatePresence>
+
+      <Modal isOpen={isTableModalOpen} onClose={() => setIsTableModalOpen(false)} title={editingTable?.id ? 'Edit Table' : 'New Table'}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+          <Input 
+            label="Table Name / Number" 
+            value={editingTable?.name || ''} 
+            onChange={(e) => setEditingTable({ ...editingTable, name: e.target.value })} 
+          />
+          <Input 
+            type="number" 
+            label="Capacity (Seats)" 
+            value={editingTable?.capacity || ''} 
+            onChange={(e) => setEditingTable({ ...editingTable, capacity: parseInt(e.target.value) || 2 })} 
+          />
+          
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
+            <Button variant="ghost" onClick={() => setIsTableModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveTable}>Save Table</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

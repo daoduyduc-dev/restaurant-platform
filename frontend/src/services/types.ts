@@ -60,6 +60,9 @@ export interface TableDTO {
   positionX: number | null;
   positionY: number | null;
   zone: string | null;
+  floor: number | null;
+  floorName: string | null;
+  isVipRoom: boolean | null;
 }
 
 // ═══ Order ═══

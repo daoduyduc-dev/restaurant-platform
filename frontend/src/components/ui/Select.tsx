@@ -12,7 +12,7 @@ export interface SelectGroup {
   options: SelectOption[];
 }
 
-interface SelectProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   options: (SelectOption | SelectGroup)[];
   value?: string | number;
   onChange?: (value: string | number) => void;

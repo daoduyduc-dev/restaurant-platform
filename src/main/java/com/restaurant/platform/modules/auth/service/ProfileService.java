@@ -36,6 +36,7 @@ public class ProfileService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .address(user.getAddress())
+                .avatarUrl(user.getAvatarUrl())
                 .active(user.isActive())
                 .roles(roles)
                 .createdDate(user.getCreatedDate())
@@ -61,10 +62,8 @@ public class ProfileService {
         if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
             user.setAddress(request.getAddress().trim());
         }
-        if (request.getAvatarUrl() != null && !request.getAvatarUrl().trim().isEmpty()) {
-            // TODO: Implement file upload and set avatar URL
-            // Note: AvatarUrl field needs to be added to User entity for proper implementation
-            // For now, skipping to avoid overwriting address field
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl().trim().isEmpty() ? null : request.getAvatarUrl());
         }
 
         User updatedUser = userRepository.save(user);
@@ -78,6 +77,7 @@ public class ProfileService {
                 .email(updatedUser.getEmail())
                 .phone(updatedUser.getPhone())
                 .address(updatedUser.getAddress())
+                .avatarUrl(updatedUser.getAvatarUrl())
                 .active(updatedUser.isActive())
                 .roles(roles)
                 .createdDate(updatedUser.getCreatedDate())
