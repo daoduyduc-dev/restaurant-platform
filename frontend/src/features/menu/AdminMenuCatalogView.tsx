@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../../services/api';
 import type { MenuItemDTO, ApiResponse, PageResponse } from '../../services/types';
-import { Search, Plus, Filter, Star, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, Star, Trash2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Button, Input, Modal, Badge } from '../../components/ui';
+import { Button, Input, Modal, Badge, ImageUpload } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 
 const MOCK: MenuItemDTO[] = [
@@ -17,7 +17,8 @@ const MOCK: MenuItemDTO[] = [
 export const AdminMenuCatalogView = () => {
   const [items, setItems] = useState<MenuItemDTO[]>(MOCK);
   const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string, icon?: string, color?: string}[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', price: '', categoryId: '', imageUrl: '', preparationTime: '' });
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,7 @@ export const AdminMenuCatalogView = () => {
   const [editingItem, setEditingItem] = useState<MenuItemDTO | null>(null);
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '', imageUrl: '' });
   const [editLoading, setEditLoading] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   const fetchMenu = () => {
     api.get<ApiResponse<PageResponse<MenuItemDTO> | MenuItemDTO[]>>('/menu?page=0&size=50').then((res) => {
@@ -51,7 +53,7 @@ export const AdminMenuCatalogView = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/menu', {
+      const response = await api.post('/menu', {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         price: parseFloat(formData.price),
@@ -60,8 +62,23 @@ export const AdminMenuCatalogView = () => {
         preparationTime: formData.preparationTime ? parseInt(formData.preparationTime, 10) : null,
       });
       toast.success('Menu item created');
+      const newItemId = response.data.data.id;
+
+      // Upload image if selected
+      if (selectedImageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append('file', selectedImageFile);
+
+        await api.post(`/menu/${newItemId}/image`, imageFormData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
+
       setIsModalOpen(false);
       setFormData({ name: '', description: '', price: '', categoryId: '', imageUrl: '', preparationTime: '' });
+      setSelectedImageFile(null);
       fetchMenu();
     } catch (error) {
       const message = axios.isAxiosError<ApiResponse<null>>(error)
@@ -109,6 +126,8 @@ export const AdminMenuCatalogView = () => {
 
   const filtered = search
     ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    : selectedCategory
+    ? items.filter(i => i.categoryId === selectedCategory)
     : items;
 
   return (
@@ -123,14 +142,56 @@ export const AdminMenuCatalogView = () => {
             type="text"
             placeholder="Search items..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSelectedCategory(null);
+            }}
             icon={<Search size={16} />}
             style={{ width: '240px', paddingLeft: "36px" }}
           />
-          <Button variant="secondary" size="medium" onClick={() => setShowFilter(!showFilter)}><Filter size={16} /> {showFilter ? 'Hide Filter' : 'Filter'}</Button>
-          <Button variant="primary" size="medium" onClick={() => setIsModalOpen(true)}><Plus size={16} /> Add Item</Button>
+          <Button variant="secondary" size="medium" onClick={() => setShowFilter(!showFilter)}>
+            <Filter size={16} /> {showFilter ? 'Hide Filter' : 'Filter'}
+          </Button>
+          <Button variant="primary" size="medium" onClick={() => setIsModalOpen(true)}>
+            <Plus size={16} /> Add Item
+          </Button>
         </div>
       </div>
+
+      {/* Category Filter */}
+      {showFilter && categories.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: 'var(--sp-2)',
+          marginBottom: 'var(--sp-6)',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <Tag size={16} style={{ color: 'var(--text-muted)' }} />
+          <Button
+            variant={!selectedCategory ? 'primary' : 'outline'}
+            size="small"
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Button>
+          {categories.map(cat => (
+            <Button
+              key={cat.id}
+              variant={selectedCategory === cat.id ? 'primary' : 'outline'}
+              size="small"
+              onClick={() => setSelectedCategory(cat.id)}
+              style={{
+                borderColor: cat.color || undefined,
+                color: cat.color || undefined,
+              }}
+            >
+              {cat.icon && <span style={{ marginRight: '4px' }}>{cat.icon}</span>}
+              {cat.name}
+            </Button>
+          ))}
+        </div>
+      )}
 
       <div className="item-grid">
         {filtered.map(item => (
@@ -264,12 +325,13 @@ export const AdminMenuCatalogView = () => {
             onChange={(e) => setFormData({ ...formData, preparationTime: e.target.value })}
             placeholder="e.g. 15"
           />
-          <Input
-            label="Image URL"
-            type="url"
-            value={formData.imageUrl}
-            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-            placeholder="https://..."
+          <ImageUpload
+            currentImageUrl={formData.imageUrl || undefined}
+            onImageUpload={(url) => setFormData({...formData, imageUrl: url})}
+            onFileSelect={(file) => setSelectedImageFile(file)}
+            shape="rounded"
+            size="lg"
+            label="Item Image"
           />
           <div>
             <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Description</label>
@@ -346,12 +408,13 @@ export const AdminMenuCatalogView = () => {
               onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
               placeholder="0.00"
             />
-            <Input
-              label="Image URL"
-              type="url"
-              defaultValue={editingItem.imageUrl || ''}
-              onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-              placeholder="https://..."
+            <ImageUpload
+              currentImageUrl={editingItem.imageUrl || undefined}
+              onImageUpload={(url) => setEditForm({ ...editForm, imageUrl: url })}
+              uploadEndpoint={`/menu/${editingItem.id}/image`}
+              shape="rounded"
+              size="lg"
+              label="Item Image"
             />
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Description</label>

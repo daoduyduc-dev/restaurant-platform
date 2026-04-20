@@ -43,5 +43,8 @@ WHERE r.status = 'NO_SHOW'
 """)
     Long countNoShow();
 
+    Page<Reservation> findByUserId(UUID userId, Pageable pageable);
+    
+    List<Reservation> findByUserId(UUID userId);
 
 }

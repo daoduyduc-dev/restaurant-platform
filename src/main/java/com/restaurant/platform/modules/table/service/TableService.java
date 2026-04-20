@@ -22,6 +22,10 @@ public interface TableService {
     
     List<TableResponse> getTablesByStatus(List<TableStatus> statuses);
 
+    List<TableResponse> getTablesByFloor(Integer floor);
+    
+    List<Integer> getAvailableFloors();
+
     TableResponse update(UUID id, TableRequest tableRequest);
 
     void delete(UUID tableId);

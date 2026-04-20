@@ -4,6 +4,7 @@ package com.restaurant.platform.modules.reservation.entity;
 import com.restaurant.platform.common.base.SoftDeleteEntity;
 import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.table.entity.Table;
+import com.restaurant.platform.modules.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -11,6 +12,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(
@@ -39,6 +41,12 @@ public class Reservation extends SoftDeleteEntity {
     @ManyToOne
     @JoinColumn(name = "table_id", nullable = false)
     private Table table;
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+    
+    private String notes;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;

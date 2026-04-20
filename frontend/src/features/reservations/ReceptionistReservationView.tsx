@@ -42,7 +42,13 @@ export const ReceptionistReservationView = () => {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await api.patch(`/reservations/${id}/status?status=${status}`);
+      if (status === 'CHECKED_IN') {
+        await api.post(`/reservations/${id}/check-in`);
+      } else if (status === 'CANCELLED') {
+        await api.post(`/reservations/${id}/cancel`);
+      } else {
+        await api.patch(`/reservations/${id}/status?status=${status}`);
+      }
       toast.success(`Updated to ${status}`);
       fetchData();
     } catch { toast.error('Failed to update'); }

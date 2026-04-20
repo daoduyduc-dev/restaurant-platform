@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 import type { ProfileResponse } from '../../services/types';
-import { User, Mail, Phone, MapPin, Calendar, Shield, LogOut, Edit2, Save, X, Camera, Key, Clock } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Shield, LogOut, Edit2, Save, X, Key, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { Button, Card, Input, Modal } from '../../components/ui';
+import { Button, Card, Input, Modal, ImageUpload } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 
 const container: Variants = {
@@ -112,37 +112,17 @@ export const ProfilePage = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Content style={{ padding: 'var(--sp-6)', textAlign: 'center' }}>
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 'var(--sp-4)' }}>
-                <div style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: 'var(--r-full)',
-                  background: 'linear-gradient(135deg, var(--orange-500), var(--orange-600))',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '48px',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}>
-                  {profile.name.charAt(0).toUpperCase()}
-                </div>
-                <button style={{
-                  position: 'absolute',
-                  bottom: '0',
-                  right: '0',
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--r-full)',
-                  background: 'var(--orange-500)',
-                  border: '3px solid var(--bg-card)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}>
-                  <Camera size={16} color="white" />
-                </button>
+              <div style={{ marginBottom: 'var(--sp-4)' }}>
+                <ImageUpload
+                  currentImageUrl={profile.avatarUrl || undefined}
+                  onImageUpload={(url) => {
+                    // Refresh profile after upload
+                    fetchProfile();
+                  }}
+                  uploadEndpoint="/profile/avatar"
+                  shape="circle"
+                  size="xl"
+                />
               </div>
 
               <h2 style={{ color: 'var(--text-heading)', marginBottom: 'var(--sp-1)' }}>{profile.name}</h2>

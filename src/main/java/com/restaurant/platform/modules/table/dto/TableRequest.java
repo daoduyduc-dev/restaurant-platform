@@ -17,4 +17,10 @@ public class TableRequest {
     private Double positionX;
     private Double positionY;
     private String zone;
+    
+    private Integer floor;
+    
+    private String floorName;
+    
+    private Boolean isVipRoom;
 }

@@ -20,6 +20,10 @@ public interface TableRepository extends JpaRepository<Table, UUID>{
     
     List<Table> findByStatusIn(List<TableStatus> statuses);
 
+    List<Table> findByFloor(Integer floor);
+    
+    List<Table> findAllByOrderByFloorAsc();
+    
     long count();
 
 }

@@ -39,4 +39,13 @@ public class Table extends SoftDeleteEntity {
 
     @Column(name = "zone")
     private String zone;
+    
+    @Column(name = "floor")
+    private Integer floor;
+    
+    @Column(name = "floor_name", length = 100)
+    private String floorName;
+    
+    @Column(name = "is_vip_room")
+    private Boolean isVipRoom;
 }

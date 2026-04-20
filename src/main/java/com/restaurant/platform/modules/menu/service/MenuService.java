@@ -15,7 +15,11 @@ public interface MenuService {
 
     PageResponse<MenuItemResponse> search(String keyword, Pageable pageable);
 
+    PageResponse<MenuItemResponse> getByCategory(UUID categoryId, Pageable pageable);
+
     MenuItemResponse getById(UUID id);
 
     void delete(UUID id);
+
+    void updateImage(UUID id, String imageUrl);
 }
