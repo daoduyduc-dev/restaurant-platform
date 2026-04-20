@@ -20,24 +20,22 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const host = window.location.host;
-    const socketUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(accessToken)}`;
+
+    const socketUrl = `http://localhost:8080/ws?token=${encodeURIComponent(accessToken)}`;
+
+    let retryCount = 0;
+    const MAX_RETRY = 5;
 
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
-      connectHeaders: {
-        Authorization: `Bearer ${accessToken}`,
-      },
       reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      onStompError: (frame) => {
-        console.error('WebSocket error:', frame.headers['message']);
-        setConnected(false);
-      },
-      onDisconnect: () => {
-        setConnected(false);
+
+      onWebSocketClose: () => {
+        retryCount++;
+        if (retryCount > MAX_RETRY) {
+          console.error("Stop reconnecting WebSocket");
+          client.deactivate(); // 🔥 chặn vòng lặp
+        }
       },
     });
 
@@ -68,9 +66,8 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
     client.activate();
 
     return () => {
-      if (clientRef.current?.connected) {
-        clientRef.current.deactivate();
-      }
+      clientRef.current?.deactivate(); // luôn gọi
+      clientRef.current = null;
       setConnected(false);
     };
   }, [topic, accessToken]);
