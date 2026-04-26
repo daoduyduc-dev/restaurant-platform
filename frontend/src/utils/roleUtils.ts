@@ -1,22 +1,17 @@
-import { useAuthStore } from '../store/authStore';
-
-export type UserRole = 'CUSTOMER' | 'WAITER' | 'RECEPTIONIST' | 'KITCHEN' | 'MANAGER' | 'ADMIN';
+export type UserRole = 'CUSTOMER' | 'STAFF' | 'ADMIN';
 
 export const ROLE_PRIORITY: Record<UserRole, number> = {
   CUSTOMER: 1,
-  WAITER: 2,
-  RECEPTIONIST: 3,
-  KITCHEN: 4,
-  MANAGER: 5,
-  ADMIN: 6,
+  STAFF: 2,
+  ADMIN: 3,
 };
 
 export function getPrimaryRole(roles: string[]): UserRole {
   if (!roles || roles.length === 0) return 'CUSTOMER';
-  
+
   let highest: UserRole = 'CUSTOMER';
   let highestPriority = 0;
-  
+
   for (const role of roles) {
     const upperRole = role.toUpperCase() as UserRole;
     const priority = ROLE_PRIORITY[upperRole] || 0;
@@ -25,7 +20,7 @@ export function getPrimaryRole(roles: string[]): UserRole {
       highest = upperRole;
     }
   }
-  
+
   return highest;
 }
 
@@ -43,15 +38,11 @@ export function hasMinimumRole(roles: string[], minimumRole: UserRole): boolean 
 }
 
 export const ROLE_ROUTES: Record<UserRole, string> = {
-  CUSTOMER: '/customer',
-  WAITER: '/waiter',
-  RECEPTIONIST: '/receptionist',
-  KITCHEN: '/kitchen',
-  MANAGER: '/manager',
-  ADMIN: '/admin',
+  CUSTOMER: '/',
+  STAFF: '/',
+  ADMIN: '/',
 };
 
 export function getDefaultRoute(roles: string[]): string {
-  const primaryRole = getPrimaryRole(roles);
-  return ROLE_ROUTES[primaryRole];
+  return '/';
 }

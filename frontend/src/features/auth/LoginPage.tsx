@@ -8,10 +8,7 @@ import { motion } from 'framer-motion';
 
 const QUICK_LOGIN_USERS = [
   { email: 'admin@servegenius.com', password: 'admin123', role: 'Admin', icon: '👨‍💼' },
-  { email: 'manager@servegenius.com', password: 'manager123', role: 'Manager', icon: '👔' },
-  { email: 'waiter@servegenius.com', password: 'waiter123', role: 'Waiter', icon: '🤵' },
-  { email: 'receptionist@servegenius.com', password: 'reception123', role: 'Receptionist', icon: '🛎️' },
-  { email: 'kitchen@servegenius.com', password: 'kitchen123', role: 'Kitchen', icon: '👨‍🍳' },
+  { email: 'staff@servegenius.com', password: 'staff123', role: 'Staff', icon: '🤵' },
   { email: 'customer@servegenius.com', password: 'customer123', role: 'Customer', icon: '🧑‍💼' },
 ];
 
@@ -377,7 +374,7 @@ export const LoginPage = () => {
             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-heading)', marginBottom: 'var(--sp-3)' }}>
               Quick Login (Demo Users)
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-2)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--sp-2)' }}>
               {QUICK_LOGIN_USERS.map((user) => (
                 <button
                   key={user.email}

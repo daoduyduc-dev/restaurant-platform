@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import type { LoyaltyDTO } from '../../services/types';
-import { Star, Crown, Gift } from 'lucide-react';
+import type { LoyaltyDTO, LoyaltyTransactionDTO } from '../../services/types';
+import { Star, Crown, Gift, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, Badge, Button, Modal, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const CustomerLoyaltyView = () => {
+  const user = useAuthStore(s => s.user);
   const [loyalty, setLoyalty] = useState<LoyaltyDTO | null>(null);
+  const [history, setHistory] = useState<LoyaltyTransactionDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user?.id) return;
     // Attempt to get loyalty context for current user. For demo, get `/loyalty/my`.
-    api.get('/loyalty/me').then((res) => {
+    api.get('/loyalty/me', { params: { userId: user.id } }).then((res) => {
       setLoyalty(res.data.data);
     }).catch(() => {
       // Mock for demo if endpoint fails
@@ -28,18 +32,23 @@ export const CustomerLoyaltyView = () => {
         lastUpdated: new Date().toISOString()
       });
     }).finally(() => setLoading(false));
-  }, []);
+
+    api.get('/loyalty/history', { params: { userId: user.id, page: 0, size: 20 } }).then((res) => {
+      const data = res.data.data?.items || res.data.data || [];
+      if (Array.isArray(data)) setHistory(data);
+    }).catch(() => setHistory([]));
+  }, [user?.id]);
 
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [redeemPoints, setRedeemPoints] = useState<number>(100);
 
   const handleRedeem = async () => {
     try {
-      await api.post('/loyalty/redeem', { points: redeemPoints });
+      await api.post('/loyalty/redeem', { points: redeemPoints }, { params: { userId: user?.id } });
       toast.success(`Successfully redeemed ${redeemPoints} points`);
       setIsRedeemModalOpen(false);
       // Reload loyalty
-      const res = await api.get('/loyalty/me');
+      const res = await api.get('/loyalty/me', { params: { userId: user?.id } });
       setLoyalty(res.data.data);
     } catch {
       toast.error('Failed to redeem points');
@@ -107,6 +116,29 @@ export const CustomerLoyaltyView = () => {
                <div style={{ letterSpacing: '0.2em', fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: 'var(--text-muted)' }}>
                   ID: {loyalty?.userId || '----'}
                </div>
+            </Card.Content>
+         </Card>
+
+         <Card variant="elevated">
+            <Card.Header>
+               <Card.Title>Points History</Card.Title>
+               <Card.Description>Earned and redeemed loyalty activity</Card.Description>
+            </Card.Header>
+            <Card.Content style={{ padding: 'var(--sp-5)', display: 'grid', gap: 'var(--sp-3)' }}>
+               {history.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--sp-6)' }}>No loyalty activity yet</div>
+               ) : history.map(tx => (
+                  <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--sp-3)', borderRadius: 'var(--r-md)', background: 'var(--gray-50)' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <TrendingUp size={16} color={tx.points >= 0 ? 'var(--teal)' : 'var(--rose)'} />
+                        <div>
+                           <div style={{ fontWeight: 700 }}>{tx.description || tx.type}</div>
+                           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{tx.createdDate ? new Date(tx.createdDate).toLocaleString() : ''}</div>
+                        </div>
+                     </div>
+                     <strong style={{ color: tx.points >= 0 ? 'var(--teal)' : 'var(--rose)' }}>{tx.points > 0 ? '+' : ''}{tx.points}</strong>
+                  </div>
+               ))}
             </Card.Content>
          </Card>
       </div>

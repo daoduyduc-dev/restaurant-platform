@@ -116,7 +116,7 @@ export const CustomerDashboard = () => {
                     {loyalty?.tier || 'Silver'} Member
                   </div>
                   <div style={{ fontSize: 'var(--text-lg)', color: getTierColor(loyalty?.tier || 'Silver'), fontWeight: 600 }}>
-                    {loyalty?.totalPoints || 0} Points
+                    {loyalty?.points || 0} Points
                   </div>
                 </div>
               </div>

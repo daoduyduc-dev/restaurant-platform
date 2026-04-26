@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { toast } from '../../store/toastStore';
 
-interface ImageUploadProps {
+export interface ImageUploadProps {
   currentImageUrl?: string;
   onImageUpload: (imageUrl: string) => void;
   uploadEndpoint?: string; // e.g., '/profile/avatar' or '/menu/{id}/image'

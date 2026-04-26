@@ -3,6 +3,7 @@ package com.restaurant.platform.modules.order.dto.request;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -12,4 +13,6 @@ public class CreateOrderRequest {
     private UUID tableId;
 
     private UUID reservationId; // optional
+
+    private List<AddOrderItemRequest> items;
 }

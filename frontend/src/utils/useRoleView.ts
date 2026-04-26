@@ -26,31 +26,10 @@ const ROLE_CONFIGS: Record<UserRole, Omit<RoleViewConfig, 'role'>> = {
     canCreate: true, canEdit: true, canDelete: true, canAssign: true, canConfigure: true,
     isOperational: false, isMonitoring: false, isAdministrative: true, isCustomer: false,
   },
-  MANAGER: {
-    label: 'Manager',
+  STAFF: {
+    label: 'Staff',
     color: 'var(--orange-500)',
     bgColor: 'rgba(212, 175, 55, 0.1)',
-    canCreate: true, canEdit: true, canDelete: false, canAssign: true, canConfigure: true,
-    isOperational: false, isMonitoring: true, isAdministrative: false, isCustomer: false,
-  },
-  RECEPTIONIST: {
-    label: 'Receptionist',
-    color: 'var(--teal)',
-    bgColor: 'rgba(13, 148, 136, 0.1)',
-    canCreate: true, canEdit: true, canDelete: false, canAssign: false, canConfigure: false,
-    isOperational: true, isMonitoring: false, isAdministrative: false, isCustomer: false,
-  },
-  KITCHEN: {
-    label: 'Kitchen',
-    color: '#8B5CF6',
-    bgColor: 'rgba(139, 92, 246, 0.1)',
-    canCreate: false, canEdit: true, canDelete: false, canAssign: false, canConfigure: false,
-    isOperational: true, isMonitoring: false, isAdministrative: false, isCustomer: false,
-  },
-  WAITER: {
-    label: 'Waiter',
-    color: '#3B82F6',
-    bgColor: 'rgba(59, 130, 246, 0.1)',
     canCreate: true, canEdit: true, canDelete: false, canAssign: false, canConfigure: false,
     isOperational: true, isMonitoring: false, isAdministrative: false, isCustomer: false,
   },

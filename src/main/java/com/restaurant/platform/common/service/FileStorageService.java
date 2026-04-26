@@ -62,7 +62,9 @@ public class FileStorageService {
         
         try {
             Path targetLocation = targetDirectory.resolve(fileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            try (var inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            }
             log.info("File stored: {}", targetLocation.toAbsolutePath());
             return fileName;
         } catch (IOException e) {

@@ -7,6 +7,8 @@ import com.restaurant.platform.common.response.PageResponse;
 import com.restaurant.platform.modules.order.service.OrderService;
 import com.restaurant.platform.modules.reservation.dto.ReservationRequest;
 import com.restaurant.platform.modules.reservation.dto.ReservationResponse;
+import com.restaurant.platform.modules.reservation.dto.TableAvailabilityResponse;
+import com.restaurant.platform.modules.reservation.dto.TimeSlotAvailabilityResponse;
 import com.restaurant.platform.modules.reservation.entity.Reservation;
 import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.reservation.mapper.ReservationMapper;
@@ -19,10 +21,13 @@ import com.restaurant.platform.modules.table.repository.TableRepository;
 import com.restaurant.platform.modules.auth.entity.User;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.restaurant.platform.modules.table.mapper.TableMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +40,7 @@ import static com.restaurant.platform.modules.reservation.enums.ReservationStatu
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -60,13 +66,8 @@ public class ReservationServiceImpl implements ReservationService {
                         "Table not found id: " + request.getTableId()
                 ));
 
-        // 2. Validate table status
-        if (table.getStatus() != TableStatus.AVAILABLE) {
-            throw  new BadRequestException(
-                    ErrorCode.RESERVATION_INVALID_STATUS,
-                    "Reservation invalid status: " + table.getStatus()
-            );
-        }
+        // 2. Tables are always bookable - no status check needed
+        // Status validation is done by time slot availability in frontend
 
         // 3. Validate capacity
         if (request.getNumberOfGuests() > table.getCapacity()) {
@@ -76,12 +77,28 @@ public class ReservationServiceImpl implements ReservationService {
             );
         }
 
-        // 4. Check time conflict
+        // 4. Validate reservation time is in the future
+        if (request.getReservationTime().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Reservation time must be in the future"
+            );
+        }
+
+        // 5. Validate minimum guests
+        if (request.getNumberOfGuests() < 1) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_CAPACITY,
+                    "Number of guests must be at least 1"
+            );
+        }
+
+        // 6. Check time conflict with pessimistic lock to prevent race condition
         LocalDateTime start = request.getReservationTime().minusHours(2);
         LocalDateTime end = request.getReservationTime().plusHours(2);
 
         boolean exists = reservationRepository
-                .existsByTableAndReservationTimeBetweenAndStatusIn(
+                .existsByTableAndReservationTimeBetweenAndStatusInWithLock(
                         table,
                         start,
                         end,
@@ -95,10 +112,15 @@ public class ReservationServiceImpl implements ReservationService {
             );
         }
 
-        // 5. Map → entity
+        // 7. Map → entity
         Reservation reservation = reservationMapper.toEntity(request, table);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            userRepository.findByEmail(authentication.getName()).ifPresent(reservation::setUser);
+        }
 
-        // 6. Save
+        // 8. Save
         return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
 
@@ -166,21 +188,82 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional(readOnly = true)
     public List<TableResponse> getAvailableTables(LocalDateTime reservationTime, int numberOfGuests) {
-        // Get all available tables with sufficient capacity
-        List<Table> allAvailableTables = tableRepository.findByStatusIn(List.of(TableStatus.AVAILABLE));
-        
+        // Get all tables with sufficient capacity (tables are always bookable)
+        List<Table> allTables = tableRepository.findAll();
+
         // Filter by capacity and check time conflicts
-        return allAvailableTables.stream()
+        return allTables.stream()
                 .filter(table -> table.getCapacity() >= numberOfGuests)
                 .filter(table -> {
-                    // Check for time conflicts
+                    // Check for time conflicts (4-hour window: ±2 hours)
                     LocalDateTime start = reservationTime.minusHours(2);
                     LocalDateTime end = reservationTime.plusHours(2);
-                    
+
                     return !reservationRepository.existsByTableAndReservationTimeBetweenAndStatusIn(
                             table, start, end, ACTIVE_STATUSES);
                 })
                 .map(tableMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDateTime date, int numberOfGuests) {
+        // Get all tables with sufficient capacity
+        List<Table> allTables = tableRepository.findAll().stream()
+                .filter(table -> table.getCapacity() >= numberOfGuests)
+                .toList();
+
+        // Generate time slots for the day (e.g., 10:00 AM to 10:00 PM, every hour)
+        List<LocalDateTime> timeSlots = new java.util.ArrayList<>();
+        LocalDateTime startTime = date.withHour(10).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime endTime = date.withHour(22).withMinute(0).withSecond(0).withNano(0);
+
+        LocalDateTime current = startTime;
+        while (!current.isAfter(endTime)) {
+            timeSlots.add(current);
+            current = current.plusHours(1);
+        }
+
+        // For each table, check availability for each time slot
+        return allTables.stream()
+                .map(table -> {
+                    List<TimeSlotAvailabilityResponse> slotAvailability = timeSlots.stream()
+                            .map(slot -> {
+                                // Check for time conflicts (4-hour window: ±2 hours)
+                                LocalDateTime start = slot.minusHours(2);
+                                LocalDateTime end = slot.plusHours(2);
+
+                                boolean hasConflict = reservationRepository.existsByTableAndReservationTimeBetweenAndStatusIn(
+                                        table, start, end, ACTIVE_STATUSES);
+
+                                String reason;
+                                if (!hasConflict) {
+                                    reason = "AVAILABLE";
+                                } else {
+                                    // Check if table is currently occupied or reserved
+                                    if (table.getStatus() == TableStatus.OCCUPIED) {
+                                        reason = "OCCUPIED";
+                                    } else if (table.getStatus() == TableStatus.RESERVED) {
+                                        reason = "RESERVED";
+                                    } else {
+                                        reason = "RESERVED"; // Has reservation conflict
+                                    }
+                                }
+
+                                return TimeSlotAvailabilityResponse.builder()
+                                        .timeSlot(slot)
+                                        .available(!hasConflict)
+                                        .reason(reason)
+                                        .build();
+                            })
+                            .toList();
+
+                    return TableAvailabilityResponse.builder()
+                            .table(tableMapper.toResponse(table))
+                            .timeSlots(slotAvailability)
+                            .build();
+                })
                 .toList();
     }
 
@@ -216,7 +299,8 @@ public class ReservationServiceImpl implements ReservationService {
         try {
             var tableDto = tableMapper.toResponse(table);
             messagingTemplate.convertAndSend("/topic/tables", tableDto);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message for table update", e);
         }
 
         Reservation saved = reservationRepository.save(reservation);
@@ -224,7 +308,9 @@ public class ReservationServiceImpl implements ReservationService {
         try {
             var resDto = reservationMapper.toResponse(saved);
             messagingTemplate.convertAndSend("/topic/reservations", resDto);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message for reservation update", e);
+        }
 
         return reservationMapper.toResponse(saved);
     }

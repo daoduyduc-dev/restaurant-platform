@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { TableDTO } from '../../services/types';
-import { FloorPlan } from './FloorPlan';
+import { FloorPlanEnhanced } from './FloorPlanEnhanced';
 import { useWebSocket } from '../../services/useWebSocket';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Card, Input } from '../../components/ui';
@@ -22,12 +22,15 @@ export const CustomerTableView = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<Set<string>>(new Set());
 
   const fetchTables = async () => {
     try {
       const res = await api.get('/tables');
       setTables(res.data.data || []);
-    } catch {}
+    } catch (error) {
+      console.error('Failed to fetch tables:', error);
+    }
   };
 
   useEffect(() => { fetchTables(); }, []);
@@ -37,7 +40,7 @@ export const CustomerTableView = () => {
   useEffect(() => {
     const checkAvailability = async () => {
       if (!date || !time) return;
-      
+
       setCheckingAvailability(true);
       try {
         const reservationTime = `${date}T${time}:00`;
@@ -47,7 +50,7 @@ export const CustomerTableView = () => {
             numberOfGuests: guests
           }
         });
-        const availableIds = new Set((res.data.data || []).map((t: TableDTO) => t.id));
+        const availableIds = new Set<string>((res.data.data || []).map((t: TableDTO) => t.id));
         setAvailableTables(availableIds);
       } catch (error) {
         console.error('Failed to check availability:', error);
@@ -61,6 +64,43 @@ export const CustomerTableView = () => {
     checkAvailability();
   }, [date, time, guests, tables]);
 
+  // Check booked time slots for selected date and table
+  useEffect(() => {
+    const checkBookedSlots = async () => {
+      if (!date || !selectedTable) return;
+
+      try {
+        // Fetch all reservations for the selected date and table
+        const res = await api.get('/reservations', {
+          params: {
+            tableId: selectedTable.id,
+            date: date,
+            page: 0,
+            size: 100
+          }
+        });
+
+        const reservations = res.data.data?.items || res.data.data || [];
+        const bookedSlots = new Set<string>();
+
+        reservations.forEach((reservation: any) => {
+          if (['PENDING', 'RESERVED', 'CHECKED_IN'].includes(reservation.status)) {
+            const resTime = new Date(reservation.reservationTime);
+            const timeStr = resTime.toTimeString().substring(0, 5); // HH:MM format
+            bookedSlots.add(timeStr);
+          }
+        });
+
+        setBookedTimeSlots(bookedSlots);
+      } catch (error) {
+        console.error('Failed to check booked slots:', error);
+        setBookedTimeSlots(new Set());
+      }
+    };
+
+    checkBookedSlots();
+  }, [date, selectedTable]);
+
   const handleTableClick = (table: TableDTO) => {
     if (!availableTables.has(table.id)) {
        toast.error('This table is not available for the selected date/time. Please choose a different table or time.');
@@ -71,6 +111,14 @@ export const CustomerTableView = () => {
 
   const submitBooking = async () => {
     if (!selectedTable || !name || !phone) return toast.error('Please fill all fields');
+
+    // Validate date/time is not in the past
+    const reservationDateTime = new Date(`${date}T${time}:00`);
+    const now = new Date();
+    if (reservationDateTime < now) {
+      return toast.error('Cannot book a table in the past. Please select a future date and time.');
+    }
+
     try {
       await api.post('/reservations', {
         tableId: selectedTable.id,
@@ -79,9 +127,19 @@ export const CustomerTableView = () => {
         reservationTime: `${date}T${time}:00`,
         numberOfGuests: guests
       });
-      toast.success('Reservation confirmed!');
-      navigate('/reservations');
-    } catch { toast.error('Failed to book table'); }
+      toast.success('🎉 Đặt bàn thành công! Mời bạn qua menu để chọn món hoặc check-in tại nhà hàng đúng giờ.');
+      setSelectedTable(null);
+      setName('');
+      setPhone('');
+      fetchTables();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message;
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to book table. Please try again.');
+      }
+    }
   };
 
   return (
@@ -93,8 +151,8 @@ export const CustomerTableView = () => {
           <p style={{ margin: 0, color: 'var(--text-muted)' }}>Choose your preferred dining spot. Only green tables are available.</p>
         </div>
         
-        <Card variant="elevated" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <FloorPlan
+        <Card variant="elevated" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+          <FloorPlanEnhanced
             tables={tables.map(t => ({
               ...t,
               status: availableTables.has(t.id) ? 'AVAILABLE' : 'OCCUPIED'
@@ -146,14 +204,40 @@ export const CustomerTableView = () => {
                       <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Date</label>
                       <div className="input-container">
                         <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                        <input type="date" className="input-field" style={{ paddingLeft: 34 }} value={date} onChange={e=>setDate(e.target.value)} />
+                        <input type="date" className="input-field" style={{ paddingLeft: 34 }} value={date} onChange={e=>setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
                       </div>
                     </div>
                     <div>
                       <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Time</label>
                       <div className="input-container">
                         <Clock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                        <input type="time" className="input-field" style={{ paddingLeft: 34 }} value={time} onChange={e=>setTime(e.target.value)} />
+                        <select
+                          className="input-field"
+                          style={{ paddingLeft: 34 }}
+                          value={time}
+                          onChange={e=>setTime(e.target.value)}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const hour = i.toString().padStart(2, '0');
+                            return ['00', '30'].map(minute => {
+                              const timeValue = `${hour}:${minute}`;
+                              const isBooked = bookedTimeSlots.has(timeValue);
+                              return (
+                                <option
+                                  key={timeValue}
+                                  value={timeValue}
+                                  disabled={isBooked}
+                                  style={{
+                                    opacity: isBooked ? 0.5 : 1,
+                                    color: isBooked ? 'var(--text-muted)' : 'inherit'
+                                  }}
+                                >
+                                  {timeValue} {isBooked ? '(Booked)' : ''}
+                                </option>
+                              );
+                            });
+                          }).flat()}
+                        </select>
                       </div>
                     </div>
                  </div>

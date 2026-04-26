@@ -18,5 +18,6 @@ public interface MenuMapper {
 
     @Mapping(target = "categoryId", expression = "java(item.getCategory() != null ? item.getCategory().getId() : null)")
     @Mapping(target = "categoryName", expression = "java(item.getCategory() != null ? item.getCategory().getName() : null)")
+    @Mapping(target = "isAvailable", source = "available")
     MenuItemResponse toResponse(MenuItem item);
 }

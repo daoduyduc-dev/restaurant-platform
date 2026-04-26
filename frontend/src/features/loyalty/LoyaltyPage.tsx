@@ -7,8 +7,7 @@ export const LoyaltyPage = () => {
 
   switch (role) {
     case 'ADMIN':
-    case 'MANAGER':
-    case 'RECEPTIONIST':
+    case 'STAFF':
       return <ManagerLoyaltyView />;
     case 'CUSTOMER':
     default:

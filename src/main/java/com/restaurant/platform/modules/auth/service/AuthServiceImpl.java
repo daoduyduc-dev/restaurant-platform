@@ -14,6 +14,7 @@ import com.restaurant.platform.common.exception.UnauthorizedException;
 import com.restaurant.platform.common.EmailService;
 import com.restaurant.platform.security.JwtService;
 import com.restaurant.platform.security.SecurityUtils;
+import com.restaurant.platform.security.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetRepository resetRepo;
     private final EmailService emailService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -78,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Override
     public AuthResponse refresh(String token) {
 
         RefreshToken rt = refreshRepo.findByToken(token)
@@ -87,15 +90,26 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("TOKEN_EXPIRED", "Refresh token has expired");
         }
 
-        String newAccess = jwtService.generateToken(
-                new org.springframework.security.core.userdetails.User(
-                        rt.getUsername(), "", List.of()
-                )
-        );
+        // Load full user with roles and permissions
+        UserDetails userDetails = userDetailsService.loadUserByUsername(rt.getUsername());
+
+        String newAccess = jwtService.generateToken(userDetails);
+
+        // Fetch full user for response
+        User user = userRepository.findByEmail(rt.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "User not found"));
+
+        List<String> roleNames = user.getRoles().stream()
+                .map(r -> r.getName().name())
+                .toList();
 
         return AuthResponse.builder()
                 .accessToken(newAccess)
                 .refreshToken(token)
+                .userId(user.getId().toString())
+                .name(user.getName())
+                .email(user.getEmail())
+                .roles(roleNames)
                 .build();
     }
 

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,15 +34,8 @@ public class OrderController {
         // Publish to role-specific topics so clients can subscribe by role for lighter traffic
         String status = order.getStatus() != null ? order.getStatus().toUpperCase() : "";
 
-        // Kitchen cares about NEW/PENDING/COOKING
-        if (status.equals("OPEN") || status.equals("PENDING") || status.equals("COOKING")) {
-            messagingTemplate.convertAndSend("/topic/orders/role/KITCHEN", order);
-        }
-
-        // Waiters care about READY -> to serve
-        if (status.equals("READY")) {
-            messagingTemplate.convertAndSend("/topic/orders/role/WAITER", order);
-        }
+        // Staff cares about all order updates
+        messagingTemplate.convertAndSend("/topic/orders/role/STAFF", order);
 
         // Managers/Admins may subscribe to overall metrics or specific order updates
         messagingTemplate.convertAndSend("/topic/orders/role/MANAGER", order);
@@ -54,7 +48,7 @@ public class OrderController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasAnyRole('WAITER','RECEPTIONIST') and hasAuthority('ORDER_CREATE')")
+    @PreAuthorize("hasRole('CUSTOMER') or (hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_CREATE'))")
     public ApiResponse<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse order = orderService.create(request);
         notifyKitchen(order);
@@ -73,6 +67,12 @@ public class OrderController {
     public ApiResponse<PageResponse<OrderResponse>> getAll(Pageable pageable) {
         return ApiResponse.success(orderService.getAll(pageable));
     }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ApiResponse<PageResponse<OrderResponse>> getMyOrders(Authentication authentication, Pageable pageable) {
+        return ApiResponse.success(orderService.getMyOrders(authentication.getName(), pageable));
+    }
     
     @GetMapping(params = "status")
     @PreAuthorize("isAuthenticated()")
@@ -84,7 +84,7 @@ public class OrderController {
 
     // ================= ADD ITEM =================
     @PostMapping("/{id}/items")
-    @PreAuthorize("hasAnyRole('WAITER','RECEPTIONIST') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<OrderResponse> addItem(
             @PathVariable UUID id,
             @Valid @RequestBody AddOrderItemRequest request
@@ -96,7 +96,7 @@ public class OrderController {
 
     // ================= UPDATE ITEM =================
     @PutMapping("/{id}/items/{itemId}")
-    @PreAuthorize("hasAnyRole('WAITER','RECEPTIONIST') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<OrderResponse> updateItem(
             @PathVariable UUID id,
             @PathVariable UUID itemId,
@@ -109,7 +109,7 @@ public class OrderController {
 
     // ================= REMOVE ITEM =================
     @DeleteMapping("/{id}/items/{itemId}")
-    @PreAuthorize("hasAnyRole('WAITER','RECEPTIONIST') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<Void> removeItem(
             @PathVariable UUID id,
             @PathVariable UUID itemId
@@ -124,7 +124,7 @@ public class OrderController {
 
     // ================= PAY =================
     @PostMapping("/{id}/pay")
-    @PreAuthorize("hasAnyRole('WAITER','MANAGER') and hasAuthority('ORDER_PAY')")
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_PAY')")
     public ApiResponse<OrderResponse> pay(@PathVariable UUID id) {
         OrderResponse order = orderService.pay(id);
         notifyKitchen(order);
@@ -133,7 +133,7 @@ public class OrderController {
 
     // ================= UPDATE STATUS =================
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('WAITER','MANAGER','RECEPTIONIST','KITCHEN') and hasAnyAuthority('ORDER_UPDATE', 'ORDER_KITCHEN_UPDATE')")
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAnyAuthority('ORDER_UPDATE', 'ORDER_KITCHEN_UPDATE')")
     public ApiResponse<OrderResponse> updateStatus(
             @PathVariable UUID id,
             @RequestParam com.restaurant.platform.modules.order.enums.OrderStatus status

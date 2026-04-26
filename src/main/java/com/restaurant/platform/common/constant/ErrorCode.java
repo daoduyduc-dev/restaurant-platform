@@ -3,7 +3,7 @@ package com.restaurant.platform.common.constant;
 public final class ErrorCode {
 
 
-    public static final String INVALID_INPUT = "";
+    public static final String INVALID_INPUT = "VALIDATION_400";
 
     private ErrorCode() {}
 
@@ -23,17 +23,17 @@ public final class ErrorCode {
     // ================= TABLE =================
     public static final String TABLE_NOT_FOUND = "TABLE_404";
     public static final String TABLE_ALREADY_EXISTS = "TABLE_409";
-    public static final String TABLE_NOT_AVAILABLE = "TABLE_400";
-    public static final String TABLE_CAPACITY_EXCEEDED = "TABLE_400";
+    public static final String TABLE_NOT_AVAILABLE = "TABLE_400_UNAVAILABLE";
+    public static final String TABLE_CAPACITY_EXCEEDED = "TABLE_400_CAPACITY";
 
     // ================= RESERVATION =================
     public static final String RESERVATION_NOT_FOUND = "RESERVATION_404";
     public static final String RESERVATION_ALREADY_EXISTS = "RESERVATION_409";
-    public static final String RESERVATION_TIME_CONFLICT = "RESERVATION_409";
-    public static final String RESERVATION_INVALID_TIME = "RESERVATION_400";
-    public static final String RESERVATION_INVALID_STATUS = "RESERVATION_400";
-    public static final String RESERVATION_ALREADY_CANCELLED = "RESERVATION_400";
-    public static final String RESERVATION_INVALID_CAPACITY = "RESERVATION_400";
+    public static final String RESERVATION_TIME_CONFLICT = "RESERVATION_409_CONFLICT";
+    public static final String RESERVATION_INVALID_TIME = "RESERVATION_400_TIME";
+    public static final String RESERVATION_INVALID_STATUS = "RESERVATION_400_STATUS";
+    public static final String RESERVATION_ALREADY_CANCELLED = "RESERVATION_400_CANCELLED";
+    public static final String RESERVATION_INVALID_CAPACITY = "RESERVATION_400_CAPACITY";
 
     // ================= ORDER =================
     public static final String ORDER_NOT_FOUND = "ORDER_404";
@@ -59,5 +59,5 @@ public final class ErrorCode {
     public static final String NOTIFICATION_INVALID = "NOTIFICATION_400";
 
     // ================= VALIDATION =================
-    public static final String VALIDATION_ERROR = "VALIDATION_400";
+    public static final String VALIDATION_ERROR = "VALIDATION_400_FIELD";
 }

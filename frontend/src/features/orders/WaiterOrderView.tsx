@@ -8,6 +8,7 @@ import type { Variants } from 'framer-motion';
 import { useWebSocket } from '../../services/useWebSocket';
 import { Button, Card, Badge, Modal, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
+import { translateStatus } from '../../utils/translations';
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -19,18 +20,17 @@ const item: Variants = {
 };
 
 const STATUS_COLS = [
-  { key: 'OPEN',    label: 'New',       color: '#3B82F6', bg: 'rgba(59,130,246,0.08)' },
-  { key: 'COOKING', label: 'Cooking',   color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-  { key: 'READY',   label: '🔔 Ready',  color: '#059669', bg: 'rgba(5,150,105,0.08)' },
-  { key: 'SERVED',  label: 'Served',    color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
+  { key: 'OPEN',    label: 'Mới',       color: '#3B82F6', bg: 'rgba(59,130,246,0.08)' },
+  { key: 'COOKING', label: 'Đang nấu',   color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
+  { key: 'SERVED',  label: 'Đã phục vụ',    color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
 ];
 
 function timeSince(dateStr: string) {
   const d = new Date(dateStr);
   const mins = Math.floor((Date.now() - d.getTime()) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  if (mins < 1) return 'vừa xong';
+  if (mins < 60) return `${mins} phút`;
+  return `${Math.floor(mins / 60)} giờ ${mins % 60} phút`;
 }
 
 export const WaiterOrderView = () => {
@@ -47,7 +47,7 @@ export const WaiterOrderView = () => {
       const res = await api.get('/orders');
       const items = res.data.data?.items || res.data.data || [];
       setOrders(Array.isArray(items) ? items : []);
-    } catch { console.error('Failed to fetch orders'); }
+    } catch { }
     finally { setLoading(false); }
   };
 
@@ -65,7 +65,7 @@ export const WaiterOrderView = () => {
         try {
            const res = await api.get('/menu');
            setMenuItems(res.data.data?.items || res.data.data || []);
-        } catch { console.error('failed fetching menu') }
+        } catch { }
      }
   };
 
@@ -81,28 +81,36 @@ export const WaiterOrderView = () => {
            menuItemId: addMenuId,
            quantity: addQty
         });
-        toast.success('Item added');
+        toast.success('Đã thêm món');
         setAddMenuId('');
         setAddQty(1);
         fetchOrders(); // The WS updates selectedOrder too, but we can refetch just in case
-     } catch { toast.error('Failed to add item'); }
+     } catch { toast.error('Không thể thêm món'); }
   };
 
   const handleRemoveItem = async (itemId: string) => {
      if (!selectedOrder) return;
      try {
         await api.delete(`/orders/${selectedOrder.id}/items/${itemId}`);
-        toast.success('Item removed');
+        toast.success('Đã xóa món');
         fetchOrders();
-     } catch { toast.error('Failed to remove item'); }
+     } catch { toast.error('Không thể xóa món'); }
   };
 
   const handleMarkServed = async (id: string) => {
     try {
       await api.patch(`/orders/${id}/status?status=SERVED`);
-      toast.success('Order marked as served');
+      toast.success('Đã đánh dấu phục vụ');
       fetchOrders();
-    } catch { toast.error('Failed to update'); }
+    } catch { toast.error('Không thể cập nhật'); }
+  };
+
+  const handleMoveToCooking = async (id: string) => {
+    try {
+      await api.patch(`/orders/${id}/status?status=COOKING`);
+      toast.success('Đã chuyển sang nấu');
+      fetchOrders();
+    } catch { toast.error('Không thể cập nhật'); }
   };
 
   const grouped = STATUS_COLS.map(col => ({
@@ -110,7 +118,7 @@ export const WaiterOrderView = () => {
     orders: orders.filter(o => o.status === col.key),
   }));
 
-  const readyCount = grouped.find(g => g.key === 'READY')?.orders.length || 0;
+  const cookingCount = grouped.find(g => g.key === 'COOKING')?.orders.length || 0;
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--sp-16)' }}><div className="spinner" /></div>;
 
@@ -120,18 +128,18 @@ export const WaiterOrderView = () => {
         <div>
           <h1 style={{ color: 'var(--orange-600)' }}>
             <Zap size={28} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
-            My Orders
+            Order của tôi
           </h1>
-          <p>Quick actions for table service</p>
+          <p>Quản lý order phục vụ bàn</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
-          {readyCount > 0 && (
-            <Badge variant="success" size="medium" style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
-              <Bell size={14} /> {readyCount} Ready to Serve
+          {cookingCount > 0 && (
+            <Badge variant="warning" size="medium">
+              <Clock size={14} /> {cookingCount} Đang nấu
             </Badge>
           )}
           <Button variant="primary" size="medium" onClick={() => navigate('/tables')}>
-            <ClipboardList size={16} /> New Order
+            <ClipboardList size={16} /> Order mới
           </Button>
         </div>
       </motion.div>
@@ -164,7 +172,7 @@ export const WaiterOrderView = () => {
             <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-3)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
               {col.orders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 'var(--sp-6)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                  No orders
+                  Không có order
                 </div>
               ) : col.orders.map(order => (
                 <motion.div
@@ -176,9 +184,8 @@ export const WaiterOrderView = () => {
                     background: 'var(--bg-card)',
                     borderRadius: 'var(--r-lg)',
                     padding: 'var(--sp-4)',
-                    border: `1px solid ${col.key === 'READY' ? 'rgba(5,150,105,0.4)' : 'var(--border-main)'}`,
-                    boxShadow: col.key === 'READY' ? '0 0 16px rgba(5,150,105,0.15)' : 'var(--shadow-xs)',
-                    animation: col.key === 'READY' ? 'pulse 2s ease-in-out infinite' : undefined,
+                    border: '1px solid var(--border-main)',
+                    boxShadow: 'var(--shadow-xs)',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
@@ -193,11 +200,16 @@ export const WaiterOrderView = () => {
                     </span>
                   </div>
                   <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--sp-2)' }}>
-                    {order.items?.length || 0} items · ${(order.totalAmount || 0).toFixed(2)}
+                    {order.items?.length || 0} món · ${(order.totalAmount || 0).toFixed(2)}
                   </div>
-                  {col.key === 'READY' && (
+                  {col.key === 'OPEN' && (
+                    <Button variant="primary" size="small" style={{ width: '100%', marginTop: 'var(--sp-2)' }} onClick={(e) => { e.stopPropagation(); handleMoveToCooking(order.id); }}>
+                      <ChevronRight size={14} /> Bắt đầu nấu
+                    </Button>
+                  )}
+                  {col.key === 'COOKING' && (
                     <Button variant="primary" size="small" style={{ width: '100%', marginTop: 'var(--sp-2)' }} onClick={(e) => { e.stopPropagation(); handleMarkServed(order.id); }}>
-                      <CheckCircle size={14} /> Mark Served
+                      <CheckCircle size={14} /> Đánh dấu đã phục vụ
                     </Button>
                   )}
                 </motion.div>
@@ -207,14 +219,14 @@ export const WaiterOrderView = () => {
         ))}
       </motion.div>
 
-      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={selectedOrder ? `Order Details - ${selectedOrder.tableName}` : ''}>
+      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={selectedOrder ? `Chi tiết Order - ${selectedOrder.tableName}` : ''}>
         {selectedOrder && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                   <Badge variant="neutral">{selectedOrder.status}</Badge>
+                   <Badge variant="neutral">{translateStatus(selectedOrder.status)}</Badge>
                    <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 8 }}>
-                      Total: ${(selectedOrder.totalAmount || 0).toFixed(2)}
+                      Tổng: ${(selectedOrder.totalAmount || 0).toFixed(2)}
                    </span>
                 </div>
              </div>
@@ -224,46 +236,46 @@ export const WaiterOrderView = () => {
                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--sp-2)', borderBottom: '1px solid var(--gray-100)' }}>
                       <div>
                          <div style={{ fontWeight: 600 }}>{item.quantity}x {item.menuItemName}</div>
-                         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>${(item.unitPrice || 0).toFixed(2)} each</div>
+                         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>${(item.price || 0).toFixed(2)} mỗi món</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                         <div style={{ fontWeight: 600 }}>${(item.subtotal || 0).toFixed(2)}</div>
+                         <div style={{ fontWeight: 600 }}>${(item.total || 0).toFixed(2)}</div>
                          {['OPEN', 'PENDING'].includes(selectedOrder.status) && (
-                           <Button variant="ghost" size="small" style={{ color: 'var(--rose)', padding: '4px 8px' }} onClick={() => handleRemoveItem(item.id)}>Remove</Button>
+                           <Button variant="ghost" size="small" style={{ color: 'var(--rose)', padding: '4px 8px' }} onClick={() => handleRemoveItem(item.id)}>Xóa</Button>
                          )}
                       </div>
                    </div>
                 ))}
                 {(!selectedOrder.items || selectedOrder.items.length === 0) && (
-                   <div style={{ padding: 'var(--sp-4)', textAlign: 'center', color: 'var(--text-muted)' }}>No items yet.</div>
+                   <div style={{ padding: 'var(--sp-4)', textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có món nào.</div>
                 )}
              </div>
 
              {['OPEN', 'PENDING'].includes(selectedOrder.status) && (
                 <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'flex-end', background: 'var(--gray-50)', padding: 'var(--sp-3)', borderRadius: 'var(--r-md)' }}>
                    <div style={{ flex: 1 }}>
-                     <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Add Item</label>
-                     <select 
-                       value={addMenuId} 
+                     <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Thêm món</label>
+                     <select
+                       value={addMenuId}
                        onChange={e => setAddMenuId(e.target.value)}
                        style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-main)', borderRadius: 'var(--r-sm)' }}
                      >
-                        <option value="">-- Select Menu Item --</option>
+                        <option value="">-- Chọn món --</option>
                         {menuItems.map(m => (
                            <option key={m.id} value={m.id}>{m.name} - ${(m.price||0).toFixed(2)}</option>
                         ))}
                      </select>
                    </div>
                    <div style={{ width: 80 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Qty</label>
-                      <Input type="number" min={1} value={addQty as any} onChange={e => setAddQty(parseInt(e.target.value)||1)} />
+                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Số lượng</label>
+                      <Input type="number" min={1} value={addQty} onChange={e => setAddQty(parseInt(e.target.value, 10)||1)} />
                    </div>
-                   <Button variant="primary" onClick={handleAddItem} disabled={!addMenuId}>Add</Button>
+                   <Button variant="primary" onClick={handleAddItem} disabled={!addMenuId}>Thêm</Button>
                 </div>
              )}
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--sp-2)' }}>
-                <Button variant="ghost" onClick={() => setSelectedOrder(null)}>Close</Button>
+                <Button variant="ghost" onClick={() => setSelectedOrder(null)}>Đóng</Button>
              </div>
           </div>
         )}

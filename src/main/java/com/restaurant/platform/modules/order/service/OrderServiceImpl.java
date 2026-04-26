@@ -23,13 +23,17 @@ import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
 import com.restaurant.platform.modules.table.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
+import com.restaurant.platform.modules.auth.entity.User;
+import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -38,6 +42,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -59,24 +64,77 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.TABLE_NOT_FOUND, "Table not found"));
 
-        // 🔥 check bàn đã có order OPEN chưa
-        if (orderRepository.existsByTableAndStatus(table, OrderStatus.OPEN)) {
-            throw new BadRequestException(
-                    ErrorCode.ORDER_ALREADY_EXISTS,
-                    "Table already has active order");
-        }
-
         Reservation reservation = null;
         if (request.getReservationId() != null) {
             reservation = reservationRepository.findById(request.getReservationId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found"));
+
+            if (reservation.getStatus() != ReservationStatus.RESERVED
+                    && reservation.getStatus() != ReservationStatus.CHECKED_IN) {
+                throw new BadRequestException(
+                        ErrorCode.RESERVATION_INVALID_STATUS,
+                        "Only active reservations (RESERVED or CHECKED_IN) can place orders");
+            }
+
+            String email = SecurityContextHolder.getContext().getAuthentication() != null
+                    ? SecurityContextHolder.getContext().getAuthentication().getName()
+                    : null;
+
+            // Only check reservation ownership for customers, not for staff
+            if (email != null && reservation.getUser() != null) {
+                User currentUser = userRepository.findByEmail(email).orElse(null);
+                if (currentUser != null) {
+                    // Check if user is STAFF or ADMIN - they can order for any reservation
+                    boolean isStaffOrAdmin = currentUser.getRoles().stream()
+                            .anyMatch(role -> role.getName().name().equals("STAFF") || role.getName().name().equals("ADMIN"));
+
+                    // Only check ownership if user is not staff/admin
+                    if (!isStaffOrAdmin && !reservation.getUser().getId().equals(currentUser.getId())) {
+                        throw new BadRequestException(
+                                ErrorCode.INVALID_INPUT,
+                                "This reservation belongs to another customer");
+                    }
+                }
+            }
+
+            // Check if this reservation already has an OPEN, COOKING, or SERVED order
+            Order existing = orderRepository.findByReservationId(request.getReservationId()).orElse(null);
+            if (existing != null && !existing.getStatus().equals(OrderStatus.PAID) && !existing.getStatus().equals(OrderStatus.CANCELED)) {
+                addItems(existing, request.getItems());
+                return mapToResponse(orderRepository.save(existing));
+            }
+        } else {
+            // For walk-in customers, check if table has an active order and add to it
+            Order existing = orderRepository.findByTableAndStatus(table, OrderStatus.OPEN).orElse(null);
+            if (existing == null) {
+                existing = orderRepository.findByTableAndStatus(table, OrderStatus.COOKING).orElse(null);
+            }
+            if (existing != null) {
+                addItems(existing, request.getItems());
+                return mapToResponse(orderRepository.save(existing));
+            }
+        }
+
+        // Determine order status:
+        // - COOKING if: no reservation (walk-in) OR reservation is CHECKED_IN
+        // - OPEN if: reservation exists but not yet CHECKED_IN (pre-order)
+        OrderStatus initialStatus;
+        if (reservation == null) {
+            // Walk-in order without reservation -> COOKING
+            initialStatus = OrderStatus.COOKING;
+        } else if (reservation.getStatus() == ReservationStatus.CHECKED_IN) {
+            // Reservation already checked in -> COOKING
+            initialStatus = OrderStatus.COOKING;
+        } else {
+            // Reservation not yet checked in (pre-order) -> OPEN
+            initialStatus = OrderStatus.OPEN;
         }
 
         Order order = Order.builder()
                 .table(table)
                 .reservation(reservation)
-                .status(OrderStatus.OPEN)
+                .status(initialStatus)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -88,6 +146,9 @@ public class OrderServiceImpl implements OrderService {
         // Persist order
         order = orderRepository.save(order);
 
+        addItems(order, request.getItems());
+        order = orderRepository.save(order);
+
         // Notify kitchen staff of new order (lightweight notification)
         try {
             var payload = java.util.Map.of(
@@ -97,8 +158,9 @@ public class OrderServiceImpl implements OrderService {
                     "message", "New order created",
                     "timestamp", java.time.Instant.now().toString()
             );
-            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order creation", e);
         }
 
         // Publish updated table status to table topic
@@ -110,7 +172,9 @@ public class OrderServiceImpl implements OrderService {
                     "status", table.getStatus().name()
             );
             messagingTemplate.convertAndSend("/topic/tables", tableDto);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for table update", e);
+        }
 
         return mapToResponse(order);
     }
@@ -130,6 +194,16 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public PageResponse<OrderResponse> getAll(Pageable pageable) {
         Page<Order> page = orderRepository.findAll(pageable);
+        return new PageResponse<>(page.map(this::mapToResponse));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderResponse> getMyOrders(String email, Pageable pageable) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND, "User not found"));
+        Page<Order> page = orderRepository.findByReservationUserId(user.getId(), pageable);
         return new PageResponse<>(page.map(this::mapToResponse));
     }
 
@@ -186,8 +260,9 @@ public class OrderServiceImpl implements OrderService {
                     "message", "Order items updated",
                     "timestamp", java.time.Instant.now().toString()
             );
-            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order update", e);
         }
 
         return mapToResponse(order);
@@ -220,8 +295,9 @@ public class OrderServiceImpl implements OrderService {
                     "quantity", quantity.toString(),
                     "timestamp", java.time.Instant.now().toString()
             );
-            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for item update", e);
         }
 
         return mapToResponse(item.getOrder());
@@ -248,8 +324,9 @@ public class OrderServiceImpl implements OrderService {
                     "itemId", orderItemId.toString(),
                     "timestamp", java.time.Instant.now().toString()
             );
-            messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for item removal", e);
         }
     }
 
@@ -272,6 +349,25 @@ public class OrderServiceImpl implements OrderService {
         // Persist table status explicitly
         tableRepository.save(table);
 
+        // Update reservation status to COMPLETED if exists
+        if (order.getReservation() != null) {
+            Reservation reservation = order.getReservation();
+            reservation.setStatus(ReservationStatus.COMPLETED);
+            reservationRepository.save(reservation);
+
+            try {
+                var resPayload = java.util.Map.of(
+                        "type", "RESERVATION_COMPLETED",
+                        "reservationId", reservation.getId().toString(),
+                        "message", "Reservation completed",
+                        "timestamp", java.time.Instant.now().toString()
+                );
+                messagingTemplate.convertAndSend("/topic/reservations", resPayload);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket notification for reservation completion", e);
+            }
+        }
+
         try {
             var payload = java.util.Map.of(
                     "type", "ORDER_PAID",
@@ -279,9 +375,9 @@ public class OrderServiceImpl implements OrderService {
                     "message", "Order has been paid",
                     "timestamp", java.time.Instant.now().toString()
             );
-            messagingTemplate.convertAndSend("/topic/notifications/role/RECEPTIONIST", payload);
-            messagingTemplate.convertAndSend("/topic/notifications/role/WAITER", payload);
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order payment", e);
         }
 
         // publish table update
@@ -293,7 +389,9 @@ public class OrderServiceImpl implements OrderService {
                     "status", table.getStatus().name()
             );
             messagingTemplate.convertAndSend("/topic/tables", tableDto);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for table update", e);
+        }
 
         return mapToResponse(orderRepository.save(order));
     }
@@ -304,17 +402,21 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(status);
             if (status == OrderStatus.PAID) {
                 Table table = order.getTable();
-                table.setStatus(TableStatus.AVAILABLE);
-                tableRepository.save(table);
-                try {
-                    var tableDto = java.util.Map.of(
-                            "id", table.getId().toString(),
-                            "name", table.getName(),
-                            "capacity", table.getCapacity(),
-                            "status", table.getStatus().name()
-                    );
-                    messagingTemplate.convertAndSend("/topic/tables", tableDto);
-                } catch (Exception ignored) {}
+                if (table != null) {
+                    table.setStatus(TableStatus.AVAILABLE);
+                    tableRepository.save(table);
+                    try {
+                        var tableDto = java.util.Map.of(
+                                "id", table.getId().toString(),
+                                "name", table.getName(),
+                                "capacity", table.getCapacity(),
+                                "status", table.getStatus().name()
+                        );
+                        messagingTemplate.convertAndSend("/topic/tables", tableDto);
+                    } catch (Exception e) {
+                        log.error("Failed to send WebSocket notification for table update", e);
+                    }
+                }
             }
         Order saved = orderRepository.save(order);
 
@@ -328,21 +430,23 @@ public class OrderServiceImpl implements OrderService {
             );
 
             if (status == OrderStatus.READY) {
-                messagingTemplate.convertAndSend("/topic/notifications/role/WAITER", payload);
+                messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
             } else if (status == OrderStatus.COOKING || status == OrderStatus.PENDING || status == OrderStatus.OPEN) {
-                messagingTemplate.convertAndSend("/topic/notifications/role/KITCHEN", payload);
+                messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
             }
 
             messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
             // Send to assigned user directly if present
-            try {
-                var assigned = saved.getAssignedTo();
-                if (assigned != null && assigned.getId() != null) {
+            var assigned = saved.getAssignedTo();
+            if (assigned != null && assigned.getId() != null) {
+                try {
                     messagingTemplate.convertAndSendToUser(assigned.getId().toString(), "/queue/notifications", payload);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket notification to assigned user", e);
                 }
-            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for status change", e);
         }
 
         return mapToResponse(saved);
@@ -357,11 +461,53 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void recalculate(Order order) {
+        if (order.getItems() == null) {
+            order.setItems(new java.util.ArrayList<>());
+        }
         BigDecimal total = order.getItems().stream()
                 .map(OrderItem::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         order.setTotalAmount(total);
+    }
+
+    private void addItems(Order order, List<AddOrderItemRequest> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        if (order.getItems() == null) {
+            order.setItems(new java.util.ArrayList<>());
+        }
+
+        for (AddOrderItemRequest itemRequest : items) {
+            MenuItem menuItem = menuItemRepository.findById(itemRequest.getMenuItemId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            ErrorCode.MENU_ITEM_NOT_FOUND, "Menu item not found"));
+
+            if (!menuItem.getAvailable()) {
+                throw new BadRequestException(
+                        ErrorCode.INVALID_INPUT,
+                        "Menu item is not available");
+            }
+
+            OrderItem existing = order.getItems().stream()
+                    .filter(i -> i.getMenuItem().getId().equals(menuItem.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existing != null) {
+                existing.setQuantity(existing.getQuantity() + itemRequest.getQuantity());
+            } else {
+                order.addItem(OrderItem.builder()
+                        .order(order)
+                        .menuItem(menuItem)
+                        .quantity(itemRequest.getQuantity())
+                        .price(menuItem.getPrice())
+                        .build());
+            }
+        }
+
+        recalculate(order);
     }
 
     private OrderResponse mapToResponse(Order order) {
@@ -380,9 +526,36 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse createFromReservation(Reservation reservation) {
 
+        // Check if reservation already has an order (customer ordered before check-in)
+        Order existingOrder = orderRepository.findByReservationId(reservation.getId()).orElse(null);
+
+        if (existingOrder != null) {
+            // Update existing order status from OPEN to COOKING
+            existingOrder.setStatus(OrderStatus.COOKING);
+            Order saved = orderRepository.save(existingOrder);
+
+            try {
+                var payload = java.util.Map.of(
+                        "type", "ORDER_STATUS_CHANGED",
+                        "orderId", saved.getId().toString(),
+                        "status", "COOKING",
+                        "message", "Order moved to cooking",
+                        "timestamp", java.time.Instant.now().toString()
+                );
+                messagingTemplate.convertAndSend("/topic/orders", mapToResponse(saved));
+                messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket notification for order status change", e);
+            }
+
+            return mapToResponse(saved);
+        }
+
+        // If no existing order, create a new empty order with COOKING status
         Order order = Order.builder()
                 .table(reservation.getTable())
-                .status(OrderStatus.PENDING)
+                .reservation(reservation)
+                .status(OrderStatus.COOKING)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -410,7 +583,9 @@ public class OrderServiceImpl implements OrderService {
                 messagingTemplate.convertAndSendToUser(user.getId().toString(), "/queue/notifications", payload);
             }
             messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order assignment", e);
+        }
 
         return mapToResponse(saved);
     }

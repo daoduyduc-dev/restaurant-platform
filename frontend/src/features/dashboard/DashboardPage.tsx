@@ -2,11 +2,8 @@ import { useAuthStore } from '../../store/authStore';
 import { getPrimaryRole, ROLE_ROUTES } from '../../utils/roleUtils';
 import { CustomerDashboard } from './CustomerDashboard';
 import { WaiterDashboard } from './WaiterDashboard';
-import { ReceptionistDashboard } from './ReceptionistDashboard';
-import { KitchenDashboard } from './KitchenDashboard';
 import { ManagerDashboard } from './ManagerDashboard';
 import { AdminDashboard } from './AdminDashboard';
-import type { UserRole } from '../../utils/roleUtils';
 
 export const DashboardPage = () => {
   const { user } = useAuthStore();
@@ -16,14 +13,8 @@ export const DashboardPage = () => {
     switch (primaryRole) {
       case 'CUSTOMER':
         return <CustomerDashboard />;
-      case 'WAITER':
+      case 'STAFF':
         return <WaiterDashboard />;
-      case 'RECEPTIONIST':
-        return <ReceptionistDashboard />;
-      case 'KITCHEN':
-        return <KitchenDashboard />;
-      case 'MANAGER':
-        return <ManagerDashboard />;
       case 'ADMIN':
         return <AdminDashboard />;
       default:

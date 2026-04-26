@@ -32,7 +32,7 @@ public class ReservationController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasAnyRole('CUSTOMER','RECEPTIONIST') and hasAuthority('RESERVATION_CREATE')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','STAFF') and hasAuthority('RESERVATION_CREATE')")
     public ApiResponse<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
         return ApiResponse.success("Reservation created successfully",
                 reservationService.create(request));
@@ -81,7 +81,7 @@ public class ReservationController {
 
     // ================= CHECK-IN =================
     @PostMapping("/{id}/check-in")
-    @PreAuthorize("hasRole('RECEPTIONIST') and hasAuthority('RESERVATION_CHECKIN')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('RESERVATION_CHECKIN')")
     public ApiResponse<ReservationResponse> checkIn(@PathVariable UUID id) {
         return ApiResponse.success("Check-in successful",
                 reservationService.checkIn(id));
@@ -89,7 +89,7 @@ public class ReservationController {
 
     // ================= CANCEL =================
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('CUSTOMER','RECEPTIONIST') and hasAuthority('RESERVATION_CANCEL')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','STAFF') and hasAuthority('RESERVATION_CANCEL')")
     public ApiResponse<ReservationResponse> cancel(@PathVariable UUID id) {
         return ApiResponse.success("Reservation cancelled",
                 reservationService.cancel(id));
@@ -113,5 +113,15 @@ public class ReservationController {
             @RequestParam int numberOfGuests
     ) {
         return ApiResponse.success(reservationService.getAvailableTables(reservationTime, numberOfGuests));
+    }
+
+    // ================= GET TABLE AVAILABILITY BY TIME SLOTS =================
+    @GetMapping("/table-availability")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<com.restaurant.platform.modules.reservation.dto.TableAvailabilityResponse>> getTableAvailabilityByTimeSlots(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date,
+            @RequestParam int numberOfGuests
+    ) {
+        return ApiResponse.success(reservationService.getTableAvailabilityByTimeSlots(date, numberOfGuests));
     }
 }

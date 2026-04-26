@@ -62,7 +62,7 @@ export const WaiterDashboard = () => {
     try {
       const res = await api.get('/orders?status=OPEN,PENDING');
       if (res.data.data?.items) {
-        const orders = res.data.data.items;
+        const orders: OrderDTO[] = res.data.data.items;
         setActiveOrders(orders.filter(o => o.status === 'OPEN'));
         setReadyOrders(orders.filter(o => o.status === 'PENDING'));
       }

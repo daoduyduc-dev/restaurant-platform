@@ -84,18 +84,17 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       const elapsed = Date.now() - startTime;
       const remaining = 100 - (elapsed / duration) * 100;
       setProgress(Math.max(remaining, 0));
-      
+
       if (remaining <= 0) {
         clearInterval(timer);
         onRemove();
       }
     }, 50);
-    
+
     return () => {
       clearInterval(timer);
-      setTimeout(onRemove, duration);
     };
-  }, [onRemove]);
+  }, [onRemove, duration]);
 
   return (
     <motion.div

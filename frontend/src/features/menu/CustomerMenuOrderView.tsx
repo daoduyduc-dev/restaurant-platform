@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
-import type { MenuItemDTO } from '../../services/types';
-import { Search, Plus, Filter, ShoppingCart, Minus, CreditCard, Tag } from 'lucide-react';
+import type { MenuItemDTO, ReservationDTO } from '../../services/types';
+import { AlertCircle, CheckCircle, MapPin, Search, Plus, ShoppingCart, Minus, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Input, Badge, Card } from '../../components/ui';
 import { toast } from '../../store/toastStore';
@@ -11,7 +12,12 @@ interface CartItem extends MenuItemDTO {
 }
 
 export const CustomerMenuOrderView = () => {
+  const [searchParams] = useSearchParams();
+  const qrTableId = searchParams.get('tableId');
+  const qrTableName = searchParams.get('tableName') || 'QR table';
   const [items, setItems] = useState<MenuItemDTO[]>([]);
+  const [reservations, setReservations] = useState<ReservationDTO[]>([]);
+  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -20,20 +26,45 @@ export const CustomerMenuOrderView = () => {
 
   useEffect(() => {
     api.get('/menu?page=0&size=50').then((res) => {
-      const data = (res.data.data as any)?.items || res.data.data;
-      if (Array.isArray(data)) setItems(data.filter(i => i.isAvailable));
+      const responseData = res.data.data;
+      const data = (responseData && typeof responseData === 'object' && 'items' in responseData)
+        ? responseData.items
+        : responseData;
+      if (Array.isArray(data)) setItems(data.filter(i => i.isAvailable ?? i.available));
     }).catch(() => {
       toast.error('Failed to fetch menu items');
     });
-    
+
     api.get('/categories').then((res) => {
       if (res.data.data) setCategories(res.data.data);
     }).catch(() => {
       console.error('Failed to fetch categories');
     });
+
+    api.get('/reservations/my?page=0&size=100').then((res) => {
+      const data = res.data.data?.items || res.data.data || [];
+      if (Array.isArray(data)) setReservations(data);
+    }).catch(() => {
+      setReservations([]);
+    });
   }, []);
 
+  const activeReservations = reservations.filter(r => ['RESERVED', 'CHECKED_IN'].includes(r.status));
+  const selectedReservation = reservations.find(r => r.id === selectedReservationId) || null;
+  const canOrder = Boolean(qrTableId || selectedReservation);
+  const tableLabel = qrTableId ? qrTableName : selectedReservation?.tableName;
+
+  useEffect(() => {
+    if (!qrTableId && activeReservations.length === 1 && !selectedReservationId) {
+      setSelectedReservationId(activeReservations[0].id);
+    }
+  }, [activeReservations, qrTableId, selectedReservationId]);
+
   const addToCart = (item: MenuItemDTO) => {
+    if (!canOrder) {
+      toast.error('bạn cần book bàn trước khi chọn món');
+      return;
+    }
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
@@ -41,37 +72,41 @@ export const CustomerMenuOrderView = () => {
       }
       return [...prev, { ...item, cartQuantity: 1 }];
     });
-    toast.success(`${item.name} added to order`, { duration: 1500 });
+    toast.success(`${item.name} added to order`);
   };
 
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => {
-      return prev.map(i => {
+      const updated = prev.map(i => {
         if (i.id === id) {
           const newQ = i.cartQuantity + delta;
-          return newQ > 0 ? { ...i, cartQuantity: newQ } : i;
+          return { ...i, cartQuantity: newQ };
         }
         return i;
       }).filter(i => i.cartQuantity > 0);
+      return updated;
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(i => i.id !== id));
-  };
-
   const handlePlaceOrder = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !canOrder) return;
     try {
       await api.post('/orders', {
-        tableId: '1', // Placeholder or use customer's reserved table ID if available
+        tableId: qrTableId || selectedReservation?.tableId,
+        reservationId: selectedReservation?.id,
         items: cart.map(c => ({ menuItemId: c.id, quantity: c.cartQuantity }))
       });
       toast.success('Order sent to kitchen!');
       setCart([]);
       setIsDrawerOpen(false);
-    } catch {
-      toast.error('Failed to place order');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message;
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to place order. Please try again.');
+      }
+      console.error('Order error:', error?.response?.data || error);
     }
   };
 
@@ -89,7 +124,7 @@ export const CustomerMenuOrderView = () => {
         <div className="page-header" style={{ marginBottom: 'var(--sp-4)' }}>
            <div>
               <h1 style={{ color: 'var(--orange-600)' }}>Menu Collection</h1>
-              <p>Discover our culinary artistry</p>
+              <p>{canOrder ? `${tableLabel} - mời bạn chọn món` : 'bạn cần book bàn trước khi chọn món'}</p>
            </div>
            <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
               <Input
@@ -99,11 +134,64 @@ export const CustomerMenuOrderView = () => {
                  }}
                  icon={<Search size={16} />} style={{ width: 240 }}
               />
-              <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'}>
+              <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'} disabled={!canOrder}>
                  <ShoppingCart size={16} /> Order ({cart.length})
               </Button>
            </div>
         </div>
+
+        {!qrTableId && (
+          <div style={{
+            display: 'grid',
+            gap: 'var(--sp-3)',
+            marginBottom: 'var(--sp-5)',
+          }}>
+            {!canOrder && (
+              <Card variant="elevated" style={{ borderLeft: '4px solid var(--amber)' }}>
+                <Card.Content style={{ padding: 'var(--sp-4)', display: 'flex', gap: 12, alignItems: 'center', color: 'var(--text-heading)' }}>
+                  <AlertCircle size={20} color="var(--amber)" />
+                  <span style={{ fontWeight: 700 }}>bạn cần book bàn trước khi chọn món</span>
+                </Card.Content>
+              </Card>
+            )}
+            {reservations.length > 0 && activeReservations.length !== 1 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
+                {reservations.map(res => {
+                  const selectable = ['RESERVED', 'CHECKED_IN'].includes(res.status);
+                  return (
+                    <button
+                      key={res.id}
+                      onClick={() => selectable && setSelectedReservationId(res.id)}
+                      disabled={!selectable}
+                      style={{
+                        textAlign: 'left',
+                        padding: '14px 16px',
+                        borderRadius: 'var(--r-md)',
+                        border: selectedReservationId === res.id ? '2px solid var(--orange-500)' : '1px solid var(--border-main)',
+                        background: 'var(--bg-card)',
+                        opacity: selectable ? 1 : 0.42,
+                        cursor: selectable ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                        <strong style={{ color: 'var(--text-heading)' }}>{res.tableName}</strong>
+                        <Badge variant={selectable ? 'success' : 'neutral'} size="small">{res.status}</Badge>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 13 }}>
+                        <MapPin size={14} /> {new Date(res.reservationTime).toLocaleString()}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {canOrder && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--teal)', fontWeight: 700 }}>
+                <CheckCircle size={18} /> Ordering for {tableLabel}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Category Filter */}
         {categories.length > 0 && (
@@ -153,7 +241,7 @@ export const CustomerMenuOrderView = () => {
                        <p style={{ color: 'var(--text-muted)', fontSize: 14, flex: 1 }}>{item.description}</p>
                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
                           <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--orange-600)' }}>${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
-                          <Button variant="outline" size="small" onClick={() => addToCart(item)}><Plus size={16} /> Add</Button>
+                          <Button variant="outline" size="small" onClick={() => addToCart(item)} disabled={!canOrder}><Plus size={16} /> Add</Button>
                        </div>
                     </Card.Content>
                  </Card>
@@ -205,7 +293,7 @@ export const CustomerMenuOrderView = () => {
                         <span>Total</span>
                         <span>${cartTotal.toFixed(2)}</span>
                      </div>
-                     <Button variant="primary" style={{ width: '100%', justifyContent: 'center' }} disabled={cart.length === 0} onClick={handlePlaceOrder}>
+                     <Button variant="primary" style={{ width: '100%', justifyContent: 'center' }} disabled={cart.length === 0 || !canOrder} onClick={handlePlaceOrder}>
                         Place Order
                      </Button>
                   </Card.Footer>

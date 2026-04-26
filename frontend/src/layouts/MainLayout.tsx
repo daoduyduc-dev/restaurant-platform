@@ -3,10 +3,9 @@ import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, ClipboardList, CreditCard,
+  LayoutDashboard, ClipboardList,
   UtensilsCrossed as MenuIcon2, PieChart, Calendar,
-  Award, BarChart3, Users, LogOut, Settings, Search, UserCircle,
-  ChefHat
+  Award, BarChart3, Users, LogOut, Settings, Search, UserCircle, CreditCard,
 } from 'lucide-react';
 import { getPrimaryRole, type UserRole } from '../utils/roleUtils';
 import { useWebSocket } from '../services/useWebSocket';
@@ -33,83 +32,41 @@ const buildNav = (primaryRole: UserRole): NavSection[] => {
           { to: '/tables', icon: PieChart, label: 'Table Map' },
           { to: '/reservations', icon: Calendar, label: 'My Reservations' },
           { to: '/menu', icon: MenuIcon2, label: 'Browse Menu' },
-          { to: '/payment', icon: CreditCard, label: 'Payment' },
         ]},
         { section: 'Rewards', items: [
           { to: '/loyalty', icon: Award, label: 'Loyalty Rewards' },
-          { to: '/report', icon: BarChart3, label: 'My History' },
         ]},
       ];
 
-    case 'WAITER':
-      return [
-        ...commonNav,
-        { section: 'Service', items: [
-          { to: '/orders', icon: ClipboardList, label: 'Orders' },
-          { to: '/tables', icon: PieChart, label: 'Table Map' },
-          { to: '/payment', icon: CreditCard, label: 'Payments' },
-        ]},
-        { section: 'Reference', items: [
-          { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/report', icon: BarChart3, label: 'My Stats' },
-        ]},
-      ];
-
-    case 'KITCHEN':
-      return [
-        ...commonNav,
-        { section: 'Kitchen', items: [
-          { to: '/orders', icon: ChefHat, label: 'Kitchen Display' },
-        ]},
-      ];
-
-    case 'RECEPTIONIST':
-      return [
-        ...commonNav,
-        { section: 'Front Desk', items: [
-          { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/tables', icon: PieChart, label: 'Table Map' },
-          { to: '/orders', icon: ClipboardList, label: 'Orders' },
-          { to: '/payment', icon: CreditCard, label: 'Payments' },
-        ]},
-        { section: 'Reference', items: [
-          { to: '/report', icon: BarChart3, label: 'Reports' },
-        ]},
-      ];
-
-    case 'MANAGER':
+    case 'STAFF':
       return [
         ...commonNav,
         { section: 'Operations', items: [
           { to: '/orders', icon: ClipboardList, label: 'Orders' },
           { to: '/tables', icon: PieChart, label: 'Tables' },
           { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/payment', icon: CreditCard, label: 'Payments' },
           { to: '/menu', icon: MenuIcon2, label: 'Menu' },
-        ]},
-        { section: 'Analytics', items: [
-          { to: '/report', icon: BarChart3, label: 'Reports' },
-          { to: '/staff', icon: Users, label: 'Staff' },
-          { to: '/loyalty', icon: Award, label: 'Loyalty' },
-          { to: '/settings', icon: Settings, label: 'Settings' },
+          { to: '/payment', icon: CreditCard, label: 'Payment' },
         ]},
       ];
 
     case 'ADMIN':
       return [
         ...commonNav,
-        { section: 'Administration', items: [
-          { to: '/staff', icon: Users, label: 'User Management' },
-          { to: '/menu', icon: MenuIcon2, label: 'Menu' },
-          { to: '/tables', icon: PieChart, label: 'Tables' },
-        ]},
         { section: 'Operations', items: [
           { to: '/orders', icon: ClipboardList, label: 'Orders' },
+          { to: '/tables', icon: PieChart, label: 'Tables' },
           { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/payment', icon: CreditCard, label: 'Payments' },
+          { to: '/menu', icon: MenuIcon2, label: 'Menu' },
+          { to: '/loyalty', icon: Award, label: 'Loyalty' },
+        ]},
+        { section: 'Analytics', items: [
+          { to: '/report', icon: BarChart3, label: 'Reports' },
+        ]},
+        { section: 'Administration', items: [
+          { to: '/staff', icon: Users, label: 'User Management' },
         ]},
         { section: 'System', items: [
-          { to: '/report', icon: BarChart3, label: 'Reports' },
           { to: '/settings', icon: Settings, label: 'Settings' },
         ]},
       ];

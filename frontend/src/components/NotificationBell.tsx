@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Bell, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
@@ -39,9 +39,14 @@ export const NotificationBell = () => {
     }
   }, [user]);
 
-  const notifTopics = user ? [`/topic/notifications/${user.id}`] : [];
-  if (user?.roles) user.roles.forEach(r => notifTopics.push(`/topic/notifications/role/${r}`));
-  if (user) notifTopics.push(`/user/queue/notifications`);
+  const notifTopics = useMemo(() => {
+    if (!user) return [];
+    return [
+      `/topic/notifications/${user.id}`,
+      ...(user.roles || []).map(r => `/topic/notifications/role/${r}`),
+      '/user/queue/notifications',
+    ];
+  }, [user?.id, user?.roles?.join('|')]);
 
   useWebSocket<any>(notifTopics, () => {
     fetchNotifications();
@@ -63,7 +68,9 @@ export const NotificationBell = () => {
       await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
   };
 
   const markAllAsRead = async () => {
@@ -71,7 +78,9 @@ export const NotificationBell = () => {
       await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch {}
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
   const deleteNotif = async (e: React.MouseEvent, id: string) => {
@@ -80,7 +89,9 @@ export const NotificationBell = () => {
       await api.delete(`/notifications/${id}`);
       setNotifications(prev => prev.filter(n => n.id !== id));
       fetchNotifications();
-    } catch {}
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
   };
 
   return (

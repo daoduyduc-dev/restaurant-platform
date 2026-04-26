@@ -8,10 +8,8 @@ export const ReservationsPage = () => {
   switch (role) {
     case 'CUSTOMER':
       return <CustomerReservationView />;
-    case 'RECEPTIONIST':
-    case 'MANAGER':
+    case 'STAFF':
     case 'ADMIN':
-    case 'WAITER': 
       return <ReceptionistReservationView />;
     default:
       return <ReceptionistReservationView />;

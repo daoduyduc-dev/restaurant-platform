@@ -42,11 +42,13 @@ public class Order extends SoftDeleteEntity {
 
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)
+        @Builder.Default
         private OrderStatus status = OrderStatus.OPEN;
 
         private BigDecimal totalAmount;
 
         @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+        @Builder.Default
         private List<OrderItem> items = new ArrayList<>();
 
             @ManyToOne(fetch = FetchType.LAZY)
@@ -54,6 +56,9 @@ public class Order extends SoftDeleteEntity {
             private User assignedTo;
 
         public void addItem(OrderItem item) {
+                if (items == null) {
+                        items = new ArrayList<>();
+                }
                 items.add(item);
                 item.setOrder(this);
         }

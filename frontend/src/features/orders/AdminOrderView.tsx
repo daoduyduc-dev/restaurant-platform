@@ -24,7 +24,9 @@ export const AdminOrderView = () => {
         const res = await api.get('/orders');
         const items = res.data.data?.items || res.data.data || [];
         setOrders(Array.isArray(items) ? items : []);
-      } catch {}
+      } catch (error) {
+        console.error('Failed to fetch orders:', error);
+      }
       finally { setLoading(false); }
     })();
   }, []);

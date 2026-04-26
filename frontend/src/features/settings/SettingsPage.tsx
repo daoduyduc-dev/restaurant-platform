@@ -7,8 +7,7 @@ export const SettingsPage = () => {
 
   switch (role) {
     case 'ADMIN':
-    case 'MANAGER':
-      return <AdminSettingsView />; // Settings currently holds both Admin and Manager views. Could filter inside if needed.
+      return <AdminSettingsView />;
     default:
       return <NoAccessView message="System settings are restricted to administrators and venue managers." />;
   }

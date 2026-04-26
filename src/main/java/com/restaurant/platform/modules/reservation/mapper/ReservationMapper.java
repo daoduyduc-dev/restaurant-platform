@@ -11,6 +11,14 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ReservationMapper {
     // request → entity
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "modifiedDate", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "modifiedBy", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "notes", ignore = true)
     @Mapping(target = "table", source = "table")
     @Mapping(target = "status", constant = "RESERVED")
     Reservation toEntity(ReservationRequest request, Table table);

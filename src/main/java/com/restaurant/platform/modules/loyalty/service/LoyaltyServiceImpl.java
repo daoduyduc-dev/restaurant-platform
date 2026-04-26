@@ -63,8 +63,14 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     public LoyaltyResponse getMyPoints(UUID userId) {
 
         LoyaltyAccount acc = accountRepo.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseGet(() -> accountRepo.save(LoyaltyAccount.builder()
+                        .userId(userId)
+                        .points(BigDecimal.ZERO)
+                        .totalPointsEarned(BigDecimal.ZERO)
+                        .totalPointsRedeemed(BigDecimal.ZERO)
+                        .tier(LoyaltyTier.SILVER)
+                        .lastUpdated(LocalDateTime.now())
+                        .build()));
 
         return toResponseWithTierInfo(acc);
     }
@@ -106,8 +112,8 @@ public class LoyaltyServiceImpl implements LoyaltyService {
 
         // Calculate points: base = 1 point per $10, then apply tier multiplier
         double multiplier = acc.getTier().getPointsMultiplier();
-        java.math.BigDecimal basePoints = amount.divide(BigDecimal.TEN, 0, java.math.RoundingMode.DOWN);
-        BigDecimal earnedPoints = basePoints.multiply(BigDecimal.valueOf(multiplier)).setScale(0, java.math.RoundingMode.DOWN);
+        BigDecimal basePoints = amount.divide(BigDecimal.TEN, 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal earnedPoints = basePoints.multiply(BigDecimal.valueOf(multiplier)).setScale(2, java.math.RoundingMode.HALF_UP);
 
         acc.setPoints(acc.getPoints().add(earnedPoints));
         acc.setTotalPointsEarned(acc.getTotalPointsEarned().add(earnedPoints));
@@ -132,6 +138,12 @@ public class LoyaltyServiceImpl implements LoyaltyService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.USER_NOT_FOUND, "User not found"));
 
+        if (points == null || points.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException(
+                    ErrorCode.BAD_REQUEST,
+                    "Points must be greater than zero");
+        }
+
         if (acc.getPoints().compareTo(points) < 0) {
             throw new BadRequestException(
                     ErrorCode.BAD_REQUEST,
@@ -140,6 +152,9 @@ public class LoyaltyServiceImpl implements LoyaltyService {
         }
 
         acc.setPoints(acc.getPoints().subtract(points));
+        if (acc.getTotalPointsRedeemed() == null) {
+            acc.setTotalPointsRedeemed(BigDecimal.ZERO);
+        }
         acc.setTotalPointsRedeemed(acc.getTotalPointsRedeemed().add(points));
         acc.setLastUpdated(LocalDateTime.now());
         accountRepo.save(acc);
@@ -155,6 +170,18 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     }
 
     private LoyaltyResponse toResponseWithTierInfo(LoyaltyAccount acc) {
+        if (acc.getPoints() == null) {
+            acc.setPoints(BigDecimal.ZERO);
+        }
+        if (acc.getTotalPointsEarned() == null) {
+            acc.setTotalPointsEarned(BigDecimal.ZERO);
+        }
+        if (acc.getTotalPointsRedeemed() == null) {
+            acc.setTotalPointsRedeemed(BigDecimal.ZERO);
+        }
+        if (acc.getTier() == null) {
+            acc.setTier(LoyaltyTier.SILVER);
+        }
         LoyaltyTier currentTier = acc.getTier();
         LoyaltyTier nextTier = getNextTier(currentTier);
         

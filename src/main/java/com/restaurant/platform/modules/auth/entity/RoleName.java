@@ -1,10 +1,7 @@
 package com.restaurant.platform.modules.auth.entity;
 
 public enum RoleName {
-    ADMIN,
-    MANAGER,
-    WAITER,
-    RECEPTIONIST,
-    KITCHEN,
+    ADMIN,    // Admin + Manager combined
+    STAFF,    // Waiter + Receptionist + Kitchen combined
     CUSTOMER
 }

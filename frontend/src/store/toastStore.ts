@@ -12,19 +12,33 @@ interface ToastState {
   toasts: Toast[];
   addToast: (message: string, type?: ToastType) => void;
   removeToast: (id: string) => void;
+  timeouts: Map<string, ReturnType<typeof setTimeout>>;
 }
 
-export const useToastStore = create<ToastState>((set) => ({
+export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
+  timeouts: new Map(),
   addToast: (message, type = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     set((state) => ({ toasts: [...state.toasts, { id, type, message }] }));
-    setTimeout(() => {
-      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+
+    const timeout = setTimeout(() => {
+      set((state) => ({
+        toasts: state.toasts.filter((t) => t.id !== id)
+      }));
+      get().timeouts.delete(id);
     }, 5000);
+
+    get().timeouts.set(id, timeout);
   },
-  removeToast: (id) =>
-    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id) => {
+    const timeout = get().timeouts.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      get().timeouts.delete(id);
+    }
+    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+  },
 }));
 
 // Helper functions for easier usage

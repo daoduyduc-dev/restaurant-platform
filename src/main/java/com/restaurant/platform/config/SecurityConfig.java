@@ -57,15 +57,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/menu/**").authenticated()
                         .requestMatchers("/api/v1/categories").authenticated()
 
-                        // Tables - All authenticated can view (CUSTOMER for booking), STAFF can manage
+                        // Tables - All authenticated can view, only ADMIN can manage (tables are fixed)
                         .requestMatchers("/api/v1/tables").authenticated()
-                        .requestMatchers("/api/v1/tables/**").authenticated()
+                        .requestMatchers("/api/v1/tables/**").hasRole("ADMIN")
 
                         // Orders - CUSTOMER can only view their own, STAFF can create/update
                         .requestMatchers("/api/v1/orders").authenticated()
                         .requestMatchers("/api/v1/orders/**").authenticated()
 
-                        // Reservations - CUSTOMER can create/view own, RECEPTIONIST can manage all
+                        // Reservations - CUSTOMER can create/view own, STAFF can manage all
                         .requestMatchers("/api/v1/reservations").authenticated()
                         .requestMatchers("/api/v1/reservations/**").authenticated()
 

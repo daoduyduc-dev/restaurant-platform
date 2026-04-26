@@ -193,7 +193,7 @@ export const ManagerTableView = () => {
                              
                              <div style={{ display: 'flex', gap: 8 }}>
                                 <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/orders')}>View Order</Button>
-                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/payment')}>View Bill</Button>
+                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/orders')}>View Order</Button>
                              </div>
                           </div>
                        );
@@ -220,7 +220,7 @@ export const ManagerTableView = () => {
                            </div>
                            <div style={{ padding: '12px' }}>
                               {bottleneckTables.map(t => (
-                                 <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: '1px dashed var(--gray-200)', lastChild: { border: 'none', marginBottom: 0 } } as any}>
+                                 <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: '1px dashed var(--gray-200)' }}>
                                     <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{t.name}</span>
                                     <span style={{ fontSize: 13, color: 'var(--rose)' }}>{t.status === 'DIRTY' ? 'Needs cleaning' : 'Seated > 90m'}</span>
                                  </div>

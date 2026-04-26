@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import type { MenuItemDTO, ApiResponse, PageResponse } from '../../services/types';
+import type { MenuItemDTO } from '../../services/types';
 import { Search, Plus, Filter, Star, Trash2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button, Input, Modal, Badge, ImageUpload } from '../../components/ui';
@@ -29,10 +29,13 @@ export const AdminMenuCatalogView = () => {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   const fetchMenu = () => {
-    api.get('/menu?page=0&size=50').then((res: ApiResponse<PageResponse<MenuItemDTO> | MenuItemDTO[]>) => {
-      const data = (res.data.data as any)?.items || res.data.data;
+    api.get('/menu?page=0&size=50').then((res) => {
+      const responseData = res.data.data;
+      const data = (responseData && typeof responseData === 'object' && 'items' in responseData)
+        ? responseData.items
+        : responseData;
       if (Array.isArray(data) && data.length > 0) setItems(data);
-    }).catch((error: Error) => {
+    }).catch(() => {
       toast.error('Failed to fetch menu items');
     });
   };
@@ -40,7 +43,7 @@ export const AdminMenuCatalogView = () => {
   useEffect(() => {
     fetchMenu();
     // Assuming backend endpoint /categories exists for dropdown
-    api.get('/categories').then((res: ApiResponse<any>) => {
+    api.get('/categories').then((res) => {
       if (res.data.data) setCategories(res.data.data);
     }).catch((error: Error) => {
       console.error('Failed to fetch categories:', error);

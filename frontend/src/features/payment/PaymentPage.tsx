@@ -8,10 +8,8 @@ export const PaymentPage = () => {
   switch (role) {
     case 'CUSTOMER':
       return <CustomerPaymentView />;
-    case 'RECEPTIONIST':
-    case 'MANAGER':
+    case 'STAFF':
     case 'ADMIN':
-    case 'WAITER': 
       return <StaffPaymentView />;
     default:
       return <StaffPaymentView />;

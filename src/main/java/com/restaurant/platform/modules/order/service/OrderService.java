@@ -20,6 +20,8 @@ public interface OrderService {
     OrderResponse getById(UUID id);
 
     PageResponse<OrderResponse> getAll(Pageable pageable);
+
+    PageResponse<OrderResponse> getMyOrders(String email, Pageable pageable);
     
     List<OrderResponse> getAllByStatus(List<OrderStatus> statuses);
 

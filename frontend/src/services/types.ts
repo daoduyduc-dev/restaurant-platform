@@ -46,6 +46,7 @@ export interface MenuItemDTO {
   categoryId: string;
   categoryName: string;
   isAvailable: boolean;
+  available?: boolean;
 }
 
 // ═══ Table ═══
@@ -74,8 +75,8 @@ export interface OrderItemDTO {
   menuItemId: string;
   menuItemName: string;
   quantity: number;
-  unitPrice: number;
-  subtotal: number;
+  price: number;
+  total: number;
 }
 
 export interface OrderDTO {
@@ -102,8 +103,22 @@ export interface ReservationDTO {
   phone: string;
   reservationTime: string;
   numberOfGuests: number;
+  tableId: string;
   tableName: string;
+  tableCapacity: number;
   status: ReservationStatus;
+  createdAt: string;
+}
+
+export interface TimeSlotAvailabilityDTO {
+  timeSlot: string;
+  available: boolean;
+  reason: string; // "AVAILABLE", "OCCUPIED", "RESERVED"
+}
+
+export interface TableAvailabilityDTO {
+  table: TableDTO;
+  timeSlots: TimeSlotAvailabilityDTO[];
 }
 
 // ═══ Dashboard ═══
@@ -167,6 +182,14 @@ export interface LoyaltyDTO {
   pointsToNextTier: number;
   nextTier: string;
   lastUpdated: string;
+}
+
+export interface LoyaltyTransactionDTO {
+  id: string;
+  type: 'EARN' | 'REDEEM' | 'ADJUSTMENT' | string;
+  points: number;
+  description: string;
+  createdDate: string;
 }
 
 // ═══ Profile ═══

@@ -95,6 +95,9 @@ public class PaymentServiceImpl implements PaymentService {
             if (order != null) {
                 order.setStatus(OrderStatus.PAID);
                 orderRepository.save(order);
+            } else {
+                throw new ResourceNotFoundException(
+                        ErrorCode.ORDER_NOT_FOUND, "Order not found for payment");
             }
         } else {
             payment.setStatus(PaymentStatus.FAILED);

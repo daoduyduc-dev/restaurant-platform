@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import type { UserDTO, ApiResponse } from '../../services/types';
+import type { UserDTO } from '../../services/types';
 import { Search, Plus, Mail, Phone, Shield, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button, Input, Modal, Badge, Card } from '../../components/ui';
@@ -29,9 +29,9 @@ export const StaffPage = () => {
 
   const fetchStaff = () => {
     api.get('/users')
-      .then((res: ApiResponse<UserDTO[]>) => {
+      .then((res) => {
         const data = res.data.data;
-        if (Array.isArray(data)) setStaff(data);
+        if (Array.isArray(data)) setStaff(data.filter((user: UserDTO) => !user.roles?.includes('KITCHEN')));
       })
       .catch((error: Error) => {
         console.error('Failed to fetch staff:', error);

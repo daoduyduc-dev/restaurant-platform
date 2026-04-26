@@ -40,7 +40,9 @@ export const ManagerOrderView = () => {
     try {
       const res = await api.get('/users');
       if (res.data.data?.items) setStaff(res.data.data.items.filter((u: UserDTO) => u.roles?.some(r => ['WAITER', 'KITCHEN'].includes(r.toUpperCase()))));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to fetch staff:', error);
+    }
   };
 
   useEffect(() => { fetchOrders(); fetchStaff(); }, []);

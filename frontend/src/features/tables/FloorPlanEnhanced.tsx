@@ -29,10 +29,16 @@ const STATUS_COLORS: Record<string, { fill: string; border: string; text: string
 };
 
 const DEFAULT_POSITIONS = [
-  { x: 8, y: 8 }, { x: 28, y: 8 }, { x: 48, y: 8 }, { x: 68, y: 8 },
-  { x: 8, y: 35 }, { x: 28, y: 35 }, { x: 48, y: 35 }, { x: 68, y: 35 },
-  { x: 8, y: 62 }, { x: 28, y: 62 }, { x: 48, y: 62 }, { x: 68, y: 62 },
-  { x: 88, y: 8 }, { x: 88, y: 35 }, { x: 88, y: 62 },
+  // Row 1
+  { x: 5, y: 12 }, { x: 18, y: 12 }, { x: 31, y: 12 }, { x: 44, y: 12 }, { x: 57, y: 12 }, { x: 70, y: 12 },
+  // Row 2
+  { x: 5, y: 28 }, { x: 18, y: 28 }, { x: 31, y: 28 }, { x: 44, y: 28 }, { x: 57, y: 28 }, { x: 70, y: 28 },
+  // Row 3
+  { x: 5, y: 44 }, { x: 18, y: 44 }, { x: 31, y: 44 }, { x: 44, y: 44 }, { x: 57, y: 44 }, { x: 70, y: 44 },
+  // Row 4
+  { x: 5, y: 60 }, { x: 18, y: 60 }, { x: 31, y: 60 }, { x: 44, y: 60 }, { x: 57, y: 60 }, { x: 70, y: 60 },
+  // Extra positions
+  { x: 5, y: 76 }, { x: 18, y: 76 }, { x: 31, y: 76 }, { x: 44, y: 76 }, { x: 57, y: 76 }, { x: 70, y: 76 },
 ];
 
 interface FloorPlanProps {
@@ -306,3 +312,5 @@ export const FloorPlan = ({
     </div>
   );
 };
+
+export const FloorPlanEnhanced = FloorPlan;

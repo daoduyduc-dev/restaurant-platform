@@ -8,6 +8,8 @@ public interface AuthService {
 
     AuthResponse login(AuthRequest request);
 
+    AuthResponse refresh(String token);
+
     void logout(HttpServletRequest request);
 
     void changePassword(@Valid ChangePasswordRequest request);

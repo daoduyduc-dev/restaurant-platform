@@ -10,8 +10,8 @@ import { MenuPage } from './features/menu/MenuPage';
 import { TablesPage } from './features/tables/TablesPage';
 import { OrdersPage } from './features/orders/OrdersPage';
 import { ReservationsPage } from './features/reservations/ReservationsPage';
-import { PaymentPage } from './features/payment/PaymentPage';
 import { LoyaltyPage } from './features/loyalty/LoyaltyPage';
+import { PaymentPage } from './features/payment/PaymentPage';
 import { ReportPage } from './features/report/ReportPage';
 import { StaffPage } from './features/staff/StaffPage';
 import { NotificationsPage } from './features/notifications/NotificationsPage';
@@ -60,14 +60,14 @@ function App() {
           <Route path="tables" element={<TablesPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
-          <Route path="payment" element={<PaymentPage />} />
           <Route path="loyalty" element={<LoyaltyPage />} />
+          <Route path="payment" element={<PaymentPage />} />
           <Route path="report" element={<ReportPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           
-          {/* Staff management — ADMIN/MANAGER only */}
+          {/* Staff management - ADMIN only */}
           <Route path="staff" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+            <ProtectedRoute allowedRoles={['ADMIN']}>
               <StaffPage />
             </ProtectedRoute>
           } />

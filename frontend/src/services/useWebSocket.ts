@@ -9,10 +9,15 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
   const onMessageRef = useRef(onMessage);
   const clientRef = useRef<Client | null>(null);
   const { token: accessToken } = useAuthStore();
+  const topicRef = useRef(topic);
 
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
+  useEffect(() => {
+    topicRef.current = topic;
+  }, [topic]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -20,9 +25,8 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const socketUrl = `${protocol}//${host}/ws`;
+    const apiBase = apiBaseUrl();
+    const socketUrl = `${apiBase.replace(/\/api\/v1$/, '')}/ws?token=${encodeURIComponent(accessToken)}`;
 
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
@@ -43,9 +47,9 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
 
     client.onConnect = () => {
       setConnected(true);
-      console.log('WebSocket connected to:', topic);
+      console.log('WebSocket connected to:', topicRef.current);
 
-      const topics = Array.isArray(topic) ? topic : [topic];
+      const topics = Array.isArray(topicRef.current) ? topicRef.current : [topicRef.current];
 
       topics.forEach((t) => {
         try {
@@ -69,12 +73,15 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
     client.activate();
 
     return () => {
-      if (clientRef.current?.connected) {
-        clientRef.current.deactivate();
-      }
+      clientRef.current?.deactivate();
+      clientRef.current = null;
       setConnected(false);
     };
-  }, [topic, accessToken]);
+  }, [accessToken]);
 
   return { connected };
+}
+
+function apiBaseUrl() {
+  return 'http://localhost:8080/api/v1';
 }

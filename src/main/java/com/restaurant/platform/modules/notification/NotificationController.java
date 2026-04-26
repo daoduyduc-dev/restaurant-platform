@@ -18,6 +18,7 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final com.restaurant.platform.modules.auth.repository.UserRepository userRepository;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -122,7 +123,9 @@ public class NotificationController {
         Object principal = authentication.getPrincipal();
         if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
             String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-            return UUID.fromString(username);
+            return userRepository.findByEmail(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Unable to extract user ID from authentication"))
+                    .getId();
         }
         throw new IllegalArgumentException("Unable to extract user ID from authentication");
     }

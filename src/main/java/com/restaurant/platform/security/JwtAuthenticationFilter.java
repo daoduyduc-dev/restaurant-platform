@@ -47,6 +47,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
+            // Validate token signature and expiry first
+            if (!jwtService.validateToken(token)) {
+                chain.doFilter(request, response);
+                return;
+            }
+
             String username = jwtService.extractUsername(token);
 
             if (username != null &&

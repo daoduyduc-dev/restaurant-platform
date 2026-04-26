@@ -11,6 +11,8 @@ export const ReceptionistReservationView = () => {
   const [reservations, setReservations] = useState<ReservationDTO[]>([]);
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [search, setSearch] = useState('');
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterStatus, setFilterStatus] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '', phone: '', reservationTime: '', numberOfGuests: 2, tableId: ''
@@ -25,7 +27,9 @@ export const ReceptionistReservationView = () => {
       const resItems = rRes.data.data?.items || rRes.data.data || [];
       setReservations(Array.isArray(resItems) ? resItems : []);
       setTables(tRes.data.data || []);
-    } catch {}
+    } catch (error) {
+      console.error('Failed to fetch reservations or tables:', error);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -54,17 +58,31 @@ export const ReceptionistReservationView = () => {
     } catch { toast.error('Failed to update'); }
   };
 
-  // Group reservations
+  // Filter and sort reservations
   const todayStr = new Date().toISOString().split('T')[0];
+
+  const filtered = reservations
+    .filter(r => {
+      // Date filter
+      if (filterDate && !r.reservationTime.startsWith(filterDate)) return false;
+
+      // Status filter
+      if (filterStatus && r.status !== filterStatus) return false;
+
+      // Search filter (name, phone)
+      if (search) {
+        const searchLower = search.toLowerCase();
+        return r.customerName.toLowerCase().includes(searchLower) ||
+               r.phone.includes(search);
+      }
+
+      return true;
+    })
+    .sort((a, b) => new Date(a.reservationTime).getTime() - new Date(b.reservationTime).getTime());
+
   const todayRes = reservations.filter(r => r.reservationTime.startsWith(todayStr));
   const pendingCount = todayRes.filter(r => r.status === 'PENDING').length;
   const checkedInCount = todayRes.filter(r => r.status === 'CHECKED_IN').length;
-
-  const filtered = reservations.filter(r => 
-    r.customerName.toLowerCase().includes(search.toLowerCase()) || 
-    r.phone.includes(search) || 
-    r.status.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -108,10 +126,34 @@ export const ReceptionistReservationView = () => {
 
       <Card variant="elevated">
          <Card.Header>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
                <Card.Title>All Reservations</Card.Title>
-               <div style={{ width: 300 }}>
-                  <Input placeholder="Search name, phone, status..." value={search} onChange={e=>setSearch(e.target.value)} icon={<Search size={16}/>} />
+               <div style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' }}>
+                  <Input
+                     type="date"
+                     value={filterDate}
+                     onChange={e=>setFilterDate(e.target.value)}
+                     style={{ width: 160 }}
+                  />
+                  <select
+                     value={filterStatus}
+                     onChange={e=>setFilterStatus(e.target.value)}
+                     style={{ padding: '8px 12px', border: '1px solid var(--border-main)', borderRadius: 'var(--r-sm)', fontSize: '14px' }}
+                  >
+                     <option value="">All Status</option>
+                     <option value="PENDING">PENDING</option>
+                     <option value="RESERVED">RESERVED</option>
+                     <option value="CHECKED_IN">CHECKED_IN</option>
+                     <option value="CANCELLED">CANCELLED</option>
+                     <option value="COMPLETED">COMPLETED</option>
+                  </select>
+                  <Input
+                     placeholder="Search name, phone..."
+                     value={search}
+                     onChange={e=>setSearch(e.target.value)}
+                     icon={<Search size={16}/>}
+                     style={{ width: 220 }}
+                  />
                </div>
             </div>
          </Card.Header>
@@ -139,12 +181,23 @@ export const ReceptionistReservationView = () => {
                               <Badge variant={res.status === 'PENDING' ? 'warning' : res.status === 'CHECKED_IN' ? 'success' : res.status === 'CANCELLED' ? 'error' : 'neutral'}>{res.status}</Badge>
                            </td>
                            <td>
-                              {res.status === 'PENDING' && (
-                                 <div style={{ display: 'flex', gap: 6 }}>
-                                    <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14}/> Seat</Button>
-                                    <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14}/> Cancel</Button>
-                                 </div>
-                              )}
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                 {res.status === 'PENDING' && (
+                                    <>
+                                       <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14}/> Check In</Button>
+                                       <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14}/> Cancel</Button>
+                                    </>
+                                 )}
+                                 {res.status === 'RESERVED' && (
+                                    <>
+                                       <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14}/> Check In</Button>
+                                       <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14}/> Cancel</Button>
+                                    </>
+                                 )}
+                                 {res.status === 'CHECKED_IN' && (
+                                    <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'COMPLETED')}>Complete</Button>
+                                 )}
+                              </div>
                            </td>
                         </tr>
                      )
@@ -159,7 +212,7 @@ export const ReceptionistReservationView = () => {
            <Input label="Customer Name" value={formData.customerName} onChange={e=>setFormData({...formData, customerName: e.target.value})} />
            <Input label="Phone Number" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
            <Input type="datetime-local" label="Reservation Time" value={formData.reservationTime} onChange={e=>setFormData({...formData, reservationTime: e.target.value})} />
-           <Input type="number" label="Number of Guests" value={formData.numberOfGuests as any} onChange={e=>setFormData({...formData, numberOfGuests: parseInt(e.target.value)||1})} />
+           <Input type="number" label="Number of Guests" value={formData.numberOfGuests} onChange={e=>setFormData({...formData, numberOfGuests: parseInt(e.target.value, 10)||1})} />
            
            <div>
              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: 'block' }}>Assign Table (Optional)</label>

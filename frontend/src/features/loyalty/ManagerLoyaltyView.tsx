@@ -4,8 +4,6 @@ import api from '../../services/api';
 import { Award, Star, TrendingUp, Users, Gift, Crown, ArrowUpRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button, Card, Badge, Modal, Input } from '../../components/ui';
-import type { LoyaltyDTO } from '../../services/types';
-import type { ApiResponse } from '../../services/types';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from '../../store/toastStore';
 
@@ -36,17 +34,16 @@ export const ManagerLoyaltyView = () => {
 
   useEffect(() => {
     api.get('/loyalty/all')
-      .then((res: ApiResponse<LoyaltyDTO[]>) => {
+      .then((res) => {
         const data = res.data.data;
         if (Array.isArray(data)) {
-          // Map LoyaltyDTO to LoyaltyMember display format
-          setMembers(data.map((loyalty: LoyaltyDTO) => ({
-            id: loyalty.id || '',
-            name: (loyalty as any).customerName || (loyalty as any).name || 'Unknown',
-            email: (loyalty as any).email || '',
-            points: loyalty.totalPoints || loyalty.points || 0,
+          setMembers(data.map((loyalty: any) => ({
+            id: loyalty.id || loyalty.userId || '',
+            name: loyalty.customerName || loyalty.name || 'Unknown',
+            email: loyalty.email || '',
+            points: loyalty.totalPointsEarned || loyalty.points || 0,
             tier: loyalty.tier || 'Bronze',
-            visits: (loyalty as any).visits || 0,
+            visits: loyalty.visits || 0,
             spent: loyalty.totalSpent ? `$${loyalty.totalSpent.toFixed(2)}` : '$0.00',
           })));
         }
@@ -59,7 +56,7 @@ export const ManagerLoyaltyView = () => {
   const totals = {
     members: members.length,
     totalPoints: members.reduce((s, m) => s + m.points, 0),
-    avgVisits: Math.round(members.reduce((s, m) => s + m.visits, 0) / members.length),
+    avgVisits: members.length ? Math.round(members.reduce((s, m) => s + m.visits, 0) / members.length) : 0,
   };
 
   return (

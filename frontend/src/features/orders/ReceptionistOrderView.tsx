@@ -19,7 +19,9 @@ export const ReceptionistOrderView = () => {
       const res = await api.get('/orders');
       const items = res.data.data?.items || res.data.data || [];
       setOrders(Array.isArray(items) ? items : []);
-    } catch {} finally { setLoading(false); }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchOrders(); }, []);
