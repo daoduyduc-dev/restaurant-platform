@@ -41,8 +41,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
-    public void configureClientInboundChannel(org.springframework.messaging.simp.config.ChannelRegistration registration) {
-        // Register interceptor to authenticate STOMP CONNECT frames and attach Principal
+    public void configureClientInboundChannel(
+            org.springframework.messaging.simp.config.ChannelRegistration registration) {
+        // Register interceptor to authenticate STOMP CONNECT frames and attach
+        // Principal
         registration.interceptors(new WebSocketAuthChannelInterceptor(jwtService, userDetailsService, userRepository));
     }
 
@@ -56,7 +58,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         @Override
         public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                       WebSocketHandler wsHandler, Map<String, Object> attributes) {
+                WebSocketHandler wsHandler, Map<String, Object> attributes) {
             String query = request.getURI().getQuery();
             if (query != null && query.contains("token=")) {
                 String token = query.substring(query.indexOf("token=") + 6);
@@ -65,12 +67,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     return true;
                 }
             }
-            return false;
+            return true;
         }
 
         @Override
         public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                   WebSocketHandler wsHandler, Exception exception) {
+                WebSocketHandler wsHandler, Exception exception) {
         }
     }
 }

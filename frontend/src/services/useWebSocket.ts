@@ -1,23 +1,20 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import type { IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '../store/authStore';
+
+const MAX_RETRY_ATTEMPTS = 5;
 
 export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) => void) {
   const [connected, setConnected] = useState(false);
   const onMessageRef = useRef(onMessage);
   const clientRef = useRef<Client | null>(null);
   const { token: accessToken } = useAuthStore();
-  const topicRef = useRef(topic);
 
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
-
-  useEffect(() => {
-    topicRef.current = topic;
-  }, [topic]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -25,8 +22,8 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       return;
     }
 
-    const apiBase = apiBaseUrl();
-    const socketUrl = `${apiBase.replace(/\/api\/v1$/, '')}/ws?token=${encodeURIComponent(accessToken)}`;
+    const socketUrl = `${resolveSocketUrl()}?token=${encodeURIComponent(accessToken)}`;
+    let retryCount = 0;
 
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
@@ -43,13 +40,21 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       onDisconnect: () => {
         setConnected(false);
       },
+      onWebSocketClose: () => {
+        setConnected(false);
+        retryCount += 1;
+        if (retryCount > MAX_RETRY_ATTEMPTS) {
+          console.error('Stop reconnecting WebSocket');
+          client.deactivate();
+        }
+      },
     });
 
     client.onConnect = () => {
+      retryCount = 0;
       setConnected(true);
-      console.log('WebSocket connected to:', topicRef.current);
 
-      const topics = Array.isArray(topicRef.current) ? topicRef.current : [topicRef.current];
+      const topics = Array.isArray(topic) ? topic : [topic];
 
       topics.forEach((t) => {
         try {
@@ -77,11 +82,13 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
       clientRef.current = null;
       setConnected(false);
     };
-  }, [accessToken]);
+  }, [accessToken, topic]);
 
   return { connected };
 }
 
-function apiBaseUrl() {
-  return 'http://localhost:8080/api/v1';
+function resolveSocketUrl() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+  const resolvedApiUrl = new URL(apiBaseUrl, window.location.origin);
+  return new URL('/ws', resolvedApiUrl.origin).toString();
 }
