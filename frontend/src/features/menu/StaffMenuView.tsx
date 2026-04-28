@@ -21,7 +21,7 @@ export const StaffMenuView = () => {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [categories, setCategories] = useState<{id: string, name: string, icon?: string, color?: string}[]>([]);
+  const [categories, setCategories] = useState<{ id: string, name: string, icon?: string, color?: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
@@ -113,8 +113,8 @@ export const StaffMenuView = () => {
   const filtered = search
     ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : selectedCategory
-    ? items.filter(i => i.categoryId === selectedCategory)
-    : items;
+      ? items.filter(i => i.categoryId === selectedCategory)
+      : items;
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
 
   return (
@@ -122,22 +122,22 @@ export const StaffMenuView = () => {
       {/* Menu Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div className="page-header" style={{ marginBottom: 'var(--sp-4)' }}>
-           <div>
-              <h1 style={{ color: 'var(--orange-600)' }}>Menu Collection</h1>
-              <p>{canOrder ? `${tableLabel} - Select items to order` : 'Select a table to take order'}</p>
-           </div>
-           <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
-              <Input
-                 type="text" placeholder="Search menu..." value={search} onChange={(e) => {
-                   setSearch(e.target.value);
-                   setSelectedCategory(null);
-                 }}
-                 icon={<Search size={16} />} style={{ width: 240 }}
-              />
-              <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'} disabled={!canOrder}>
-                 <ShoppingCart size={16} /> Order ({cart.length})
-              </Button>
-           </div>
+          <div>
+            <h1 style={{ color: 'var(--orange-600)' }}>Menu Collection</h1>
+            <p>{canOrder ? `${tableLabel} - Select items to order` : 'Select a table to take order'}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <Input
+              type="text" placeholder="Search menu..." value={search} onChange={(e) => {
+                setSearch(e.target.value);
+                setSelectedCategory(null);
+              }}
+              icon={<Search size={16} />} style={{ width: '240px', paddingLeft: '36px' }}
+            />
+            <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'} disabled={!canOrder}>
+              <ShoppingCart size={16} /> Order ({cart.length})
+            </Button>
+          </div>
         </div>
 
         {!qrTableId && (
@@ -200,7 +200,7 @@ export const StaffMenuView = () => {
                             {res.customerName}
                           </div>
                           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                            {res.numberOfGuests} guests · {new Date(res.reservationTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                            {res.numberOfGuests} guests · {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </button>
                       </motion.div>

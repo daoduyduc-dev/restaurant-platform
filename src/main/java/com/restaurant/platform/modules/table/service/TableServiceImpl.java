@@ -6,6 +6,7 @@ import com.restaurant.platform.modules.table.dto.TableRequest;
 import com.restaurant.platform.modules.table.dto.TableResponse;
 import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
+import com.restaurant.platform.modules.table.enums.TableType;
 import com.restaurant.platform.modules.table.mapper.TableMapper;
 import com.restaurant.platform.modules.table.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class TableServiceImpl implements TableService {
 
         Table table = tableMapper.toEntity(tableRequest);
         table.setStatus(TableStatus.AVAILABLE);
+        table.setType(resolveType(tableRequest.getType(), null));
         tableRepository.save(table);
 
         return tableMapper.toResponse(table);
@@ -71,7 +73,7 @@ public class TableServiceImpl implements TableService {
     @Override
     @Transactional(readOnly = true)
     public List<TableResponse> getAllTables() {
-        return tableRepository.findAll()
+        return tableRepository.findAllByOrderByFloorAscNameAsc()
                 .stream()
                 .map(tableMapper::toResponse)
                 .toList();
@@ -79,18 +81,12 @@ public class TableServiceImpl implements TableService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<TableResponse> getTablesByStatus(List<TableStatus> statuses) {
-        return tableRepository.findByStatusIn(statuses)
+    public List<TableResponse> searchTables(List<TableStatus> statuses, Integer floor, TableType type) {
+        return tableRepository.findAllByOrderByFloorAscNameAsc()
                 .stream()
-                .map(tableMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<TableResponse> getTablesByFloor(Integer floor) {
-        return tableRepository.findByFloor(floor)
-                .stream()
+                .filter(table -> statuses == null || statuses.isEmpty() || statuses.contains(table.getStatus()))
+                .filter(table -> floor == null || floor.equals(table.getFloor()))
+                .filter(table -> type == null || type == table.getType())
                 .map(tableMapper::toResponse)
                 .toList();
     }
@@ -98,7 +94,7 @@ public class TableServiceImpl implements TableService {
     @Override
     @Transactional(readOnly = true)
     public List<Integer> getAvailableFloors() {
-        return tableRepository.findAll()
+        return tableRepository.findAllByOrderByFloorAscNameAsc()
                 .stream()
                 .map(Table::getFloor)
                 .filter(f -> f != null)
@@ -110,8 +106,10 @@ public class TableServiceImpl implements TableService {
     @Override
     public TableResponse update(UUID id, TableRequest tableRequest) {
         Table table = getTableOrThrow(id);
+        TableType currentType = table.getType();
 
         tableMapper.updateEntity(table, tableRequest);
+        table.setType(resolveType(tableRequest.getType(), currentType));
 
         tableRepository.save(table);
 
@@ -131,5 +129,15 @@ public class TableServiceImpl implements TableService {
         table.setStatus(status);
         tableRepository.save(table);
         return tableMapper.toResponse(table);
+    }
+
+    private TableType resolveType(TableType requestedType, TableType currentType) {
+        if (requestedType != null) {
+            return requestedType;
+        }
+        if (currentType != null) {
+            return currentType;
+        }
+        return TableType.NORMAL;
     }
 }

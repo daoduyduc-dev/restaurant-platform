@@ -2,6 +2,7 @@ package com.restaurant.platform.modules.table.entity;
 
 import com.restaurant.platform.common.base.SoftDeleteEntity;
 import com.restaurant.platform.modules.table.enums.TableStatus;
+import com.restaurant.platform.modules.table.enums.TableType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,10 +43,8 @@ public class Table extends SoftDeleteEntity {
     
     @Column(name = "floor")
     private Integer floor;
-    
-    @Column(name = "floor_name", length = 100)
-    private String floorName;
-    
-    @Column(name = "is_vip_room")
-    private Boolean isVipRoom;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 20)
+    private TableType type;
 }

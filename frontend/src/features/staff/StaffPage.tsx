@@ -8,12 +8,12 @@ import { toast } from '../../store/toastStore';
 
 
 
-const ROLE_COLORS: Record<string, { bg:string; color:string }> = {
-  ADMIN: { bg:'rgba(10,20,40,0.06)', color:'var(--bg-main)' },
-  MANAGER: { bg:'rgba(139,92,246,0.08)', color:'#8B5CF6' },
-  WAITER: { bg:'var(--teal-bg)', color:'var(--teal)' },
-  RECEPTIONIST: { bg:'var(--amber-bg)', color:'var(--amber)' },
-  CUSTOMER: { bg:'var(--orange-100)', color:'var(--orange-600)' },
+const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
+  ADMIN: { bg: 'rgba(10,20,40,0.06)', color: 'var(--bg-main)' },
+  MANAGER: { bg: 'rgba(139,92,246,0.08)', color: '#8B5CF6' },
+  WAITER: { bg: 'var(--teal-bg)', color: 'var(--teal)' },
+  RECEPTIONIST: { bg: 'var(--amber-bg)', color: 'var(--amber)' },
+  CUSTOMER: { bg: 'var(--orange-100)', color: 'var(--orange-600)' },
 };
 
 export const StaffPage = () => {
@@ -21,7 +21,7 @@ export const StaffPage = () => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name:'', email:'', phone:'', role:'WAITER', password:'password123' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', role: 'WAITER', password: 'password123' });
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<UserDTO | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -54,7 +54,7 @@ export const StaffPage = () => {
       });
       toast.success('Staff added!');
       setIsModalOpen(false);
-      setFormData({ name:'', email:'', phone:'', role:'WAITER', password:'password123' });
+      setFormData({ name: '', email: '', phone: '', role: 'WAITER', password: 'password123' });
       fetchStaff();
     } catch {
       toast.error('Failed to add staff');
@@ -105,14 +105,14 @@ export const StaffPage = () => {
           <h1>Staff Management</h1>
           <p>Manage your team and permissions.</p>
         </div>
-        <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Input
             type="text"
             placeholder="Search staff..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search size={16} />}
-            style={{ width: '240px' }}
+            style={{ width: '240px', paddingLeft: '36px' }}
           />
           <Button variant="primary" size="medium" onClick={() => setIsModalOpen(true)}><Plus size={16} /> Add Staff</Button>
         </div>
@@ -128,13 +128,13 @@ export const StaffPage = () => {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Status</th>
-                <th style={{ width:'120px' }}>Actions</th>
+                <th style={{ width: '120px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(s => {
                 const roleKey = s.roles?.[0] || 'WAITER';
-                const roleStyle = ROLE_COLORS[roleKey] || { bg:'var(--gray-100)', color:'var(--gray-600)' };
+                const roleStyle = ROLE_COLORS[roleKey] || { bg: 'var(--gray-100)', color: 'var(--gray-600)' };
                 return (
                   <motion.tr
                     key={s.id}
@@ -143,36 +143,36 @@ export const StaffPage = () => {
                     style={{ opacity: s.active ? 1 : 0.55 }}
                   >
                     <td>
-                      <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                        <div className="avatar avatar-lg" style={{ fontSize:'var(--text-sm)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="avatar avatar-lg" style={{ fontSize: 'var(--text-sm)' }}>
                           {s.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
-                        <span style={{ fontWeight:600 }}>{s.name}</span>
+                        <span style={{ fontWeight: 600 }}>{s.name}</span>
                       </div>
                     </td>
                     <td>
-                      <Badge variant={roleKey === 'ADMIN' ? 'error' : roleKey === 'MANAGER' ? 'info' : 'success'} size="small" style={{ textTransform:'uppercase', letterSpacing:'0.03em' }}>
+                      <Badge variant={roleKey === 'ADMIN' ? 'error' : roleKey === 'MANAGER' ? 'info' : 'success'} size="small" style={{ textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                         {roleKey}
                       </Badge>
                     </td>
                     <td>
-                      <div style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'var(--text-sm)', color:'var(--gray-600)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--gray-600)' }}>
                         <Mail size={14} color="var(--gray-400)" /> {s.email}
                       </div>
                     </td>
                     <td>
-                      <div style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'var(--text-sm)', color:'var(--gray-600)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--gray-600)' }}>
                         <Phone size={14} color="var(--gray-400)" /> {s.phone || '—'}
                       </div>
                     </td>
                     <td>
                       <Badge variant={s.active ? 'success' : 'neutral'} size="small" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        {s.active && <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'var(--teal)', display:'inline-block' }} />}
+                        {s.active && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />}
                         {s.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                     <td>
-                      <div style={{ display:'flex', gap:'4px' }}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
                         <Button variant="ghost" size="small" title="Permissions" style={{ padding: '6px' }} onClick={() => { setSelectedStaff(s); setPermissionsModalOpen(true); }}>
                           <Shield size={14} />
                         </Button>
@@ -201,7 +201,7 @@ export const StaffPage = () => {
             label="Full Name"
             required
             value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g. Gordon Ramsay"
           />
           <Input
@@ -209,13 +209,13 @@ export const StaffPage = () => {
             type="email"
             required
             value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="gordon@servegenius.com"
           />
           <Input
             label="Phone Number"
             value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             placeholder="09xxxxxxx"
           />
           <div>
@@ -223,7 +223,7 @@ export const StaffPage = () => {
             <select
               required
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -245,7 +245,7 @@ export const StaffPage = () => {
             label="Default Password"
             required
             value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           />
           <Button type="submit" variant="primary" size="medium" disabled={loading} style={{ marginTop: 'var(--sp-2)', width: '100%' }}>
             {loading ? 'Creating...' : 'Create Account'}

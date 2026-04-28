@@ -4,6 +4,8 @@ import com.restaurant.platform.common.response.ApiResponse;
 import com.restaurant.platform.modules.table.dto.TableRequest;
 import com.restaurant.platform.modules.table.dto.TableResponse;
 import com.restaurant.platform.modules.table.dto.UpdateTableStatusRequest;
+import com.restaurant.platform.modules.table.enums.TableStatus;
+import com.restaurant.platform.modules.table.enums.TableType;
 import com.restaurant.platform.modules.table.service.TableService;
 
 import jakarta.validation.Valid;
@@ -34,14 +36,12 @@ public class TableController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TableResponse>> getAll(
-            @RequestParam(required = false) List<com.restaurant.platform.modules.table.enums.TableStatus> status,
-            @RequestParam(required = false) Integer floor
+            @RequestParam(required = false) List<TableStatus> status,
+            @RequestParam(required = false) Integer floor,
+            @RequestParam(required = false) TableType type
     ) {
-        if (floor != null) {
-            return ApiResponse.success(tableService.getTablesByFloor(floor));
-        }
-        if (status != null && !status.isEmpty()) {
-            return ApiResponse.success(tableService.getTablesByStatus(status));
+        if (floor != null || type != null || (status != null && !status.isEmpty())) {
+            return ApiResponse.success(tableService.searchTables(status, floor, type));
         }
         return ApiResponse.success(tableService.getAllTables());
     }

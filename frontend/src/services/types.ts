@@ -52,6 +52,7 @@ export interface MenuItemDTO {
 // ═══ Table ═══
 
 export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'DIRTY';
+export type TableType = 'VIP' | 'NORMAL';
 
 export interface TableDTO {
   id: string;
@@ -62,8 +63,7 @@ export interface TableDTO {
   positionY: number | null;
   zone: string | null;
   floor: number | null;
-  floorName: string | null;
-  isVipRoom: boolean | null;
+  type: TableType;
 }
 
 // ═══ Order ═══

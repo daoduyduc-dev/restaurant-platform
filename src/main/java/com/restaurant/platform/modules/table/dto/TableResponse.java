@@ -1,6 +1,7 @@
 package com.restaurant.platform.modules.table.dto;
 
 import com.restaurant.platform.modules.table.enums.TableStatus;
+import com.restaurant.platform.modules.table.enums.TableType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,10 +22,8 @@ public class TableResponse {
     private Double positionX;
     private Double positionY;
     private String zone;
-    
+
     private Integer floor;
-    
-    private String floorName;
-    
-    private Boolean isVipRoom;
+
+    private TableType type;
 }

@@ -1,5 +1,11 @@
 import type { TableDTO } from '../../services/types';
-import { Flower, Crown, DoorOpen, Wind } from 'lucide-react';
+import { Flower, Crown, DoorOpen } from 'lucide-react';
+import {
+  getBoundedTablePosition,
+  getDefaultTableFallbackPosition,
+  getTableRenderSize,
+  resolveCollisions,
+} from './positioning';
 
 const STATUS_COLORS: Record<string, { fill: string; border: string; text: string; gradient: string }> = {
   AVAILABLE: { 
@@ -28,19 +34,6 @@ const STATUS_COLORS: Record<string, { fill: string; border: string; text: string
   },
 };
 
-const DEFAULT_POSITIONS = [
-  // Row 1
-  { x: 5, y: 12 }, { x: 18, y: 12 }, { x: 31, y: 12 }, { x: 44, y: 12 }, { x: 57, y: 12 }, { x: 70, y: 12 },
-  // Row 2
-  { x: 5, y: 28 }, { x: 18, y: 28 }, { x: 31, y: 28 }, { x: 44, y: 28 }, { x: 57, y: 28 }, { x: 70, y: 28 },
-  // Row 3
-  { x: 5, y: 44 }, { x: 18, y: 44 }, { x: 31, y: 44 }, { x: 44, y: 44 }, { x: 57, y: 44 }, { x: 70, y: 44 },
-  // Row 4
-  { x: 5, y: 60 }, { x: 18, y: 60 }, { x: 31, y: 60 }, { x: 44, y: 60 }, { x: 57, y: 60 }, { x: 70, y: 60 },
-  // Extra positions
-  { x: 5, y: 76 }, { x: 18, y: 76 }, { x: 31, y: 76 }, { x: 44, y: 76 }, { x: 57, y: 76 }, { x: 70, y: 76 },
-];
-
 interface FloorPlanProps {
   tables: TableDTO[];
   onTableClick?: (table: TableDTO) => void;
@@ -64,25 +57,24 @@ export const FloorPlan = ({
   minHeight = 'calc(100vh - var(--header-height) - 220px)',
   showDecorations = true
 }: FloorPlanProps) => {
-  
-  // Separate VIP and regular tables
-  const vipTables = tables.filter(t => t.isVipRoom);
-  const regularTables = tables.filter(t => !t.isVipRoom);
+  const resolvedTables = resolveCollisions(tables);
+  const vipTables = resolvedTables.filter((table) => table.type === 'VIP');
 
   return (
-    <div className="floor-plan" style={{ minHeight, position: 'relative', overflow: 'hidden' }}>
-      {/* Background pattern - subtle dot grid */}
-      <div 
-        className="floor-plan-grid" 
-        style={{
-          backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-        }}
-      />
+    <div className="floor-plan" style={{ minHeight }}>
+      <div className="floor-plan-viewport">
+        {/* Background pattern - subtle dot grid */}
+        <div 
+          className="floor-plan-grid" 
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+          }}
+        />
 
-      {/* Decorative Elements */}
-      {showDecorations && (
-        <>
+        {/* Decorative Elements */}
+        {showDecorations && (
+          <>
           {/* Walls */}
           <div style={{
             position: 'absolute',
@@ -203,19 +195,20 @@ export const FloorPlan = ({
               }} />
             </div>
           )}
-        </>
-      )}
+          </>
+        )}
 
-      {/* Regular Tables */}
-      {regularTables.map((table, i) => {
-        const pos = DEFAULT_POSITIONS[i % DEFAULT_POSITIONS.length];
-        const x = table.positionX ?? pos.x;
-        const y = table.positionY ?? pos.y;
+        {/* Tables */}
+        {resolvedTables.map((table, i) => {
+          const pos = getDefaultTableFallbackPosition(i);
         const colors = STATUS_COLORS[table.status] || STATUS_COLORS.AVAILABLE;
         const isSelected = selectedId === table.id;
         const isDimmed = dimUnavailable && table.status !== 'AVAILABLE';
         const isHighlighted = highlightStatuses?.includes(table.status);
-        const size = table.capacity > 6 ? 100 : table.capacity > 4 ? 88 : 76;
+        const size = getTableRenderSize(table.capacity);
+        const x = getBoundedTablePosition(table.positionX, pos.x, 'x', size);
+        const y = getBoundedTablePosition(table.positionY, pos.y, 'y', size);
+        const isVip = table.type === 'VIP';
 
         return (
           <div
@@ -225,6 +218,8 @@ export const FloorPlan = ({
             style={{
               left: `${x}%`,
               top: `${y}%`,
+              marginLeft: `${-size / 2}px`,
+              marginTop: `${-size / 2}px`,
               opacity: isDimmed ? 0.4 : 1,
               cursor: onTableClick ? 'pointer' : 'default',
               filter: isHighlighted ? `drop-shadow(0 0 8px ${colors.border})` : undefined,
@@ -236,20 +231,44 @@ export const FloorPlan = ({
               style={{
                 width: size,
                 height: size,
-                borderRadius: table.capacity > 6 ? '16px' : '50%',
-                border: `3px solid ${isSelected ? 'var(--orange-500)' : colors.border}`,
+                borderRadius: isVip ? '16px' : '50%',
+                border: `3px solid ${isSelected ? 'var(--orange-500)' : isVip ? '#D4AF37' : colors.border}`,
                 background: isSelected ? 'var(--orange-100)' : colors.gradient,
                 boxShadow: isSelected 
                   ? '0 0 20px rgba(212, 175, 55, 0.6), 0 4px 12px rgba(0,0,0,0.1)' 
-                  : '0 2px 8px rgba(0,0,0,0.1)',
+                  : isVip
+                    ? '0 0 0 3px rgba(212, 175, 55, 0.15), 0 2px 8px rgba(0,0,0,0.1)'
+                    : '0 2px 8px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '4px',
                 transition: 'all 0.3s ease',
+                position: 'relative',
               }}
             >
+              {isVip && (
+                <div style={{
+                  position: 'absolute',
+                  top: -10,
+                  right: -10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '4px 8px',
+                  borderRadius: 999,
+                  background: 'linear-gradient(135deg, #FDE68A, #D4AF37)',
+                  border: '1px solid rgba(180, 140, 40, 0.8)',
+                  color: '#6B4F00',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  boxShadow: '0 4px 10px rgba(180, 140, 40, 0.25)',
+                }}>
+                  <Crown size={10} />
+                  VIP
+                </div>
+              )}
               <div style={{ 
                 fontWeight: 800, 
                 fontSize: 'var(--text-base)', 
@@ -273,23 +292,10 @@ export const FloorPlan = ({
             {renderExtra?.(table)}
           </div>
         );
-      })}
+        })}
+      </div>
 
-      {/* Legend */}
-      <div style={{
-        position: 'absolute', 
-        bottom: 16, 
-        left: 16,
-        display: 'flex', 
-        gap: 16, 
-        padding: '12px 20px',
-        background: 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: 'var(--r-lg)',
-        border: '1px solid var(--border-main)',
-        fontSize: 'var(--text-xs)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      }}>
+      <div className="floor-plan-legend" style={{ backdropFilter: 'blur(10px)' }}>
         {Object.entries(STATUS_COLORS).map(([status, c]) => (
           <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ 
@@ -304,8 +310,8 @@ export const FloorPlan = ({
         ))}
         {vipTables.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Crown size={12} color="var(--orange-500)" />
-            <span style={{ fontWeight: 600, color: 'var(--orange-600)' }}>VIP</span>
+            <Crown size={12} color="#B8860B" />
+            <span style={{ fontWeight: 600, color: '#8A6A00' }}>VIP</span>
           </div>
         )}
       </div>

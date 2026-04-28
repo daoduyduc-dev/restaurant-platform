@@ -8,6 +8,7 @@ import com.restaurant.platform.modules.menu.repository.CategoryRepository;
 import com.restaurant.platform.modules.menu.repository.MenuItemRepository;
 import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
+import com.restaurant.platform.modules.table.enums.TableType;
 import com.restaurant.platform.modules.table.repository.TableRepository;
 import com.restaurant.platform.modules.reservation.repository.ReservationRepository;
 import com.restaurant.platform.modules.order.repository.OrderRepository;
@@ -40,28 +41,19 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        // Always clean and reseed tables to ensure correct structure
-        log.info("Cleaning old table data and related reservations...");
-        try {
-            orderRepo.deleteAllOrderItemsNative();
-            log.info("Old order items deleted successfully");
-            orderRepo.deleteAllOrdersNative();
-            log.info("Old orders deleted successfully");
-            reservationRepo.deleteAllNative();
-            log.info("Old reservations deleted successfully");
-            tableRepo.deleteAllNative();
-            log.info("Old tables deleted successfully");
-        } catch (Exception e) {
-            log.warn("Table cleanup warning: {}", e.getMessage());
-        }
-
         // Check if all required users exist
         boolean adminExists = userRepo.findByEmail("admin@servegenius.com").isPresent();
         boolean staffExists = userRepo.findByEmail("staff@servegenius.com").isPresent();
         boolean customerExists = userRepo.findByEmail("customer@servegenius.com").isPresent();
+        boolean tablesExist = tableRepo.count() > 0;
 
         if (adminExists && staffExists && customerExists) {
-            log.info("All users already seeded. Only reseeding tables...");
+            if (tablesExist) {
+                log.info("Users and table data already exist. Preserving current tables.");
+                return;
+            }
+
+            log.info("All users already seeded. Seeding default tables because none exist...");
             seedTables();
             return;
         }
@@ -90,7 +82,11 @@ public class DataInitializer implements CommandLineRunner {
             seedMenuItems();
 
             // 4. Create tables
-            seedTables();
+            if (!tablesExist) {
+                seedTables();
+            } else {
+                log.info("Existing table data detected. Skipping default table seed.");
+            }
 
             log.info("========== DATABASE SEEDED SUCCESSFULLY ==========");
         } else {
@@ -128,7 +124,11 @@ public class DataInitializer implements CommandLineRunner {
                 log.info("Created customer user");
             }
 
-            seedTables();
+            if (!tablesExist) {
+                seedTables();
+            } else {
+                log.info("Existing table data detected. Skipping default table seed.");
+            }
             log.info("========== MISSING USERS CREATED ==========");
         }
     }
@@ -281,57 +281,57 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedTables() {
-        // 6. Create Tables - Fixed layout with Floor 1, Floor 2, and VIP Room
+        // 6. Create Tables - Fixed layout with Floor 1, Floor 2, and VIP tables
         // FLOOR 1 - Main Dining Area (12 tables)
         tableRepo.saveAll(List.of(
             // Window side tables (2-person)
-            Table.builder().name("F1-01").capacity(2).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Window").positionX(50.0).positionY(50.0).isVipRoom(false).build(),
-            Table.builder().name("F1-02").capacity(2).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Window").positionX(50.0).positionY(150.0).isVipRoom(false).build(),
-            Table.builder().name("F1-03").capacity(2).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Window").positionX(50.0).positionY(250.0).isVipRoom(false).build(),
-            Table.builder().name("F1-04").capacity(2).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Window").positionX(50.0).positionY(350.0).isVipRoom(false).build(),
+            Table.builder().name("F1-01").capacity(2).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Window").positionX(50.0).positionY(50.0).build(),
+            Table.builder().name("F1-02").capacity(2).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Window").positionX(50.0).positionY(150.0).build(),
+            Table.builder().name("F1-03").capacity(2).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Window").positionX(50.0).positionY(250.0).build(),
+            Table.builder().name("F1-04").capacity(2).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Window").positionX(50.0).positionY(350.0).build(),
 
             // Center area tables (4-person)
-            Table.builder().name("F1-05").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(200.0).positionY(80.0).isVipRoom(false).build(),
-            Table.builder().name("F1-06").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(200.0).positionY(220.0).isVipRoom(false).build(),
-            Table.builder().name("F1-07").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(350.0).positionY(80.0).isVipRoom(false).build(),
-            Table.builder().name("F1-08").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(350.0).positionY(220.0).isVipRoom(false).build(),
+            Table.builder().name("F1-05").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(200.0).positionY(80.0).build(),
+            Table.builder().name("F1-06").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(200.0).positionY(220.0).build(),
+            Table.builder().name("F1-07").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(350.0).positionY(80.0).build(),
+            Table.builder().name("F1-08").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(350.0).positionY(220.0).build(),
 
             // Large tables (6-8 person)
-            Table.builder().name("F1-09").capacity(6).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(520.0).positionY(100.0).isVipRoom(false).build(),
-            Table.builder().name("F1-10").capacity(6).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Center").positionX(520.0).positionY(250.0).isVipRoom(false).build(),
+            Table.builder().name("F1-09").capacity(6).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(520.0).positionY(100.0).build(),
+            Table.builder().name("F1-10").capacity(6).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Center").positionX(520.0).positionY(250.0).build(),
 
             // Corner tables
-            Table.builder().name("F1-11").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Corner").positionX(680.0).positionY(50.0).isVipRoom(false).build(),
-            Table.builder().name("F1-12").capacity(4).status(TableStatus.AVAILABLE).floor(1).floorName("Floor 1").zone("Corner").positionX(680.0).positionY(350.0).isVipRoom(false).build()
+            Table.builder().name("F1-11").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Corner").positionX(680.0).positionY(50.0).build(),
+            Table.builder().name("F1-12").capacity(4).status(TableStatus.AVAILABLE).floor(1).type(TableType.NORMAL).zone("Corner").positionX(680.0).positionY(350.0).build()
         ));
 
         // FLOOR 2 - Additional Seating (10 tables)
         tableRepo.saveAll(List.of(
             // Balcony tables (2-person)
-            Table.builder().name("F2-01").capacity(2).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Balcony").positionX(50.0).positionY(50.0).isVipRoom(false).build(),
-            Table.builder().name("F2-02").capacity(2).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Balcony").positionX(50.0).positionY(150.0).isVipRoom(false).build(),
-            Table.builder().name("F2-03").capacity(2).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Balcony").positionX(50.0).positionY(250.0).isVipRoom(false).build(),
+            Table.builder().name("F2-01").capacity(2).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Balcony").positionX(50.0).positionY(50.0).build(),
+            Table.builder().name("F2-02").capacity(2).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Balcony").positionX(50.0).positionY(150.0).build(),
+            Table.builder().name("F2-03").capacity(2).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Balcony").positionX(50.0).positionY(250.0).build(),
 
             // Main area (4-person)
-            Table.builder().name("F2-04").capacity(4).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(200.0).positionY(80.0).isVipRoom(false).build(),
-            Table.builder().name("F2-05").capacity(4).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(200.0).positionY(220.0).isVipRoom(false).build(),
-            Table.builder().name("F2-06").capacity(4).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(350.0).positionY(80.0).isVipRoom(false).build(),
-            Table.builder().name("F2-07").capacity(4).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(350.0).positionY(220.0).isVipRoom(false).build(),
+            Table.builder().name("F2-04").capacity(4).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(200.0).positionY(80.0).build(),
+            Table.builder().name("F2-05").capacity(4).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(200.0).positionY(220.0).build(),
+            Table.builder().name("F2-06").capacity(4).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(350.0).positionY(80.0).build(),
+            Table.builder().name("F2-07").capacity(4).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(350.0).positionY(220.0).build(),
 
             // Large tables
-            Table.builder().name("F2-08").capacity(6).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(520.0).positionY(100.0).isVipRoom(false).build(),
-            Table.builder().name("F2-09").capacity(8).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Main").positionX(520.0).positionY(280.0).isVipRoom(false).build(),
-            Table.builder().name("F2-10").capacity(4).status(TableStatus.AVAILABLE).floor(2).floorName("Floor 2").zone("Corner").positionX(680.0).positionY(150.0).isVipRoom(false).build()
+            Table.builder().name("F2-08").capacity(6).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(520.0).positionY(100.0).build(),
+            Table.builder().name("F2-09").capacity(8).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Main").positionX(520.0).positionY(280.0).build(),
+            Table.builder().name("F2-10").capacity(4).status(TableStatus.AVAILABLE).floor(2).type(TableType.NORMAL).zone("Corner").positionX(680.0).positionY(150.0).build()
         ));
 
-        // VIP ROOM - Private Dining (3 tables)
+        // VIP TABLES - Private Dining (3 tables)
         tableRepo.saveAll(List.of(
-            Table.builder().name("VIP-01").capacity(8).status(TableStatus.AVAILABLE).floor(1).floorName("VIP Room").zone("Private").positionX(200.0).positionY(150.0).isVipRoom(true).build(),
-            Table.builder().name("VIP-02").capacity(10).status(TableStatus.AVAILABLE).floor(1).floorName("VIP Room").zone("Private").positionX(450.0).positionY(150.0).isVipRoom(true).build(),
-            Table.builder().name("VIP-03").capacity(12).status(TableStatus.AVAILABLE).floor(1).floorName("VIP Room").zone("Private").positionX(325.0).positionY(300.0).isVipRoom(true).build()
+            Table.builder().name("VIP-01").capacity(8).status(TableStatus.AVAILABLE).floor(1).type(TableType.VIP).zone("Private").positionX(200.0).positionY(150.0).build(),
+            Table.builder().name("VIP-02").capacity(10).status(TableStatus.AVAILABLE).floor(1).type(TableType.VIP).zone("Private").positionX(450.0).positionY(150.0).build(),
+            Table.builder().name("VIP-03").capacity(12).status(TableStatus.AVAILABLE).floor(1).type(TableType.VIP).zone("Private").positionX(325.0).positionY(300.0).build()
         ));
 
-        log.info("Created 25 fixed tables (12 on Floor 1, 10 on Floor 2, 3 in VIP Room)");
+        log.info("Created 25 fixed tables (12 on Floor 1, 10 on Floor 2, 3 VIP tables)");
 
         log.info("========== DATABASE SEEDED SUCCESSFULLY ==========");
     }

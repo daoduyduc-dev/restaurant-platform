@@ -1,11 +1,14 @@
 package com.restaurant.platform.modules.table.dto;
 
-import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.restaurant.platform.modules.table.enums.TableType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TableRequest {
 
     @NotBlank
@@ -17,10 +20,21 @@ public class TableRequest {
     private Double positionX;
     private Double positionY;
     private String zone;
-    
+
+    @Min(1)
     private Integer floor;
-    
-    private String floorName;
-    
-    private Boolean isVipRoom;
+
+    private TableType type;
+
+    @JsonSetter("isVipRoom")
+    public void setLegacyVipRoom(Boolean isVipRoom) {
+        if (type == null && isVipRoom != null) {
+            type = isVipRoom ? TableType.VIP : TableType.NORMAL;
+        }
+    }
+
+    @JsonSetter("floorName")
+    public void setLegacyFloorName(String ignored) {
+        // Legacy field intentionally ignored after schema migration.
+    }
 }
