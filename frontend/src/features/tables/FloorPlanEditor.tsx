@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Konva from 'konva';
 import { Stage } from 'react-konva';
-import { DEFAULT_VIEWPORT_PADDING, MAX_SCALE, ZOOM_FACTOR } from './editor/config';
+import { DEFAULT_VIEWPORT_PADDING, EDITOR_LAYOUT_SIZE, MAX_SCALE, ZOOM_FACTOR } from './editor/config';
 import { fitStageToScreen, getWorldBounds } from './editor/fitStageToScreen';
 import { OverlayLayer } from './editor/OverlayLayer';
 import { StructureLayer } from './editor/StructureLayer';
@@ -12,6 +12,22 @@ import type { CanvasPoint, EditorViewport, FloorPlanEditorProps, SceneBounds } f
 
 Konva.pixelRatio = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
+const TARGET_STAGE_WIDTH = 1000;
+
+const FLOOR_BACKGROUND_BY_FLOOR: Record<number, string> = {
+  1: '/floor-plans/floor1.png',
+  2: '/floor-plans/floor2.png',
+};
+
+const resolveMinHeight = (value: number | string) => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+  return Number.isFinite(parsedValue) ? parsedValue : 520;
+};
+
 export const FloorPlanEditor = ({
   tables,
   structures,
@@ -21,6 +37,8 @@ export const FloorPlanEditor = ({
   onTablePositionCommit,
   minHeight = 520,
   showCapacity = true,
+  draggableTables = true,
+  showOverlay = true,
 }: FloorPlanEditorProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const panAnchorRef = useRef<CanvasPoint | null>(null);
@@ -31,6 +49,14 @@ export const FloorPlanEditor = ({
   const [isPanning, setIsPanning] = useState(false);
   const size = useElementSize(containerElement);
   const worldBounds = useMemo<SceneBounds>(() => getWorldBounds(), []);
+  const canvasMinHeight = useMemo(() => resolveMinHeight(minHeight), [minHeight]);
+  const activeFloor = tables[0]?.floor ?? null;
+  const backgroundImageSrc = activeFloor != null ? FLOOR_BACKGROUND_BY_FLOOR[activeFloor] : undefined;
+  const stageHeight = useMemo(() => {
+    const stageWidth = size.width > 0 ? size.width : TARGET_STAGE_WIDTH;
+    const layoutAspectRatio = EDITOR_LAYOUT_SIZE.height / EDITOR_LAYOUT_SIZE.width;
+    return Math.max(canvasMinHeight, Math.round(stageWidth * layoutAspectRatio));
+  }, [canvasMinHeight, size.width]);
 
   const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
     containerRef.current = node;
@@ -166,9 +192,11 @@ export const FloorPlanEditor = ({
     <div
       className="floor-plan"
       style={{
-        minHeight,
+        minHeight: canvasMinHeight,
         position: 'relative',
         width: '100%',
+        maxWidth: TARGET_STAGE_WIDTH,
+        margin: '0 auto',
         background: 'linear-gradient(180deg, #FFFCF6 0%, #FFF8EB 100%)',
       }}
     >
@@ -176,10 +204,9 @@ export const FloorPlanEditor = ({
         ref={handleContainerRef}
         style={{
           position: 'relative',
-          flex: 1,
           width: '100%',
-          height: '100%',
-          minHeight,
+          height: stageHeight,
+          minHeight: canvasMinHeight,
           overflow: 'hidden',
         }}
       >
@@ -202,7 +229,11 @@ export const FloorPlanEditor = ({
             onClick={handleStageClick}
             style={{ background: 'transparent' }}
           >
-            <StructureLayer worldBounds={worldBounds} structures={structures} />
+            <StructureLayer
+              worldBounds={worldBounds}
+              structures={structures}
+              backgroundImageSrc={backgroundImageSrc}
+            />
             <TableLayer
               tables={tables}
               selectedId={selectedId}
@@ -210,11 +241,14 @@ export const FloorPlanEditor = ({
               onTablePositionChange={onTablePositionChange}
               onTablePositionCommit={onTablePositionCommit}
               showCapacity={showCapacity}
+              draggableTables={draggableTables}
             />
-            <OverlayLayer
-              tables={tables}
-              selectedId={selectedId}
-            />
+            {showOverlay ? (
+              <OverlayLayer
+                tables={tables}
+                selectedId={selectedId}
+              />
+            ) : null}
           </Stage>
         ) : null}
 
@@ -245,7 +279,7 @@ export const FloorPlanEditor = ({
             {isPanning ? 'Panning canvas...' : 'Wheel to zoom, drag empty space to pan'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            Full-screen stage with camera fit to the fixed world bounds.
+            Fixed 1000px-wide stage with camera fit to the existing world bounds.
           </div>
         </div>
       </div>

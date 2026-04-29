@@ -1,11 +1,12 @@
-import { Fragment, memo, useMemo } from 'react';
-import { Layer, Line, Rect, Text } from 'react-konva';
+import { Fragment, memo, useEffect, useMemo, useState } from 'react';
+import { Image as KonvaImage, Layer, Line, Rect, Text } from 'react-konva';
 import { DEFAULT_STRUCTURE_SHELL, GRID_SIZE, MAJOR_GRID_INTERVAL } from './config';
 import type { SceneBounds, StructureElement } from './types';
 
 interface StructureLayerProps {
   worldBounds: SceneBounds;
   structures?: StructureElement[];
+  backgroundImageSrc?: string;
 }
 
 type GridLine = {
@@ -23,6 +24,43 @@ const GRID_PADDING = GRID_SIZE * 2;
 
 const snapDownToGrid = (value: number) => Math.floor(value / GRID_SIZE) * GRID_SIZE;
 const snapUpToGrid = (value: number) => Math.ceil(value / GRID_SIZE) * GRID_SIZE;
+
+const useBackgroundImage = (backgroundImageSrc?: string) => {
+  const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (!backgroundImageSrc || typeof window === 'undefined') {
+      setBackgroundImage(null);
+      return undefined;
+    }
+
+    let isActive = true;
+    const image = new window.Image();
+
+    setBackgroundImage(null);
+    image.decoding = 'async';
+    image.src = backgroundImageSrc;
+
+    const handleLoad = () => {
+      if (isActive) {
+        setBackgroundImage(image);
+      }
+    };
+
+    image.addEventListener('load', handleLoad);
+
+    if (image.complete) {
+      handleLoad();
+    }
+
+    return () => {
+      isActive = false;
+      image.removeEventListener('load', handleLoad);
+    };
+  }, [backgroundImageSrc]);
+
+  return backgroundImage;
+};
 
 const renderStructure = (structure: StructureElement) => {
   switch (structure.kind) {
@@ -150,8 +188,10 @@ const renderStructure = (structure: StructureElement) => {
 export const StructureLayer = memo(({
   worldBounds,
   structures,
+  backgroundImageSrc,
 }: StructureLayerProps) => {
   const resolvedStructures = structures?.length ? structures : DEFAULT_STRUCTURE_SHELL;
+  const backgroundImage = useBackgroundImage(backgroundImageSrc);
   const gridViewport = useMemo(() => {
     const minX = snapDownToGrid(worldBounds.x - GRID_PADDING);
     const minY = snapDownToGrid(worldBounds.y - GRID_PADDING);
@@ -204,64 +244,77 @@ export const StructureLayer = memo(({
 
   return (
     <Layer listening={false}>
-      <Rect
-        x={gridViewport.minX}
-        y={gridViewport.minY}
-        width={gridViewport.maxX - gridViewport.minX}
-        height={gridViewport.maxY - gridViewport.minY}
-        fill="#FCFAF7"
-        perfectDrawEnabled={false}
-      />
-
-      {gridViewport.verticalLines.map((line) => (
-        <Line
-          key={line.key}
-          points={line.points}
-          stroke={line.isMajor ? '#E2DDD4' : '#F1EDE6'}
-          strokeWidth={line.isMajor ? 1.4 : 1}
+      {backgroundImage ? (
+        <KonvaImage
+          image={backgroundImage}
+          x={worldBounds.x}
+          y={worldBounds.y}
+          width={worldBounds.width}
+          height={worldBounds.height}
           perfectDrawEnabled={false}
         />
-      ))}
-
-      {gridViewport.horizontalLines.map((line) => (
-        <Line
-          key={line.key}
-          points={line.points}
-          stroke={line.isMajor ? '#E2DDD4' : '#F1EDE6'}
-          strokeWidth={line.isMajor ? 1.4 : 1}
-          perfectDrawEnabled={false}
-        />
-      ))}
-
-      {gridViewport.verticalLines.map((line) => (
-        line.label ? (
-          <Text
-            key={`${line.key}-label`}
-            x={line.label.x}
-            y={line.label.y}
-            text={line.label.text}
-            fontSize={14}
-            fill="#A8A29E"
+      ) : (
+        <>
+          <Rect
+            x={gridViewport.minX}
+            y={gridViewport.minY}
+            width={gridViewport.maxX - gridViewport.minX}
+            height={gridViewport.maxY - gridViewport.minY}
+            fill="#FCFAF7"
             perfectDrawEnabled={false}
           />
-        ) : null
-      ))}
 
-      {gridViewport.horizontalLines.map((line) => (
-        line.label ? (
-          <Text
-            key={`${line.key}-label`}
-            x={line.label.x}
-            y={line.label.y}
-            text={line.label.text}
-            fontSize={14}
-            fill="#A8A29E"
-            perfectDrawEnabled={false}
-          />
-        ) : null
-      ))}
+          {gridViewport.verticalLines.map((line) => (
+            <Line
+              key={line.key}
+              points={line.points}
+              stroke={line.isMajor ? '#E2DDD4' : '#F1EDE6'}
+              strokeWidth={line.isMajor ? 1.4 : 1}
+              perfectDrawEnabled={false}
+            />
+          ))}
 
-      {resolvedStructures.map(renderStructure)}
+          {gridViewport.horizontalLines.map((line) => (
+            <Line
+              key={line.key}
+              points={line.points}
+              stroke={line.isMajor ? '#E2DDD4' : '#F1EDE6'}
+              strokeWidth={line.isMajor ? 1.4 : 1}
+              perfectDrawEnabled={false}
+            />
+          ))}
+
+          {gridViewport.verticalLines.map((line) => (
+            line.label ? (
+              <Text
+                key={`${line.key}-label`}
+                x={line.label.x}
+                y={line.label.y}
+                text={line.label.text}
+                fontSize={14}
+                fill="#A8A29E"
+                perfectDrawEnabled={false}
+              />
+            ) : null
+          ))}
+
+          {gridViewport.horizontalLines.map((line) => (
+            line.label ? (
+              <Text
+                key={`${line.key}-label`}
+                x={line.label.x}
+                y={line.label.y}
+                text={line.label.text}
+                fontSize={14}
+                fill="#A8A29E"
+                perfectDrawEnabled={false}
+              />
+            ) : null
+          ))}
+
+          {resolvedStructures.map(renderStructure)}
+        </>
+      )}
     </Layer>
   );
 });

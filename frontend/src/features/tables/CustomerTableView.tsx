@@ -1,21 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../../services/api';
 import type { TableDTO } from '../../services/types';
-import { FloorPlanEnhanced } from './FloorPlanEnhanced';
+import { FloorPlanEditor } from './FloorPlanEditor';
 import { useWebSocket } from '../../services/useWebSocket';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button, Card, Input } from '../../components/ui';
-import { Calendar, Users, Clock, CheckCircle } from 'lucide-react';
+import { Button, Card, Input, Badge } from '../../components/ui';
+import { Building2, Calendar, CheckCircle, Clock, Layers3, Users } from 'lucide-react';
 import { toast } from '../../store/toastStore';
 
+const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
+  AVAILABLE: 'success',
+  RESERVED: 'warning',
+  OCCUPIED: 'error',
+  DIRTY: 'neutral',
+};
+
 export const CustomerTableView = () => {
-  const navigate = useNavigate();
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [selectedTable, setSelectedTable] = useState<TableDTO | null>(null);
   const [availableTables, setAvailableTables] = useState<Set<string>>(new Set());
+  const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
 
-  // Booking form state
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('19:00');
   const [guests, setGuests] = useState(2);
@@ -26,68 +30,98 @@ export const CustomerTableView = () => {
 
   const fetchTables = async () => {
     try {
-      const res = await api.get('/tables');
-      setTables(res.data.data || []);
+      const response = await api.get('/tables');
+      setTables(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch tables:', error);
     }
   };
 
-  useEffect(() => { fetchTables(); }, []);
-  useWebSocket<any>('/topic/tables', () => fetchTables());
+  useEffect(() => {
+    void fetchTables();
+  }, []);
 
-  // Check available tables for selected date/time
+  useWebSocket<any>('/topic/tables', () => {
+    void fetchTables();
+  });
+
+  const availableFloors = useMemo(() => (
+    Array.from(
+      new Set(
+        tables
+          .map((table) => table.floor)
+          .filter((floor): floor is number => floor != null)
+      )
+    ).sort((a, b) => a - b)
+  ), [tables]);
+
+  useEffect(() => {
+    if (availableFloors.length === 0) {
+      if (selectedFloor != null) {
+        setSelectedFloor(null);
+      }
+      return;
+    }
+
+    if (selectedFloor == null || !availableFloors.includes(selectedFloor)) {
+      setSelectedFloor(availableFloors[0]);
+    }
+  }, [availableFloors, selectedFloor]);
+
   useEffect(() => {
     const checkAvailability = async () => {
-      if (!date || !time) return;
+      if (!date || !time) {
+        return;
+      }
 
       setCheckingAvailability(true);
+
       try {
         const reservationTime = `${date}T${time}:00`;
-        const res = await api.get('/reservations/available-tables', {
+        const response = await api.get('/reservations/available-tables', {
           params: {
             reservationTime,
-            numberOfGuests: guests
-          }
+            numberOfGuests: guests,
+          },
         });
-        const availableIds = new Set<string>((res.data.data || []).map((t: TableDTO) => t.id));
+
+        const availableIds = new Set<string>((response.data.data || []).map((table: TableDTO) => table.id));
         setAvailableTables(availableIds);
       } catch (error) {
         console.error('Failed to check availability:', error);
-        // If endpoint fails, fall back to status-based availability
-        setAvailableTables(new Set(tables.filter(t => t.status === 'AVAILABLE').map(t => t.id)));
+        setAvailableTables(new Set(tables.filter((table) => table.status === 'AVAILABLE').map((table) => table.id)));
       } finally {
         setCheckingAvailability(false);
       }
     };
 
-    checkAvailability();
-  }, [date, time, guests, tables]);
+    void checkAvailability();
+  }, [date, guests, tables, time]);
 
-  // Check booked time slots for selected date and table
   useEffect(() => {
-    const checkBookedSlots = async () => {
-      if (!date || !selectedTable) return;
+    if (!date || !selectedTable) {
+      setBookedTimeSlots(new Set());
+      return;
+    }
 
+    const checkBookedSlots = async () => {
       try {
-        // Fetch all reservations for the selected date and table
-        const res = await api.get('/reservations', {
+        const response = await api.get('/reservations', {
           params: {
             tableId: selectedTable.id,
-            date: date,
+            date,
             page: 0,
-            size: 100
-          }
+            size: 100,
+          },
         });
 
-        const reservations = res.data.data?.items || res.data.data || [];
+        const reservations = response.data.data?.items || response.data.data || [];
         const bookedSlots = new Set<string>();
 
         reservations.forEach((reservation: any) => {
           if (['PENDING', 'RESERVED', 'CHECKED_IN'].includes(reservation.status)) {
-            const resTime = new Date(reservation.reservationTime);
-            const timeStr = resTime.toTimeString().substring(0, 5); // HH:MM format
-            bookedSlots.add(timeStr);
+            const reservationDate = new Date(reservation.reservationTime);
+            bookedSlots.add(reservationDate.toTimeString().substring(0, 5));
           }
         });
 
@@ -98,25 +132,61 @@ export const CustomerTableView = () => {
       }
     };
 
-    checkBookedSlots();
+    void checkBookedSlots();
   }, [date, selectedTable]);
 
-  const handleTableClick = (table: TableDTO) => {
-    if (!availableTables.has(table.id)) {
-       toast.error('This table is not available for the selected date/time. Please choose a different table or time.');
-       return;
+  useEffect(() => {
+    if (selectedFloor == null || !selectedTable || selectedTable.floor === selectedFloor) {
+      return;
     }
-    setSelectedTable(table);
+
+    setSelectedTable(null);
+  }, [selectedFloor, selectedTable]);
+
+  const tablesWithAvailability = useMemo(() => (
+    tables.map((table) => {
+      const availabilityStatus: TableDTO['status'] = availableTables.has(table.id) ? 'AVAILABLE' : 'OCCUPIED';
+
+      return {
+        ...table,
+        status: availabilityStatus,
+      };
+    })
+  ), [availableTables, tables]);
+
+  const tablesOnSelectedFloor = selectedFloor == null
+    ? tablesWithAvailability
+    : tablesWithAvailability.filter((table) => table.floor === selectedFloor);
+
+  const availableCountOnFloor = tablesOnSelectedFloor.filter((table) => table.status === 'AVAILABLE').length;
+
+  const handleTableSelect = (table: TableDTO | null) => {
+    if (!table) {
+      setSelectedTable(null);
+      return;
+    }
+
+    if (!availableTables.has(table.id)) {
+      toast.error('This table is not available for the selected date and time.');
+      return;
+    }
+
+    const sourceTable = tables.find((item) => item.id === table.id) ?? table;
+    setSelectedTable(sourceTable);
   };
 
   const submitBooking = async () => {
-    if (!selectedTable || !name || !phone) return toast.error('Please fill all fields');
+    if (!selectedTable || !name || !phone) {
+      toast.error('Please fill all fields');
+      return;
+    }
 
-    // Validate date/time is not in the past
     const reservationDateTime = new Date(`${date}T${time}:00`);
     const now = new Date();
+
     if (reservationDateTime < now) {
-      return toast.error('Cannot book a table in the past. Please select a future date and time.');
+      toast.error('Cannot book a table in the past. Please select a future date and time.');
+      return;
     }
 
     try {
@@ -125,143 +195,232 @@ export const CustomerTableView = () => {
         customerName: name,
         phone,
         reservationTime: `${date}T${time}:00`,
-        numberOfGuests: guests
+        numberOfGuests: guests,
       });
-      toast.success('🎉 Đặt bàn thành công! Mời bạn qua menu để chọn món hoặc check-in tại nhà hàng đúng giờ.');
+
+      toast.success('Table booked successfully.');
       setSelectedTable(null);
       setName('');
       setPhone('');
-      fetchTables();
+      await fetchTables();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message;
-      if (errorMessage) {
-        toast.error(errorMessage);
-      } else {
-        toast.error('Failed to book table. Please try again.');
-      }
+      toast.error(errorMessage || 'Failed to book table. Please try again.');
     }
   };
 
   return (
-    <div style={{ display: 'flex', height: '100%', gap: 'var(--sp-6)' }}>
-      {/* Floor Plan */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ marginBottom: 'var(--sp-4)' }}>
-          <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Select a Table</h1>
-          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Choose your preferred dining spot. Only green tables are available.</p>
+    <div style={{ display: 'flex', gap: 'var(--sp-6)', alignItems: 'stretch' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Book a Table</h1>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)' }}>
+              Browse each floor and select an available table for your reservation.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+            <Badge variant="success">{availableCountOnFloor} available</Badge>
+            <Badge variant="info">{guests} guest(s)</Badge>
+          </div>
         </div>
-        
-        <Card variant="elevated" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-          <FloorPlanEnhanced
-            tables={tables.map(t => ({
-              ...t,
-              status: availableTables.has(t.id) ? 'AVAILABLE' : 'OCCUPIED'
-            }))}
-            selectedId={selectedTable?.id}
-            onTableClick={handleTableClick}
-            dimUnavailable={true}
-          />
-          {checkingAvailability && (
+
+        <Card variant="elevated">
+          <Card.Content style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginRight: 'var(--sp-2)' }}>
+              <Building2 size={18} color="var(--text-muted)" />
+              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Floor Tabs</span>
+            </div>
+            {availableFloors.map((floor) => (
+              <Button
+                key={floor}
+                variant={selectedFloor === floor ? 'primary' : 'ghost'}
+                size="small"
+                onClick={() => setSelectedFloor(floor)}
+              >
+                Floor {floor}
+              </Button>
+            ))}
+          </Card.Content>
+        </Card>
+
+        <Card variant="elevated" style={{ overflow: 'hidden', position: 'relative' }}>
+          <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div>
+                <Card.Title>Floor Layout</Card.Title>
+                <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                  {selectedFloor != null ? `Showing Floor ${selectedFloor}` : 'No floor selected'} with {tablesOnSelectedFloor.length} table(s). Only available tables can be selected.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                <Badge variant="info">{tablesOnSelectedFloor.length} total</Badge>
+                <Badge variant="success">{availableCountOnFloor} open</Badge>
+              </div>
+            </div>
+          </Card.Header>
+          <Card.Content style={{ padding: 0 }}>
+            {tablesOnSelectedFloor.length > 0 ? (
+              <FloorPlanEditor
+                tables={tablesOnSelectedFloor}
+                selectedId={selectedTable?.id}
+                onTableSelect={handleTableSelect}
+                minHeight="520px"
+                draggableTables={false}
+                showOverlay={false}
+              />
+            ) : (
+              <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                No tables are available on the selected floor.
+              </div>
+            )}
+          </Card.Content>
+
+          {checkingAvailability ? (
             <div style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              background: 'rgba(255,255,255,0.9)',
+              background: 'rgba(255,255,255,0.92)',
               padding: 'var(--sp-4)',
               borderRadius: 'var(--r-lg)',
               boxShadow: 'var(--shadow-lg)',
               zIndex: 10,
+              textAlign: 'center',
             }}>
               <div className="spinner" />
-              <p style={{ marginTop: 'var(--sp-2)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Checking availability...</p>
+              <p style={{ margin: 'var(--sp-2) 0 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+                Checking availability...
+              </p>
             </div>
-          )}
+          ) : null}
         </Card>
       </div>
 
-      {/* Booking Form Sidebar */}
-      <AnimatePresence>
-        {selectedTable && (
-          <motion.div
-            initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }}
-            style={{ width: 380, display: 'flex', flexDirection: 'column' }}
-          >
-            <Card variant="elevated" style={{ height: '100%', display: 'flex', flexDirection: 'column', borderTop: '4px solid var(--orange-500)' }}>
-              <Card.Header style={{ paddingBottom: 'var(--sp-4)', borderBottom: '1px solid var(--border-main)' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                   <div>
-                     <Card.Title>Book {selectedTable.name}</Card.Title>
-                     <Card.Description>Up to {selectedTable.capacity} guests</Card.Description>
-                   </div>
-                   <button onClick={() => setSelectedTable(null)} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize: 24 }}>×</button>
-                 </div>
-              </Card.Header>
+      <div style={{ width: 380, display: 'flex', flexDirection: 'column' }}>
+        <Card variant="elevated" style={{ height: '100%' }}>
+          <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
+            <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Layers3 size={18} color="var(--orange-500)" />
+              Reservation Details
+            </Card.Title>
+          </Card.Header>
+          <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
+            {selectedTable ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 22, color: 'var(--text-heading)' }}>{selectedTable.name}</h3>
+                    <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 8, flexWrap: 'wrap' }}>
+                      <Badge variant={availableTables.has(selectedTable.id) ? 'success' : STATUS_VARIANTS[selectedTable.status]}>
+                        {availableTables.has(selectedTable.id) ? 'Available now' : selectedTable.status}
+                      </Badge>
+                      <Badge variant="info">Floor {selectedTable.floor ?? '-'}</Badge>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Up to {selectedTable.capacity} guests</div>
+                </div>
 
-              <Card.Content style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)', paddingTop: 'var(--sp-5)' }}>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                    <div>
-                      <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Date</label>
-                      <div className="input-container">
-                        <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                        <input type="date" className="input-field" style={{ paddingLeft: 34 }} value={date} onChange={e=>setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Time</label>
-                      <div className="input-container">
-                        <Clock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                        <select
-                          className="input-field"
-                          style={{ paddingLeft: 34 }}
-                          value={time}
-                          onChange={e=>setTime(e.target.value)}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => {
-                            const hour = i.toString().padStart(2, '0');
-                            return ['00', '30'].map(minute => {
-                              const timeValue = `${hour}:${minute}`;
-                              const isBooked = bookedTimeSlots.has(timeValue);
-                              return (
-                                <option
-                                  key={timeValue}
-                                  value={timeValue}
-                                  disabled={isBooked}
-                                  style={{
-                                    opacity: isBooked ? 0.5 : 1,
-                                    color: isBooked ? 'var(--text-muted)' : 'inherit'
-                                  }}
-                                >
-                                  {timeValue} {isBooked ? '(Booked)' : ''}
-                                </option>
-                              );
-                            });
-                          }).flat()}
-                        </select>
-                      </div>
-                    </div>
-                 </div>
-                 
-                 <div>
-                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Guests</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div>
+                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Date</label>
                     <div className="input-container">
-                      <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                      <input type="number" min="1" max={selectedTable.capacity} className="input-field" style={{ paddingLeft: 34 }} value={guests} onChange={e=>setGuests(parseInt(e.target.value)||1)} />
+                      <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
+                      <input
+                        type="date"
+                        className="input-field"
+                        style={{ paddingLeft: 34 }}
+                        value={date}
+                        onChange={(event) => setDate(event.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
                     </div>
-                 </div>
+                  </div>
 
-                 <Input label="Your Name" value={name} onChange={e=>setName(e.target.value)} placeholder="John Doe" />
-                 <Input label="Phone Number" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+1 234 567 890" />
+                  <div>
+                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Time</label>
+                    <div className="input-container">
+                      <Clock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
+                      <select
+                        className="input-field"
+                        style={{ paddingLeft: 34 }}
+                        value={time}
+                        onChange={(event) => setTime(event.target.value)}
+                      >
+                        {Array.from({ length: 24 }, (_, hourIndex) => {
+                          const hour = hourIndex.toString().padStart(2, '0');
+                          return ['00', '30'].map((minute) => {
+                            const slot = `${hour}:${minute}`;
+                            const isBooked = bookedTimeSlots.has(slot);
 
-                 <div style={{ flex: 1 }} />
-                 <Button variant="primary" size="large" style={{ width: '100%', justifyContent: 'center' }} onClick={submitBooking}>
-                    <CheckCircle size={18} /> Confirm Booking
-                 </Button>
-              </Card.Content>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                            return (
+                              <option
+                                key={slot}
+                                value={slot}
+                                disabled={isBooked}
+                              >
+                                {slot} {isBooked ? '(Booked)' : ''}
+                              </option>
+                            );
+                          });
+                        }).flat()}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Guests</label>
+                  <div className="input-container">
+                    <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
+                    <input
+                      type="number"
+                      min="1"
+                      max={selectedTable.capacity}
+                      className="input-field"
+                      style={{ paddingLeft: 34 }}
+                      value={guests}
+                      onChange={(event) => setGuests(Number.parseInt(event.target.value, 10) || 1)}
+                    />
+                  </div>
+                </div>
+
+                <Input label="Your Name" value={name} onChange={(event) => setName(event.target.value)} placeholder="John Doe" />
+                <Input label="Phone Number" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+1 234 567 890" />
+
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+                  <Button variant="primary" size="large" style={{ width: '100%', justifyContent: 'center' }} onClick={() => void submitBooking()}>
+                    <CheckCircle size={18} />
+                    Confirm Booking
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}>
+                <SelectIndicator />
+                <p style={{ margin: 0 }}>Select an available table to complete your reservation.</p>
+              </div>
+            )}
+          </Card.Content>
+        </Card>
+      </div>
     </div>
   );
 };
+
+const SelectIndicator = () => (
+  <div style={{
+    width: 64,
+    height: 64,
+    border: '2px dashed var(--gray-400)',
+    borderRadius: '50%',
+    margin: '0 auto 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}>
+    <div style={{ width: 8, height: 8, background: 'var(--gray-400)', borderRadius: '50%' }} />
+  </div>
+);

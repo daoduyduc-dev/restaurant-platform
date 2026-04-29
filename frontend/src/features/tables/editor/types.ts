@@ -73,4 +73,6 @@ export interface FloorPlanEditorProps {
   onTablePositionCommit?: (tableId: string, position: CanvasPoint) => void;
   minHeight?: number | string;
   showCapacity?: boolean;
+  draggableTables?: boolean;
+  showOverlay?: boolean;
 }

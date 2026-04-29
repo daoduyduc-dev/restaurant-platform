@@ -12,6 +12,7 @@ interface TableLayerProps {
   onTablePositionChange?: (tableId: string, position: CanvasPoint) => void;
   onTablePositionCommit?: (tableId: string, position: CanvasPoint) => void;
   showCapacity?: boolean;
+  draggableTables?: boolean;
 }
 
 interface TableNodeProps {
@@ -19,6 +20,7 @@ interface TableNodeProps {
   index: number;
   selected: boolean;
   showCapacity: boolean;
+  draggableTables: boolean;
   onTableSelect?: (table: TableDTO) => void;
   onTablePositionChange?: (tableId: string, position: CanvasPoint) => void;
   onTablePositionCommit?: (tableId: string, position: CanvasPoint) => void;
@@ -31,6 +33,7 @@ const TableNode = memo(({
   index,
   selected,
   showCapacity,
+  draggableTables,
   onTableSelect,
   onTablePositionChange,
   onTablePositionCommit,
@@ -65,20 +68,20 @@ const TableNode = memo(({
     <Group
       x={rect.x}
       y={rect.y}
-      draggable
+      draggable={draggableTables}
       onClick={() => onTableSelect?.(table)}
       onTap={() => onTableSelect?.(table)}
-      onDragStart={(event) => updateCursor(event as Konva.KonvaEventObject<MouseEvent>, 'grabbing')}
-      onDragMove={(event) => emitPosition(event, onTablePositionChange)}
-      onDragEnd={(event) => {
+      onDragStart={draggableTables ? (event) => updateCursor(event as Konva.KonvaEventObject<MouseEvent>, 'grabbing') : undefined}
+      onDragMove={draggableTables ? (event) => emitPosition(event, onTablePositionChange) : undefined}
+      onDragEnd={draggableTables ? (event) => {
         emitPosition(event, onTablePositionChange);
         emitPosition(event, onTablePositionCommit);
         const container = event.target.getStage()?.container();
         if (container) {
           container.style.cursor = 'grab';
         }
-      }}
-      onMouseEnter={(event) => updateCursor(event, 'grab')}
+      } : undefined}
+      onMouseEnter={(event) => updateCursor(event, draggableTables ? 'grab' : onTableSelect ? 'pointer' : 'default')}
       onMouseLeave={(event) => updateCursor(event, 'default')}
     >
       <Rect
@@ -150,6 +153,7 @@ const TableNode = memo(({
 }, (previousProps, nextProps) => {
   return previousProps.selected === nextProps.selected
     && previousProps.showCapacity === nextProps.showCapacity
+    && previousProps.draggableTables === nextProps.draggableTables
     && previousProps.index === nextProps.index
     && previousProps.table.id === nextProps.table.id
     && previousProps.table.name === nextProps.table.name
@@ -167,6 +171,7 @@ export const TableLayer = memo(({
   onTablePositionChange,
   onTablePositionCommit,
   showCapacity = true,
+  draggableTables = true,
 }: TableLayerProps) => {
   return (
     <Layer>
@@ -177,6 +182,7 @@ export const TableLayer = memo(({
           index={index}
           selected={selectedId === table.id}
           showCapacity={showCapacity}
+          draggableTables={draggableTables}
           onTableSelect={onTableSelect}
           onTablePositionChange={onTablePositionChange}
           onTablePositionCommit={onTablePositionCommit}
