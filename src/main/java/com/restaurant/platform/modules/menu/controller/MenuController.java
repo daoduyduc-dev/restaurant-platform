@@ -3,8 +3,10 @@ package com.restaurant.platform.modules.menu.controller;
 import com.restaurant.platform.common.response.ApiResponse;
 import com.restaurant.platform.common.response.PageResponse;
 import com.restaurant.platform.common.service.FileStorageService;
+import com.restaurant.platform.common.service.MediaUrlService;
 import com.restaurant.platform.modules.menu.dto.CreateMenuItemRequest;
 import com.restaurant.platform.modules.menu.dto.MenuItemResponse;
+import com.restaurant.platform.modules.menu.dto.UpdateMenuItemRequest;
 import com.restaurant.platform.modules.menu.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -25,6 +27,7 @@ public class MenuController {
 
     private final MenuService menuService;
     private final FileStorageService fileStorageService;
+    private final MediaUrlService mediaUrlService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') and hasAuthority('MENU_CREATE')")
@@ -61,6 +64,15 @@ public class MenuController {
         return ApiResponse.success(menuService.getById(id));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('MENU_UPDATE')")
+    public ApiResponse<MenuItemResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateMenuItemRequest request
+    ) {
+        return ApiResponse.success("Menu item updated successfully", menuService.update(id, request));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') and hasAuthority('MENU_DELETE')")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
@@ -86,13 +98,14 @@ public class MenuController {
         
         String fileName = fileStorageService.storeMenuItemImage(file);
         String imageUrl = "/uploads/menu-items/" + fileName;
+        String publicImageUrl = mediaUrlService.toPublicUrl(imageUrl);
         
         // Update menu item with image URL
         menuService.updateImage(id, imageUrl);
         
         return ApiResponse.success(Map.of(
                 "fileName", fileName,
-                "imageUrl", imageUrl,
+                "imageUrl", publicImageUrl,
                 "message", "Image uploaded successfully"
         ));
     }

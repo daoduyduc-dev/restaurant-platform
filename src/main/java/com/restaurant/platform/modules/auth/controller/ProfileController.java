@@ -2,6 +2,7 @@ package com.restaurant.platform.modules.auth.controller;
 
 import com.restaurant.platform.common.response.ApiResponse;
 import com.restaurant.platform.common.service.FileStorageService;
+import com.restaurant.platform.common.service.MediaUrlService;
 import com.restaurant.platform.modules.auth.dto.ProfileResponse;
 import com.restaurant.platform.modules.auth.dto.UpdateProfileRequest;
 import com.restaurant.platform.modules.auth.service.ProfileService;
@@ -22,6 +23,7 @@ public class ProfileController {
 
     private final ProfileService profileService;
     private final FileStorageService fileStorageService;
+    private final MediaUrlService mediaUrlService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
@@ -52,6 +54,7 @@ public class ProfileController {
         
         String fileName = fileStorageService.storeAvatar(file);
         String avatarUrl = "/uploads/avatars/" + fileName;
+        String publicAvatarUrl = mediaUrlService.toPublicUrl(avatarUrl);
         
         // Update user profile with avatar URL
         UpdateProfileRequest request = new UpdateProfileRequest();
@@ -60,7 +63,7 @@ public class ProfileController {
         
         return ApiResponse.success(Map.of(
                 "fileName", fileName,
-                "avatarUrl", avatarUrl,
+                "avatarUrl", publicAvatarUrl,
                 "message", "Avatar uploaded successfully"
         ));
     }

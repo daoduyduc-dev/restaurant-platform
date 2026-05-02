@@ -7,6 +7,7 @@ import com.restaurant.platform.modules.auth.repository.UserRepository;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
 import com.restaurant.platform.common.exception.BadRequestException;
 import com.restaurant.platform.common.constant.ErrorCode;
+import com.restaurant.platform.common.service.MediaUrlService;
 import com.restaurant.platform.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.List;
 public class ProfileService {
 
     private final UserRepository userRepository;
+    private final MediaUrlService mediaUrlService;
 
     public ProfileResponse getMyProfile() {
         String email = SecurityUtils.getCurrentUsername();
@@ -36,7 +38,7 @@ public class ProfileService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .address(user.getAddress())
-                .avatarUrl(user.getAvatarUrl())
+                .avatarUrl(mediaUrlService.toPublicUrl(user.getAvatarUrl()))
                 .active(user.isActive())
                 .roles(roles)
                 .createdDate(user.getCreatedDate())
@@ -77,7 +79,7 @@ public class ProfileService {
                 .email(updatedUser.getEmail())
                 .phone(updatedUser.getPhone())
                 .address(updatedUser.getAddress())
-                .avatarUrl(updatedUser.getAvatarUrl())
+                .avatarUrl(mediaUrlService.toPublicUrl(updatedUser.getAvatarUrl()))
                 .active(updatedUser.isActive())
                 .roles(roles)
                 .createdDate(updatedUser.getCreatedDate())

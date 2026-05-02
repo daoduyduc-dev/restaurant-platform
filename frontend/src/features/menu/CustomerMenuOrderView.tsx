@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
+import { resolveMediaUrl } from '../../services/media';
 import type { MenuItemDTO, ReservationDTO } from '../../services/types';
 import { AlertCircle, CheckCircle, MapPin, Search, Plus, ShoppingCart, Minus, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -233,7 +234,7 @@ export const CustomerMenuOrderView = () => {
             <motion.div key={item.id} whileHover={{ y: -4 }}>
               <Card variant="elevated" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ height: 200, overflow: 'hidden' }}>
-                  <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={resolveMediaUrl(item.imageUrl)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <Card.Content style={{ flex: 1, padding: 'var(--sp-4)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>{item.categoryName}</div>
@@ -272,7 +273,7 @@ export const CustomerMenuOrderView = () => {
                     {cart.map(c => (
                       <div key={c.id} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <div style={{ width: 60, height: 60, borderRadius: 8, overflow: 'hidden' }}>
-                          <img src={c.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={resolveMediaUrl(c.imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 600 }}>{c.name}</div>

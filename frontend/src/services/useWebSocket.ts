@@ -3,6 +3,7 @@ import { Client } from '@stomp/stompjs';
 import type { IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '../store/authStore';
+import { API_BASE_URL } from './config';
 
 const MAX_RETRY_ATTEMPTS = 5;
 
@@ -88,7 +89,6 @@ export function useWebSocket<T>(topic: string | string[], onMessage: (msg: T) =>
 }
 
 function resolveSocketUrl() {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-  const resolvedApiUrl = new URL(apiBaseUrl, window.location.origin);
+  const resolvedApiUrl = new URL(API_BASE_URL, window.location.origin);
   return new URL('/ws', resolvedApiUrl.origin).toString();
 }

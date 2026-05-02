@@ -1,20 +1,16 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import type { MenuItemDTO } from '../../services/types';
+import { useEffect, useState } from 'react';
 import { Search, Plus, Filter, Star, Trash2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../../services/api';
+import { resolveMediaUrl } from '../../services/media';
+import type { MenuItemDTO } from '../../services/types';
 import { Button, Input, Modal, Badge, ImageUpload } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 
-const MOCK: MenuItemDTO[] = [
-  { id: '1', name: 'Truffle Ribeye Steak', categoryName: 'Main Course', categoryId: '', price: 85, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop', description: '', preparationTime: 25 },
-  { id: '2', name: 'Lobster Ravioli', categoryName: 'Main Course', categoryId: '', price: 42, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop', description: '', preparationTime: 20 },
-  { id: '3', name: 'Wagyu Beef Tartare', categoryName: 'Appetizer', categoryId: '', price: 36, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop', description: '', preparationTime: 12 },
-  { id: '4', name: 'Chocolate Soufflé', categoryName: 'Dessert', categoryId: '', price: 24, isAvailable: true, imageUrl: 'https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop', description: '', preparationTime: 18 },
-];
+const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop';
 
 export const AdminMenuCatalogView = () => {
-  const [items, setItems] = useState<MenuItemDTO[]>(MOCK);
+  const [items, setItems] = useState<MenuItemDTO[]>([]);
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<{ id: string, name: string, icon?: string, color?: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -34,15 +30,16 @@ export const AdminMenuCatalogView = () => {
       const data = (responseData && typeof responseData === 'object' && 'items' in responseData)
         ? responseData.items
         : responseData;
-      if (Array.isArray(data) && data.length > 0) setItems(data);
+
+      setItems(Array.isArray(data) ? data : []);
     }).catch(() => {
+      setItems([]);
       toast.error('Failed to fetch menu items');
     });
   };
 
   useEffect(() => {
     fetchMenu();
-    // Assuming backend endpoint /categories exists for dropdown
     api.get('/categories').then((res) => {
       if (res.data.data) setCategories(res.data.data);
     }).catch((error: Error) => {
@@ -53,15 +50,14 @@ export const AdminMenuCatalogView = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const response = await api.post('/menu', {
         ...formData,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
       });
-      toast.success('Menu item created');
       const newItemId = response.data.data.id;
 
-      // Upload image if selected
       if (selectedImageFile) {
         const imageFormData = new FormData();
         imageFormData.append('file', selectedImageFile);
@@ -73,11 +69,12 @@ export const AdminMenuCatalogView = () => {
         });
       }
 
+      toast.success('Menu item created');
       setIsModalOpen(false);
       setFormData({ name: '', description: '', price: '', categoryId: '', imageUrl: '' });
       setSelectedImageFile(null);
       fetchMenu();
-    } catch (error) {
+    } catch {
       toast.error('Failed to create menu item');
     } finally {
       setLoading(false);
@@ -86,6 +83,7 @@ export const AdminMenuCatalogView = () => {
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
+
     try {
       await api.delete(`/menu/${id}`);
       toast.success(`${name} deleted!`);
@@ -97,48 +95,42 @@ export const AdminMenuCatalogView = () => {
 
   const handleEditSave = async () => {
     if (!editingItem) return;
+
     setEditLoading(true);
     try {
       await api.put(`/menu/${editingItem.id}`, {
-        name: editForm.name || editingItem.name,
-        description: editForm.description ?? editingItem.description,
+        name: editForm.name.trim() || editingItem.name,
+        description: editForm.description !== '' ? editForm.description : editingItem.description,
         price: editForm.price ? parseFloat(editForm.price) : editingItem.price,
-        imageUrl: editForm.imageUrl ?? editingItem.imageUrl,
+        imageUrl: editForm.imageUrl.trim() || editingItem.imageUrl,
         isAvailable: editingItem.isAvailable,
         categoryId: editingItem.categoryId,
         preparationTime: editingItem.preparationTime,
       });
       toast.success('Menu item updated');
       setEditingItem(null);
+      setEditForm({ name: '', description: '', price: '', imageUrl: '' });
       fetchMenu();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update menu item');
     } finally {
       setEditLoading(false);
     }
   };
 
-  const handleImageUpload = async (itemId: string, file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+  const handleEditImageUploaded = (imageUrl: string) => {
+    if (!editingItem) return;
 
-      await api.post(`/menu/${itemId}/image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('Image uploaded successfully');
-      fetchMenu();
-    } catch (error) {
-      toast.error('Failed to upload image');
-    }
+    setEditingItem((prev) => prev ? { ...prev, imageUrl } : prev);
+    setSelectedItem((prev) => prev && prev.id === editingItem.id ? { ...prev, imageUrl } : prev);
+    setItems((prev) => prev.map((item) => item.id === editingItem.id ? { ...item, imageUrl } : item));
+    fetchMenu();
   };
 
   const filtered = search
-    ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    ? items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
     : selectedCategory
-      ? items.filter(i => i.categoryId === selectedCategory)
+      ? items.filter((item) => item.categoryId === selectedCategory)
       : items;
 
   return (
@@ -169,15 +161,16 @@ export const AdminMenuCatalogView = () => {
         </div>
       </div>
 
-      {/* Category Filter */}
       {showFilter && categories.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: 'var(--sp-2)',
-          marginBottom: 'var(--sp-6)',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 'var(--sp-2)',
+            marginBottom: 'var(--sp-6)',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
           <Tag size={16} style={{ color: 'var(--text-muted)' }} />
           <Button
             variant={!selectedCategory ? 'primary' : 'outline'}
@@ -186,7 +179,7 @@ export const AdminMenuCatalogView = () => {
           >
             All
           </Button>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <Button
               key={cat.id}
               variant={selectedCategory === cat.id ? 'primary' : 'outline'}
@@ -205,29 +198,31 @@ export const AdminMenuCatalogView = () => {
       )}
 
       <div className="item-grid">
-        {filtered.map(item => (
+        {filtered.map((item) => (
           <motion.div
             key={item.id}
             whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
             transition={{ duration: 0.2 }}
           >
-            <div style={{
-              borderRadius: 'var(--r-lg)',
-              overflow: 'hidden',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-main)',
-              transition: 'all 250ms var(--ease-out)'
-            }}>
+            <div
+              style={{
+                borderRadius: 'var(--r-lg)',
+                overflow: 'hidden',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-main)',
+                transition: 'all 250ms var(--ease-out)',
+              }}
+            >
               <div style={{ position: 'relative', overflow: 'hidden', height: '200px' }}>
                 <img
-                  src={item.imageUrl || 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop'}
+                  src={resolveMediaUrl(item.imageUrl) || FALLBACK_IMAGE_URL}
                   alt={item.name}
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     filter: item.isAvailable ? 'none' : 'grayscale(70%) brightness(0.7)',
-                    transition: 'transform 300ms ease'
+                    transition: 'transform 300ms ease',
                   }}
                   onMouseEnter={(e) => {
                     if (item.isAvailable) (e.target as HTMLImageElement).style.transform = 'scale(1.05)';
@@ -243,7 +238,10 @@ export const AdminMenuCatalogView = () => {
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
-                  onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.name); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item.id, item.name);
+                  }}
                   style={{
                     position: 'absolute',
                     top: '10px',
@@ -258,7 +256,7 @@ export const AdminMenuCatalogView = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: 0
+                    padding: 0,
                   }}
                   title="Delete item"
                 >
@@ -273,7 +271,7 @@ export const AdminMenuCatalogView = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--orange-600)' }}>${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
                   <div style={{ display: 'flex', gap: '2px', color: 'var(--amber)' }}>
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill={i <= 4 ? 'currentColor' : 'none'} />)}
+                    {[1, 2, 3, 4, 5].map((rating) => <Star key={rating} size={14} fill={rating <= 4 ? 'currentColor' : 'none'} />)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--sp-3)' }}>
@@ -285,6 +283,7 @@ export const AdminMenuCatalogView = () => {
           </motion.div>
         ))}
       </div>
+
       <Modal title="Add Menu Item" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="medium">
         <form id="menu-form" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <div>
@@ -320,11 +319,11 @@ export const AdminMenuCatalogView = () => {
                   backgroundColor: 'var(--bg-card)',
                   color: 'var(--text-main)',
                   fontSize: 'var(--text-sm)',
-                  fontFamily: 'var(--font-sans)'
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
                 <option value="">Select Category</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
               </select>
             </div>
           </div>
@@ -352,7 +351,7 @@ export const AdminMenuCatalogView = () => {
                 color: 'var(--text-main)',
                 fontSize: 'var(--text-sm)',
                 fontFamily: 'var(--font-sans)',
-                resize: 'vertical'
+                resize: 'vertical',
               }}
             />
           </div>
@@ -362,12 +361,11 @@ export const AdminMenuCatalogView = () => {
         </form>
       </Modal>
 
-      {/* View Detail Modal */}
       <Modal title="Menu Item Details" isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} size="medium">
         {selectedItem && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
             <img
-              src={selectedItem.imageUrl || 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop'}
+              src={resolveMediaUrl(selectedItem.imageUrl) || FALLBACK_IMAGE_URL}
               alt={selectedItem.name}
               style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: 'var(--r-md)' }}
             />
@@ -393,8 +391,15 @@ export const AdminMenuCatalogView = () => {
         )}
       </Modal>
 
-      {/* Edit Modal */}
-      <Modal title="Edit Menu Item" isOpen={!!editingItem} onClose={() => { setEditingItem(null); setEditForm({ name: '', description: '', price: '', imageUrl: '' }); }} size="medium">
+      <Modal
+        title="Edit Menu Item"
+        isOpen={!!editingItem}
+        onClose={() => {
+          setEditingItem(null);
+          setEditForm({ name: '', description: '', price: '', imageUrl: '' });
+        }}
+        size="medium"
+      >
         {editingItem && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
             <Input
@@ -413,7 +418,7 @@ export const AdminMenuCatalogView = () => {
             />
             <ImageUpload
               currentImageUrl={editingItem.imageUrl || undefined}
-              onImageUpload={(url) => setEditForm({ ...editForm, imageUrl: url })}
+              onImageUpload={handleEditImageUploaded}
               uploadEndpoint={`/menu/${editingItem.id}/image`}
               shape="rounded"
               size="lg"
@@ -435,7 +440,7 @@ export const AdminMenuCatalogView = () => {
                   color: 'var(--text-main)',
                   fontSize: 'var(--text-sm)',
                   fontFamily: 'var(--font-sans)',
-                  resize: 'vertical'
+                  resize: 'vertical',
                 }}
               />
             </div>

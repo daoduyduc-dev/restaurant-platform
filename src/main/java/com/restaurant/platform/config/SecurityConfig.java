@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/test-db/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
                         // Profile - Any authenticated user
                         .requestMatchers("/api/v1/profile/**").authenticated()

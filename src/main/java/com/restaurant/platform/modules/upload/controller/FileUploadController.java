@@ -1,6 +1,7 @@
 package com.restaurant.platform.modules.upload.controller;
 
 import com.restaurant.platform.common.service.FileStorageService;
+import com.restaurant.platform.common.service.MediaUrlService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class FileUploadController {
 
     private final FileStorageService fileStorageService;
+    private final MediaUrlService mediaUrlService;
 
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload avatar image")
@@ -32,7 +34,7 @@ public class FileUploadController {
         validateImageFile(file);
         
         String fileName = fileStorageService.storeAvatar(file);
-        String fileUrl = "/uploads/avatars/" + fileName;
+        String fileUrl = mediaUrlService.toPublicUrl("/uploads/avatars/" + fileName);
         
         return ResponseEntity.ok(Map.of(
                 "fileName", fileName,
@@ -50,7 +52,7 @@ public class FileUploadController {
         validateImageFile(file);
         
         String fileName = fileStorageService.storeMenuItemImage(file);
-        String fileUrl = "/uploads/menu-items/" + fileName;
+        String fileUrl = mediaUrlService.toPublicUrl("/uploads/menu-items/" + fileName);
         
         return ResponseEntity.ok(Map.of(
                 "fileName", fileName,
@@ -68,7 +70,7 @@ public class FileUploadController {
         validateImageFile(file);
         
         String fileName = fileStorageService.storeTableImage(file);
-        String fileUrl = "/uploads/tables/" + fileName;
+        String fileUrl = mediaUrlService.toPublicUrl("/uploads/tables/" + fileName);
         
         return ResponseEntity.ok(Map.of(
                 "fileName", fileName,

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
+import { resolveMediaUrl } from '../../services/media';
 import { toast } from '../../store/toastStore';
 
 export interface ImageUploadProps {
@@ -106,7 +107,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     toast.info('Image removed');
   };
 
-  const imageUrl = previewUrl || currentImageUrl;
+  const imageUrl = previewUrl || resolveMediaUrl(currentImageUrl);
 
   const borderRadius = shape === 'circle' ? '50%' : shape === 'rounded' ? 'var(--r-lg)' : 'var(--r-none)';
   const dimension = SIZE_MAP[size];
