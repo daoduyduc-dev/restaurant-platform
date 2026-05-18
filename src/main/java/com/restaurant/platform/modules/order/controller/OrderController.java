@@ -37,8 +37,8 @@ public class OrderController {
         // Staff cares about all order updates
         messagingTemplate.convertAndSend("/topic/orders/role/STAFF", order);
 
-        // Managers/Admins may subscribe to overall metrics or specific order updates
-        messagingTemplate.convertAndSend("/topic/orders/role/MANAGER", order);
+        // Admins may subscribe to overall metrics or specific order updates.
+        messagingTemplate.convertAndSend("/topic/orders/role/ADMIN", order);
 
         // Also publish a per-order channel for clients that need only that order
         if (order.getId() != null) {
@@ -48,7 +48,7 @@ public class OrderController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') or (hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_CREATE'))")
+    @PreAuthorize("hasRole('CUSTOMER') or (hasRole('STAFF') and hasAuthority('ORDER_CREATE'))")
     public ApiResponse<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse order = orderService.create(request);
         notifyKitchen(order);
@@ -84,7 +84,7 @@ public class OrderController {
 
     // ================= ADD ITEM =================
     @PostMapping("/{id}/items")
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<OrderResponse> addItem(
             @PathVariable UUID id,
             @Valid @RequestBody AddOrderItemRequest request
@@ -96,7 +96,7 @@ public class OrderController {
 
     // ================= UPDATE ITEM =================
     @PutMapping("/{id}/items/{itemId}")
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<OrderResponse> updateItem(
             @PathVariable UUID id,
             @PathVariable UUID itemId,
@@ -109,7 +109,7 @@ public class OrderController {
 
     // ================= REMOVE ITEM =================
     @DeleteMapping("/{id}/items/{itemId}")
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_UPDATE')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('ORDER_UPDATE')")
     public ApiResponse<Void> removeItem(
             @PathVariable UUID id,
             @PathVariable UUID itemId
@@ -124,7 +124,7 @@ public class OrderController {
 
     // ================= PAY =================
     @PostMapping("/{id}/pay")
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAuthority('ORDER_PAY')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('ORDER_PAY')")
     public ApiResponse<OrderResponse> pay(@PathVariable UUID id) {
         OrderResponse order = orderService.pay(id);
         notifyKitchen(order);
@@ -133,7 +133,7 @@ public class OrderController {
 
     // ================= UPDATE STATUS =================
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER') and hasAnyAuthority('ORDER_UPDATE', 'ORDER_KITCHEN_UPDATE')")
+    @PreAuthorize("hasRole('STAFF') and hasAnyAuthority('ORDER_UPDATE', 'ORDER_KITCHEN_UPDATE')")
     public ApiResponse<OrderResponse> updateStatus(
             @PathVariable UUID id,
             @RequestParam com.restaurant.platform.modules.order.enums.OrderStatus status
@@ -145,7 +145,7 @@ public class OrderController {
 
     // ================= ASSIGN =================
     @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN') and hasAuthority('ORDER_ASSIGN')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('ORDER_ASSIGN')")
     public ApiResponse<OrderResponse> assign(@PathVariable UUID id, @RequestBody com.restaurant.platform.modules.order.dto.request.AssignOrderRequest request) {
         OrderResponse order = orderService.assign(id, request.getUserId());
         notifyKitchen(order);

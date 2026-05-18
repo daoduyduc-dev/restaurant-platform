@@ -23,6 +23,11 @@ public class AuthController {
         return ApiResponse.success(authService.login(req));
     }
 
+    @PostMapping("/register")
+    public ApiResponse<AuthResponse> register(@RequestBody @Valid RegisterRequest req) {
+        return ApiResponse.success("Customer account created successfully", authService.register(req));
+    }
+
     @PostMapping("/refresh")
     public ApiResponse<AuthResponse> refresh(@RequestBody RefreshRequest req) {
         return ApiResponse.success(authService.refresh(req.getRefreshToken()));

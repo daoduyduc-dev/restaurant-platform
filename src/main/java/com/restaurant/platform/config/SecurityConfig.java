@@ -50,17 +50,17 @@ public class SecurityConfig {
                         // Profile - Any authenticated user
                         .requestMatchers("/api/v1/profile/**").authenticated()
 
-                        // Dashboard - ADMIN, MANAGER only (staff dashboards are frontend-only)
-                        .requestMatchers("/api/v1/dashboard/**").hasAnyRole("ADMIN", "MANAGER")
+                        // Dashboard - ADMIN only; staff dashboards compose operational endpoints on the frontend.
+                        .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
 
                         // Menu - CUSTOMER/STAFF can view, ADMIN/MANAGER can manage
                         .requestMatchers("/api/v1/menu").authenticated()
                         .requestMatchers("/api/v1/menu/**").authenticated()
                         .requestMatchers("/api/v1/categories").authenticated()
 
-                        // Tables - All authenticated can view, only ADMIN can manage (tables are fixed)
+                        // Tables - all authenticated can view; ADMIN manages layout, STAFF updates status.
                         .requestMatchers("/api/v1/tables").authenticated()
-                        .requestMatchers("/api/v1/tables/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/tables/**").authenticated()
 
                         // Orders - CUSTOMER can only view their own, STAFF can create/update
                         .requestMatchers("/api/v1/orders").authenticated()
@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/loyalty/me").authenticated()
                         .requestMatchers("/api/v1/loyalty/history").authenticated()
                         .requestMatchers("/api/v1/loyalty/redeem").hasRole("CUSTOMER")
-                        .requestMatchers("/api/v1/loyalty/all").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/api/v1/loyalty/all").hasRole("ADMIN")
                         .requestMatchers("/api/v1/loyalty/**").authenticated()
 
                         // Reports - All authenticated (role-specific data filtered in controller)
@@ -86,8 +86,8 @@ public class SecurityConfig {
                         // Notifications - Any authenticated user
                         .requestMatchers("/api/v1/notifications/**").authenticated()
 
-                        // User management - ADMIN/MANAGER only
-                        .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "MANAGER")
+                        // User management - ADMIN only
+                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
 
                         // Role management - ADMIN only
                         .requestMatchers("/api/v1/roles/**").hasRole("ADMIN")

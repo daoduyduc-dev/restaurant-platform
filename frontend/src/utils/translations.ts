@@ -1,26 +1,26 @@
-// Bản dịch tiếng Việt cho hệ thống
+// Vietnamese labels shared by operational screens.
 
 export const STATUS_TRANSLATIONS = {
-  // Order Status
-  OPEN: 'Mới tạo',
-  PENDING: 'Chờ xử lý',
-  COOKING: 'Đang nấu',
-  READY: 'Sẵn sàng',
-  SERVED: 'Đã phục vụ',
-  PAID: 'Đã thanh toán',
-  CANCELED: 'Đã hủy',
+  // Order status
+  OPEN: 'Moi tao',
+  PENDING: 'Cho bep nhan',
+  COOKING: 'Dang nau',
+  READY: 'San sang phuc vu',
+  SERVED: 'Da phuc vu',
+  PAID: 'Da thanh toan',
+  CANCELED: 'Da huy',
 
-  // Reservation Status
-  RESERVED: 'Đã đặt',
-  CHECKED_IN: 'Đã check-in',
-  COMPLETED: 'Hoàn thành',
-  CANCELLED: 'Đã hủy',
-  NO_SHOW: 'Không đến',
+  // Reservation status
+  RESERVED: 'Da dat ban',
+  CHECKED_IN: 'Da check-in',
+  COMPLETED: 'Hoan thanh',
+  CANCELLED: 'Da huy',
+  NO_SHOW: 'Khong den',
 
-  // Table Status
-  AVAILABLE: 'Trống',
-  OCCUPIED: 'Đang dùng',
-  DIRTY: 'Cần dọn',
+  // Table status
+  AVAILABLE: 'Trong',
+  OCCUPIED: 'Dang dung',
+  DIRTY: 'Can don',
 } as const;
 
 export const translateStatus = (status: string): string => {

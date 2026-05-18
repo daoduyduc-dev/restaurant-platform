@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { AuthLayout } from './layouts/AuthLayout';
 import { LoginPage } from './features/auth/LoginPage';
+import { RegisterPage } from './features/auth/RegisterPage';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { SettingsPage } from './features/settings/SettingsPage';
@@ -19,6 +20,7 @@ import { NotFoundPage } from './NotFoundPage';
 import { useAuthStore } from './store/authStore';
 import { hasAnyRole, type UserRole } from './utils/roleUtils';
 import { ToastContainer } from './components/ui/Toast';
+import { PublicRestaurantDashboard } from './features/public/PublicRestaurantDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }: { 
   children: React.ReactNode; 
@@ -34,6 +36,16 @@ const ProtectedRoute = ({ children, allowedRoles }: {
   return <>{children}</>;
 };
 
+const AppShellRoute = () => {
+  const { user } = useAuthStore();
+
+  if (!user) {
+    return <PublicRestaurantDashboard />;
+  }
+
+  return <MainLayout />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -41,15 +53,12 @@ function App() {
       <Routes>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Route>
         
         <Route 
           path="/" 
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
+          element={<AppShellRoute />}
         >
           <Route index element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
-import type { AuthResponseData, ApiResponse } from '../../services/types';
+import type { AuthResponseData } from '../../services/types';
 import { UtensilsCrossed, ArrowRight, Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -34,8 +34,10 @@ export const LoginPage = () => {
         d.refreshToken
       );
       navigate('/');
-    } catch (err: Error | any) {
-      const msg = err?.response?.data?.message;
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
       if (msg) {
         setError(msg);
       } else {
@@ -63,8 +65,10 @@ export const LoginPage = () => {
         d.refreshToken
       );
       navigate('/');
-    } catch (err: Error | any) {
-      const msg = err?.response?.data?.message;
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
       if (msg) {
         setError(msg);
       } else {
@@ -369,6 +373,10 @@ export const LoginPage = () => {
             </button>
           </form>
 
+          <div className="auth-switch">
+            Chua co tai khoan? <Link to="/register">Dang ky customer</Link>
+          </div>
+
           {/* Quick Login */}
           <div style={{ marginTop: 'var(--sp-8)' }}>
             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-heading)', marginBottom: 'var(--sp-3)' }}>
@@ -404,7 +412,7 @@ export const LoginPage = () => {
                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
                   }}
                 >
-                  <span style={{ fontSize: '20px' }}>{user.icon}</span>
+                  <span style={{ fontSize: '20px' }}>{user.role.slice(0, 1)}</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{user.role}</span>
                 </button>
               ))}

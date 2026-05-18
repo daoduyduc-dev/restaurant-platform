@@ -1,13 +1,18 @@
 package com.restaurant.platform.modules.auth.service;
 
 import com.restaurant.platform.modules.auth.dto.*;
+import com.restaurant.platform.common.constant.ErrorCode;
+import com.restaurant.platform.common.exception.BadRequestException;
 import com.restaurant.platform.modules.auth.entity.BlacklistedToken;
 import com.restaurant.platform.modules.auth.entity.PasswordResetToken;
 import com.restaurant.platform.modules.auth.entity.RefreshToken;
+import com.restaurant.platform.modules.auth.entity.Role;
+import com.restaurant.platform.modules.auth.entity.RoleName;
 import com.restaurant.platform.modules.auth.entity.User;
 import com.restaurant.platform.modules.auth.repository.BlacklistRepository;
 import com.restaurant.platform.modules.auth.repository.PasswordResetRepository;
 import com.restaurant.platform.modules.auth.repository.RefreshTokenRepository;
+import com.restaurant.platform.modules.auth.repository.RoleRepository;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
 import com.restaurant.platform.common.exception.UnauthorizedException;
@@ -40,10 +45,45 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshRepo;
     private final BlacklistRepository blacklistRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetRepository resetRepo;
     private final EmailService emailService;
     private final UserDetailsServiceImpl userDetailsService;
+
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException(
+                    ErrorCode.USER_ALREADY_EXISTS,
+                    "Email already exists: " + request.getEmail()
+            );
+        }
+
+        Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.ROLE_NOT_FOUND,
+                        "Customer role not found"
+                ));
+
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .active(true)
+                .roles(java.util.Set.of(customerRole))
+                .build();
+
+        userRepository.save(user);
+        return login(toAuthRequest(request));
+    }
+
+    private AuthRequest toAuthRequest(RegisterRequest request) {
+        AuthRequest authRequest = new AuthRequest();
+        authRequest.setEmail(request.getEmail());
+        authRequest.setPassword(request.getPassword());
+        return authRequest;
+    }
 
     @Override
     public AuthResponse login(AuthRequest request) {

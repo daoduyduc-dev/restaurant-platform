@@ -4,23 +4,22 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList,
-  UtensilsCrossed as MenuIcon2, PieChart, Calendar,
+  UtensilsCrossed as MenuIcon2, Table2, Calendar,
   Award, BarChart3, Users, LogOut, Settings, Search, UserCircle, CreditCard,
 } from 'lucide-react';
 import { getPrimaryRole, type UserRole } from '../utils/roleUtils';
-import { useWebSocket } from '../services/useWebSocket';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { NotificationBell } from '../components/NotificationBell';
 
 interface NavSection {
   section: string;
-  items: { to: string; icon: any; label: string }[];
+  items: { to: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; label: string }[];
 }
 
 const buildNav = (primaryRole: UserRole): NavSection[] => {
   const commonNav: NavSection[] = [
-    { section: 'Main', items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { section: 'Tong quan', items: [
+      { to: '/', icon: LayoutDashboard, label: 'Bang dieu khien' },
     ]},
   ];
 
@@ -28,46 +27,42 @@ const buildNav = (primaryRole: UserRole): NavSection[] => {
     case 'CUSTOMER':
       return [
         ...commonNav,
-        { section: 'Dining', items: [
-          { to: '/tables', icon: PieChart, label: 'Table Map' },
-          { to: '/reservations', icon: Calendar, label: 'My Reservations' },
-          { to: '/menu', icon: MenuIcon2, label: 'Browse Menu' },
+        { section: 'Dat dich vu', items: [
+          { to: '/tables', icon: Table2, label: 'So do ban' },
+          { to: '/reservations', icon: Calendar, label: 'Dat ban cua toi' },
+          { to: '/menu', icon: MenuIcon2, label: 'Thuc don' },
         ]},
-        { section: 'Rewards', items: [
-          { to: '/loyalty', icon: Award, label: 'Loyalty Rewards' },
+        { section: 'Thanh vien', items: [
+          { to: '/loyalty', icon: Award, label: 'Diem thuong' },
         ]},
       ];
 
     case 'STAFF':
       return [
         ...commonNav,
-        { section: 'Operations', items: [
-          { to: '/orders', icon: ClipboardList, label: 'Orders' },
-          { to: '/tables', icon: PieChart, label: 'Tables' },
-          { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/menu', icon: MenuIcon2, label: 'Menu' },
-          { to: '/payment', icon: CreditCard, label: 'Payment' },
+        { section: 'Van hanh ca lam', items: [
+          { to: '/reservations', icon: Calendar, label: 'Don dat ban' },
+          { to: '/tables', icon: Table2, label: 'Ban an' },
+          { to: '/orders', icon: ClipboardList, label: 'Order & bep' },
+          { to: '/payment', icon: CreditCard, label: 'Thanh toan' },
+          { to: '/menu', icon: MenuIcon2, label: 'Tra thuc don' },
         ]},
       ];
 
     case 'ADMIN':
       return [
         ...commonNav,
-        { section: 'Operations', items: [
-          { to: '/orders', icon: ClipboardList, label: 'Orders' },
-          { to: '/tables', icon: PieChart, label: 'Tables' },
-          { to: '/reservations', icon: Calendar, label: 'Reservations' },
-          { to: '/menu', icon: MenuIcon2, label: 'Menu' },
-          { to: '/loyalty', icon: Award, label: 'Loyalty' },
+        { section: 'Van hanh', items: [
+          { to: '/reservations', icon: Calendar, label: 'Dat ban' },
+          { to: '/tables', icon: Table2, label: 'Ban an' },
+          { to: '/orders', icon: ClipboardList, label: 'Order' },
+          { to: '/menu', icon: MenuIcon2, label: 'Thuc don' },
+          { to: '/loyalty', icon: Award, label: 'Khach hang than thiet' },
         ]},
-        { section: 'Analytics', items: [
-          { to: '/report', icon: BarChart3, label: 'Reports' },
-        ]},
-        { section: 'Administration', items: [
-          { to: '/staff', icon: Users, label: 'User Management' },
-        ]},
-        { section: 'System', items: [
-          { to: '/settings', icon: Settings, label: 'Settings' },
+        { section: 'Quan tri', items: [
+          { to: '/report', icon: BarChart3, label: 'Bao cao' },
+          { to: '/staff', icon: Users, label: 'Nhan su' },
+          { to: '/settings', icon: Settings, label: 'Cau hinh' },
         ]},
       ];
 
@@ -93,7 +88,7 @@ export const MainLayout = () => {
         }
       }
     }
-    return 'Dashboard';
+    return 'Bang dieu khien';
   };
 
   const handleLogout = async () => {
@@ -141,7 +136,7 @@ export const MainLayout = () => {
 
         <div className="sidebar-footer">
           <div style={{ padding: '8px 12px', marginBottom: '8px', borderRadius: 'var(--r-md)', background: 'rgba(212, 175, 55, 0.1)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: '2px' }}>Logged in as</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: '2px' }}>Dang dang nhap</div>
             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--orange-500)' }}>{primaryRole}</div>
           </div>
           <NavLink
@@ -152,7 +147,7 @@ export const MainLayout = () => {
             {({ isActive }) => (
               <>
                 <UserCircle size={18} strokeWidth={isActive ? 2.5 : 2} />
-                <span>Profile</span>
+                <span>Ho so</span>
               </>
             )}
           </NavLink>
@@ -162,7 +157,7 @@ export const MainLayout = () => {
             style={{ width:'100%', justifyContent:'flex-start', gap:'12px', color:'var(--text-muted)', padding:'8px 12px' }}
           >
             <LogOut size={18} />
-            <span>Sign Out</span>
+            <span>Dang xuat</span>
           </button>
         </div>
       </aside>
@@ -177,17 +172,19 @@ export const MainLayout = () => {
           <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
             <div className="search-bar" style={{ width:'280px' }}>
               <Search size={16} color="var(--text-muted)" />
-              <input placeholder="Search..." />
+              <input placeholder="Tim ban, order, khach..." />
             </div>
             <NotificationBell />
-            <button 
-              className="btn btn-ghost" 
-              style={{ padding:'8px', borderRadius:'var(--r-md)' }}
-              onClick={() => navigate('/settings')}
-              title="Settings"
-            >
-              <Settings size={18} />
-            </button>
+            {primaryRole === 'ADMIN' && (
+              <button
+                className="btn btn-ghost"
+                style={{ padding:'8px', borderRadius:'var(--r-md)' }}
+                onClick={() => navigate('/settings')}
+                title="Cau hinh"
+              >
+                <Settings size={18} />
+              </button>
+            )}
             <div style={{ width:'1px', height:'24px', background:'var(--border-main)', margin:'0 4px' }} />
             <div style={{ display:'flex', alignItems:'center', gap:'10px', cursor:'pointer' }}>
               <div className="avatar">{initials}</div>

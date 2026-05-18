@@ -55,14 +55,14 @@ public class TableController {
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER','RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     public ApiResponse<TableResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(tableService.getTableById(id));
     }
 
     // ================= GET BY NAME =================
     @GetMapping("/name/{name}")
-    @PreAuthorize("hasAnyRole('ADMIN','WAITER','MANAGER','RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     public ApiResponse<TableResponse> getByName(@PathVariable String name) {
         return ApiResponse.success(tableService.getTableByName(name));
     }
@@ -88,7 +88,7 @@ public class TableController {
 
     // ================= UPDATE STATUS =================
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('WAITER','MANAGER') and hasAuthority('TABLE_UPDATE_STATUS')")
+    @PreAuthorize("hasRole('STAFF') and hasAuthority('TABLE_UPDATE_STATUS')")
     public ApiResponse<TableResponse> updateStatus(
             @PathVariable UUID id,
             @RequestBody UpdateTableStatusRequest request

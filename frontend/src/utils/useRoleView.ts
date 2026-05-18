@@ -20,21 +20,21 @@ export interface RoleViewConfig {
 
 const ROLE_CONFIGS: Record<UserRole, Omit<RoleViewConfig, 'role'>> = {
   ADMIN: {
-    label: 'Administrator',
+    label: 'Admin / Quan ly',
     color: 'var(--rose)',
     bgColor: 'rgba(225, 29, 72, 0.1)',
     canCreate: true, canEdit: true, canDelete: true, canAssign: true, canConfigure: true,
     isOperational: false, isMonitoring: false, isAdministrative: true, isCustomer: false,
   },
   STAFF: {
-    label: 'Staff',
+    label: 'Nhan vien van hanh',
     color: 'var(--orange-500)',
     bgColor: 'rgba(212, 175, 55, 0.1)',
     canCreate: true, canEdit: true, canDelete: false, canAssign: false, canConfigure: false,
     isOperational: true, isMonitoring: false, isAdministrative: false, isCustomer: false,
   },
   CUSTOMER: {
-    label: 'Customer',
+    label: 'Khach hang',
     color: '#10B981',
     bgColor: 'rgba(16, 185, 129, 0.1)',
     canCreate: true, canEdit: false, canDelete: false, canAssign: false, canConfigure: false,
@@ -44,10 +44,11 @@ const ROLE_CONFIGS: Record<UserRole, Omit<RoleViewConfig, 'role'>> = {
 
 export function useRoleView(): RoleViewConfig {
   const user = useAuthStore(s => s.user);
+  const roles = user?.roles;
   return useMemo(() => {
-    const role = user?.roles ? getPrimaryRole(user.roles) : 'CUSTOMER';
+    const role = roles ? getPrimaryRole(roles) : 'CUSTOMER';
     return { role, ...ROLE_CONFIGS[role] };
-  }, [user?.roles]);
+  }, [roles]);
 }
 
 export function getRoleColor(role: string): string {

@@ -13,19 +13,26 @@ export function getPrimaryRole(roles: string[]): UserRole {
   let highestPriority = 0;
 
   for (const role of roles) {
-    const upperRole = role.toUpperCase() as UserRole;
-    const priority = ROLE_PRIORITY[upperRole] || 0;
+    const normalized = normalizeRole(role);
+    const priority = ROLE_PRIORITY[normalized] || 0;
     if (priority > highestPriority) {
       highestPriority = priority;
-      highest = upperRole;
+      highest = normalized;
     }
   }
 
   return highest;
 }
 
+export function normalizeRole(role: string): UserRole {
+  const upperRole = role.toUpperCase();
+  if (['ADMIN', 'MANAGER'].includes(upperRole)) return 'ADMIN';
+  if (['STAFF', 'WAITER', 'RECEPTIONIST', 'KITCHEN'].includes(upperRole)) return 'STAFF';
+  return 'CUSTOMER';
+}
+
 export function hasRole(roles: string[], targetRole: UserRole): boolean {
-  return roles.some(r => r.toUpperCase() === targetRole);
+  return roles.some(r => normalizeRole(r) === targetRole);
 }
 
 export function hasAnyRole(roles: string[], targetRoles: UserRole[]): boolean {
@@ -44,5 +51,6 @@ export const ROLE_ROUTES: Record<UserRole, string> = {
 };
 
 export function getDefaultRoute(roles: string[]): string {
+  void roles;
   return '/';
 }
