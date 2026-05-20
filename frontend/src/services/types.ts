@@ -224,5 +224,7 @@ export interface SettingsDTO {
   autoAssignWaiter: boolean;
   emailNotifications: boolean;
   smsNotifications: boolean;
+  darkMode: boolean;
+  language: string;
 }
 

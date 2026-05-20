@@ -79,7 +79,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -107,10 +107,10 @@ export const LoginPage = () => {
         }} />
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        maxWidth: '1000px', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        maxWidth: '1000px',
         width: '90%',
         background: 'white',
         borderRadius: 'var(--r-3xl)',
@@ -120,7 +120,7 @@ export const LoginPage = () => {
         zIndex: 10
       }}>
         {/* Left Side - Branding */}
-        <motion.div 
+        <motion.div
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -157,30 +157,31 @@ export const LoginPage = () => {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ 
-              width: '80px', 
-              height: '80px', 
-              borderRadius: 'var(--r-2xl)', 
-              background: 'linear-gradient(135deg, var(--orange-600), var(--orange-500))', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: 'var(--r-2xl)',
+              background: 'linear-gradient(135deg, var(--orange-600), var(--orange-500))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               marginBottom: 'var(--sp-6)',
               boxShadow: '0 8px 24px rgba(212, 175, 55, 0.3)'
             }}>
               <UtensilsCrossed size={40} color="white" />
             </div>
-            <h1 style={{ 
-              fontSize: 'var(--text-4xl)', 
-              fontWeight: 800, 
+            <h1 style={{
+              color: 'white',
+              fontSize: 'var(--text-4xl)',
+              fontWeight: 800,
               marginBottom: 'var(--sp-3)',
               fontFamily: 'var(--font-serif)',
               lineHeight: 1.1
             }}>
               ServeGenius
             </h1>
-            <p style={{ 
-              fontSize: 'var(--text-lg)', 
+            <p style={{
+              fontSize: 'var(--text-lg)',
               opacity: 0.8,
               lineHeight: 1.6,
               marginBottom: 'var(--sp-6)'
@@ -195,7 +196,7 @@ export const LoginPage = () => {
         </motion.div>
 
         {/* Right Side - Login Form */}
-        <motion.div 
+        <motion.div
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
@@ -212,15 +213,15 @@ export const LoginPage = () => {
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                style={{ 
-                  padding: 'var(--sp-3)', 
-                  background: 'rgba(239, 68, 68, 0.1)', 
-                  color: 'var(--red-500)', 
-                  borderRadius: 'var(--r-md)', 
-                  fontSize: 'var(--text-sm)', 
+                style={{
+                  padding: 'var(--sp-3)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: 'var(--red-500)',
+                  borderRadius: 'var(--r-md)',
+                  fontSize: 'var(--text-sm)',
                   fontWeight: 500,
                   border: '1px solid rgba(239, 68, 68, 0.2)'
                 }}

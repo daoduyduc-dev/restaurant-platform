@@ -9,6 +9,6 @@ export const SettingsPage = () => {
     case 'ADMIN':
       return <AdminSettingsView />;
     default:
-      return <NoAccessView message="System settings are restricted to administrators and venue managers." />;
+      return <NoAccessView message="System settings are restricted to administrators." />;
   }
 };

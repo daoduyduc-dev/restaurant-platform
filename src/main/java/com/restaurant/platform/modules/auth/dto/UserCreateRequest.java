@@ -23,6 +23,12 @@ public class UserCreateRequest {
     @Email(message = "Email is invalid")
     private String email;
 
+    @Size(max = 20, message = "Phone must not exceed 20 characters")
+    private String phone;
+
+    @Size(max = 255, message = "Address must not exceed 255 characters")
+    private String address;
+
     @NotEmpty(message = "User must have at least one role")
     private Set<RoleName> roles;
 }

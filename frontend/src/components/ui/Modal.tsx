@@ -63,9 +63,14 @@ export const Modal: React.FC<ModalProps> = ({
             position: 'fixed',
             inset: 0,
             zIndex: 1000,
+
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+
+            alignItems: 'flex-start',
+
+            paddingTop: '8vh',
+            paddingBottom: '8vh',
           }}
           onClick={handleBackdropClick}
         >
@@ -96,7 +101,7 @@ export const Modal: React.FC<ModalProps> = ({
               maxHeight: '90vh',
               display: 'flex',
               flexDirection: 'column',
-              backgroundColor: 'var(--bg-main)',
+              backgroundColor: 'var(--bg-card)',
               zIndex: 1001,
               boxShadow: 'var(--shadow-xl)'
             }}

@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS restaurant_settings (
+    id uuid PRIMARY KEY,
+    created_date timestamp(6) NOT NULL,
+    modified_date timestamp(6) NOT NULL,
+    created_by varchar(255),
+    modified_by varchar(255),
+    restaurant_name varchar(150) NOT NULL,
+    email varchar(150) NOT NULL,
+    phone varchar(50) NOT NULL,
+    address varchar(255) NOT NULL,
+    opening_time varchar(10) NOT NULL,
+    closing_time varchar(10) NOT NULL,
+    no_show_grace_period integer NOT NULL,
+    default_reservation_duration integer NOT NULL,
+    loyalty_points_per_dollar integer NOT NULL,
+    auto_assign_waiter boolean NOT NULL,
+    email_notifications boolean NOT NULL,
+    sms_notifications boolean NOT NULL,
+    dark_mode boolean NOT NULL,
+    language varchar(10) NOT NULL
+);
