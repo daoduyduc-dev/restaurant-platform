@@ -210,7 +210,18 @@ export const CustomerTableView = () => {
   };
 
   return (
-    <div style={{ display: 'flex', gap: 'var(--sp-6)', alignItems: 'stretch' }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns:
+          window.innerWidth < 1600
+            ? '1fr'
+            : 'minmax(0, 1fr) 420px',
+        gap: 'var(--sp-6)',
+        alignItems: 'start',
+        width: '100%',
+      }}
+    >
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
@@ -299,7 +310,18 @@ export const CustomerTableView = () => {
         </Card>
       </div>
 
-      <div style={{ width: 380, display: 'flex', flexDirection: 'column' }}>
+      <div
+  style={{
+    width: '100%',
+    maxWidth: 420,
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'sticky',
+    top: 24,
+    alignSelf: 'start',
+    maxHeight: 'calc(100vh - 120px)',
+  }}
+>
         <Card variant="elevated" style={{ height: '100%' }}>
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
