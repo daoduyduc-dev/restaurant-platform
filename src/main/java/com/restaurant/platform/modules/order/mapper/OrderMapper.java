@@ -13,6 +13,7 @@ public interface OrderMapper {
 
     @Mapping(target = "tableId", source = "table.id")
     @Mapping(target = "tableName", source = "table.name")
+    @Mapping(target = "tableType", source = "table.type")
     @Mapping(target = "reservationId", source = "reservation.id")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "assignedToId", source = "assignedTo.id")

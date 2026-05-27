@@ -24,6 +24,11 @@ public class SettingsController {
         return ApiResponse.success(settingsService.getSettings());
     }
 
+    @GetMapping("/public")
+    public ApiResponse<SettingsDTO> getPublicSettings() {
+        return ApiResponse.success(settingsService.getSettings());
+    }
+
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<SettingsDTO> updateSettings(@RequestBody SettingsDTO request) {

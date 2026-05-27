@@ -34,6 +34,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.restaurant.platform.modules.auth.repository.UserRepository;
 import com.restaurant.platform.modules.auth.entity.User;
 import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
+import com.restaurant.platform.modules.loyalty.service.LoyaltyService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -52,6 +53,8 @@ public class OrderServiceImpl implements OrderService {
     private final ReservationRepository reservationRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final LoyaltyService loyaltyService;
+    private final OrderBillingService orderBillingService;
 
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
@@ -333,91 +336,20 @@ public class OrderServiceImpl implements OrderService {
     // ================= PAY =================
     @Override
     public OrderResponse pay(UUID orderId) {
-
         Order order = getOrderOrThrow(orderId);
-
-        if (order.getItems().isEmpty()) {
-            throw new BadRequestException(
-                    ErrorCode.INVALID_INPUT,
-                    "Cannot pay order without items");
-        }
-
-        order.setStatus(OrderStatus.PAID);
-
-        Table table = order.getTable();
-        table.setStatus(TableStatus.AVAILABLE);
-        // Persist table status explicitly
-        tableRepository.save(table);
-
-        // Update reservation status to COMPLETED if exists
-        if (order.getReservation() != null) {
-            Reservation reservation = order.getReservation();
-            reservation.setStatus(ReservationStatus.COMPLETED);
-            reservationRepository.save(reservation);
-
-            try {
-                var resPayload = java.util.Map.of(
-                        "type", "RESERVATION_COMPLETED",
-                        "reservationId", reservation.getId().toString(),
-                        "message", "Reservation completed",
-                        "timestamp", java.time.Instant.now().toString()
-                );
-                messagingTemplate.convertAndSend("/topic/reservations", resPayload);
-            } catch (Exception e) {
-                log.error("Failed to send WebSocket notification for reservation completion", e);
-            }
-        }
-
-        try {
-            var payload = java.util.Map.of(
-                    "type", "ORDER_PAID",
-                    "orderId", order.getId().toString(),
-                    "message", "Order has been paid",
-                    "timestamp", java.time.Instant.now().toString()
-            );
-            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
-        } catch (Exception e) {
-            log.error("Failed to send WebSocket notification for order payment", e);
-        }
-
-        // publish table update
-        try {
-            var tableDto = java.util.Map.of(
-                    "id", table.getId().toString(),
-                    "name", table.getName(),
-                    "capacity", table.getCapacity(),
-                    "status", table.getStatus().name()
-            );
-            messagingTemplate.convertAndSend("/topic/tables", tableDto);
-        } catch (Exception e) {
-            log.error("Failed to send WebSocket notification for table update", e);
-        }
-
-        return mapToResponse(orderRepository.save(order));
+        Order savedOrder = finalizePayment(order);
+        return mapToResponse(savedOrder);
     }
 
     @Override
     public OrderResponse updateStatus(UUID orderId, OrderStatus status) {
         Order order = getOrderOrThrow(orderId);
+        if (status == OrderStatus.PAID) {
+            Order savedOrder = finalizePayment(order);
+            return mapToResponse(savedOrder);
+        }
+
         order.setStatus(status);
-            if (status == OrderStatus.PAID) {
-                Table table = order.getTable();
-                if (table != null) {
-                    table.setStatus(TableStatus.AVAILABLE);
-                    tableRepository.save(table);
-                    try {
-                        var tableDto = java.util.Map.of(
-                                "id", table.getId().toString(),
-                                "name", table.getName(),
-                                "capacity", table.getCapacity(),
-                                "status", table.getStatus().name()
-                        );
-                        messagingTemplate.convertAndSend("/topic/tables", tableDto);
-                    } catch (Exception e) {
-                        log.error("Failed to send WebSocket notification for table update", e);
-                    }
-                }
-            }
         Order saved = orderRepository.save(order);
 
         // Notify role-specific channels for status changes
@@ -471,6 +403,81 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(total);
     }
 
+    private Order finalizePayment(Order order) {
+        if (order.getStatus() == OrderStatus.PAID) {
+            return order;
+        }
+
+        if (order.getItems().isEmpty()) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Cannot pay order without items");
+        }
+
+        order.setStatus(OrderStatus.PAID);
+
+        Table table = order.getTable();
+        if (table != null) {
+            table.setStatus(TableStatus.AVAILABLE);
+            tableRepository.save(table);
+        }
+
+        Reservation reservation = order.getReservation();
+        if (reservation != null) {
+            reservation.setStatus(ReservationStatus.COMPLETED);
+            reservationRepository.save(reservation);
+
+            if (reservation.getUser() != null && reservation.getUser().getId() != null) {
+                loyaltyService.earnPoints(
+                        reservation.getUser().getId(),
+                        orderBillingService.getFinalAmount(order)
+                );
+            }
+
+            try {
+                var resPayload = java.util.Map.of(
+                        "type", "RESERVATION_COMPLETED",
+                        "reservationId", reservation.getId().toString(),
+                        "message", "Reservation completed",
+                        "timestamp", java.time.Instant.now().toString()
+                );
+                messagingTemplate.convertAndSend("/topic/reservations", resPayload);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket notification for reservation completion", e);
+            }
+        }
+
+        Order savedOrder = orderRepository.save(order);
+
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_PAID",
+                    "orderId", savedOrder.getId().toString(),
+                    "message", "Order has been paid",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order payment", e);
+        }
+
+        if (table != null) {
+            try {
+                var tableDto = java.util.Map.of(
+                        "id", table.getId().toString(),
+                        "name", table.getName(),
+                        "capacity", table.getCapacity(),
+                        "status", table.getStatus().name()
+                );
+                messagingTemplate.convertAndSend("/topic/tables", tableDto);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket notification for table update", e);
+            }
+        }
+
+        return savedOrder;
+    }
+
     private void addItems(Order order, List<AddOrderItemRequest> items) {
         if (items == null || items.isEmpty()) {
             return;
@@ -519,6 +526,9 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
 
         response.setItems(items);
+        response.setVipSurchargeAmount(orderBillingService.getVipSurcharge(order));
+        response.setFinalAmount(orderBillingService.getFinalAmount(order));
+        response.setLoyaltyEligible(order.getReservation() != null && order.getReservation().getUser() != null);
 
         return response;
     }

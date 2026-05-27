@@ -4,8 +4,9 @@ import com.restaurant.platform.common.constant.ErrorCode;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
 import com.restaurant.platform.common.EmailService;
 import com.restaurant.platform.modules.order.entity.Order;
-import com.restaurant.platform.modules.order.enums.OrderStatus;
 import com.restaurant.platform.modules.order.repository.OrderRepository;
+import com.restaurant.platform.modules.order.service.OrderBillingService;
+import com.restaurant.platform.modules.order.service.OrderService;
 import com.restaurant.platform.modules.payment.dto.reponse.PaymentResponse;
 import com.restaurant.platform.modules.payment.dto.request.CreatePaymentRequest;
 import com.restaurant.platform.modules.payment.entity.Payment;
@@ -18,8 +19,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,6 +28,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderRepository orderRepository;
     private final PaymentMapper paymentMapper;
     private final EmailService emailService;
+    private final OrderBillingService orderBillingService;
+    private final OrderService orderService;
 
     @Value("${payment.gateway.vnpay.url:https://sandbox.vnpayment.vn/paymentgate/Embedded}")
     private String vnpayUrl;
@@ -50,10 +51,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .order(order)
                 .method(PaymentMethod.valueOf(request.getMethod()))
                 .status(PaymentStatus.PENDING)
-                .amount(order.getTotalAmount())
+                .amount(orderBillingService.getFinalAmount(order))
                 .build();
 
         payment = paymentRepository.save(payment);
+        payment.setTransactionId(payment.getId().toString());
 
         payment.setPaymentUrl(generatePaymentUrl(payment, request.getMethod()));
 
@@ -93,8 +95,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             Order order = payment.getOrder();
             if (order != null) {
-                order.setStatus(OrderStatus.PAID);
-                orderRepository.save(order);
+                orderService.pay(order.getId());
             } else {
                 throw new ResourceNotFoundException(
                         ErrorCode.ORDER_NOT_FOUND, "Order not found for payment");

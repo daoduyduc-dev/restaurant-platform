@@ -83,8 +83,12 @@ export interface OrderDTO {
   id: string;
   tableId: string;
   tableName: string;
+  tableType?: TableType;
   status: OrderStatus;
   totalAmount: number;
+  vipSurchargeAmount?: number;
+  finalAmount?: number;
+  loyaltyEligible?: boolean;
   items: OrderItemDTO[];
   createdDate: string;
   createdAt: string;
@@ -221,6 +225,7 @@ export interface SettingsDTO {
   noShowGracePeriod: number;
   defaultReservationDuration: number;
   loyaltyPointsPerDollar: number;
+  vipTableFee: number;
   autoAssignWaiter: boolean;
   emailNotifications: boolean;
   smsNotifications: boolean;

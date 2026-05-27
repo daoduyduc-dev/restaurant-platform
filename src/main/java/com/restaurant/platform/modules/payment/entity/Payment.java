@@ -4,9 +4,19 @@ import com.restaurant.platform.common.base.SoftDeleteEntity;
 import com.restaurant.platform.modules.order.entity.Order;
 import com.restaurant.platform.modules.payment.enums.PaymentMethod;
 import com.restaurant.platform.modules.payment.enums.PaymentStatus;
-
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -43,7 +53,7 @@ public class Payment extends SoftDeleteEntity {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    private String transactionId; // từ cổng thanh toán
+    private String transactionId;
 
-    private String paymentUrl; // link redirect (VNPay/Momo)
+    private String paymentUrl;
 }

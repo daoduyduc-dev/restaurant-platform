@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Builder
@@ -21,6 +23,7 @@ public class SettingsDTO {
     private Integer noShowGracePeriod;
     private Integer defaultReservationDuration;
     private Integer loyaltyPointsPerDollar;
+    private BigDecimal vipTableFee;
     private Boolean autoAssignWaiter;
     private Boolean emailNotifications;
     private Boolean smsNotifications;

@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "restaurant_settings")
 @Getter
@@ -55,6 +57,10 @@ public class RestaurantSettings extends AuditableEntity {
     @Column(nullable = false)
     @Builder.Default
     private Integer loyaltyPointsPerDollar = 1;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal vipTableFee = new BigDecimal("25.00");
 
     @Column(nullable = false)
     @Builder.Default

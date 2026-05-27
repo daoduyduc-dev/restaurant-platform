@@ -30,6 +30,7 @@ public class SettingsService {
         settings.setNoShowGracePeriod(request.getNoShowGracePeriod());
         settings.setDefaultReservationDuration(request.getDefaultReservationDuration());
         settings.setLoyaltyPointsPerDollar(request.getLoyaltyPointsPerDollar());
+        settings.setVipTableFee(request.getVipTableFee());
         settings.setAutoAssignWaiter(request.getAutoAssignWaiter());
         settings.setEmailNotifications(request.getEmailNotifications());
         settings.setSmsNotifications(request.getSmsNotifications());
@@ -55,6 +56,7 @@ public class SettingsService {
                 .noShowGracePeriod(settings.getNoShowGracePeriod())
                 .defaultReservationDuration(settings.getDefaultReservationDuration())
                 .loyaltyPointsPerDollar(settings.getLoyaltyPointsPerDollar())
+                .vipTableFee(settings.getVipTableFee())
                 .autoAssignWaiter(settings.getAutoAssignWaiter())
                 .emailNotifications(settings.getEmailNotifications())
                 .smsNotifications(settings.getSmsNotifications())

@@ -6,6 +6,8 @@ import { Button, Card, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 import api from '../../services/api';
 import type { SettingsDTO } from '../../services/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -27,11 +29,12 @@ const DEFAULT_SETTINGS: SettingsDTO = {
   noShowGracePeriod: 20,
   defaultReservationDuration: 90,
   loyaltyPointsPerDollar: 1,
+  vipTableFee: 25,
   autoAssignWaiter: true,
   emailNotifications: true,
   smsNotifications: false,
   darkMode: false,
-  language: 'en',
+  language: 'vi',
 };
 
 const SYSTEM_INFO = {
@@ -43,6 +46,7 @@ const SYSTEM_INFO = {
 };
 
 export const AdminSettingsView = () => {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<SettingsDTO>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +57,7 @@ export const AdminSettingsView = () => {
         const response = await api.get('/settings');
         setSettings({ ...DEFAULT_SETTINGS, ...response.data.data });
       } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Failed to load settings');
+        toast.error(error.response?.data?.message || t('settings.loadError'));
       } finally {
         setLoading(false);
       }
@@ -67,9 +71,10 @@ export const AdminSettingsView = () => {
     try {
       const response = await api.put('/settings', settings);
       setSettings({ ...DEFAULT_SETTINGS, ...response.data.data });
-      toast.success('Settings saved successfully!');
+      await i18n.changeLanguage(response.data.data?.language || settings.language);
+      toast.success(t('settings.saved'));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to save settings');
+      toast.error(error.response?.data?.message || t('settings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -77,7 +82,7 @@ export const AdminSettingsView = () => {
 
   const handleReset = () => {
     setSettings(DEFAULT_SETTINGS);
-    toast.info('Settings reset to defaults. Click Save Changes to persist.');
+    toast.info(t('settings.resetInfo'));
   };
 
   if (loading) {
@@ -88,15 +93,15 @@ export const AdminSettingsView = () => {
     <motion.div variants={container} initial="hidden" animate="show" style={{ paddingTop: 'var(--sp-4)' }}>
       <motion.div variants={itemAnim} className="page-header">
         <div>
-          <h1 style={{ color: 'var(--orange-400)' }}>System Settings</h1>
-          <p>Configure your restaurant management system</p>
+          <h1 style={{ color: 'var(--orange-400)' }}>{t('settings.title')}</h1>
+          <p>{t('settings.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
           <Button variant="ghost" size="medium" onClick={handleReset}>
-            <RotateCcw size={16} /> Reset
+            <RotateCcw size={16} /> {t('common.reset')}
           </Button>
           <Button variant="primary" size="medium" onClick={handleSave} disabled={saving}>
-            <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
+            <Save size={16} /> {saving ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </motion.div>
@@ -105,13 +110,13 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Settings size={20} />} title="General Settings" description="Basic restaurant information" tint="rgba(212, 175, 55, 0.1)" color="var(--orange-500)" />
+              <SectionHeader icon={<Settings size={20} />} title={t('settings.general')} description={t('settings.generalDesc')} tint="rgba(212, 175, 55, 0.1)" color="var(--orange-500)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-              <Input label="Restaurant Name" value={settings.restaurantName} onChange={(e) => setSettings({ ...settings, restaurantName: e.target.value })} />
-              <Input label="Email" type="email" value={settings.email} onChange={(e) => setSettings({ ...settings, email: e.target.value })} />
-              <Input label="Phone" value={settings.phone} onChange={(e) => setSettings({ ...settings, phone: e.target.value })} />
-              <Input label="Address" value={settings.address} onChange={(e) => setSettings({ ...settings, address: e.target.value })} />
+              <Input label={t('settings.restaurantName')} value={settings.restaurantName} onChange={(e) => setSettings({ ...settings, restaurantName: e.target.value })} />
+              <Input label={t('settings.email')} type="email" value={settings.email} onChange={(e) => setSettings({ ...settings, email: e.target.value })} />
+              <Input label={t('settings.phone')} value={settings.phone} onChange={(e) => setSettings({ ...settings, phone: e.target.value })} />
+              <Input label={t('settings.address')} value={settings.address} onChange={(e) => setSettings({ ...settings, address: e.target.value })} />
             </Card.Content>
           </Card>
         </motion.div>
@@ -119,21 +124,21 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Clock size={20} />} title="Business Hours" description="Operating hours and reservation settings" tint="rgba(13, 148, 136, 0.1)" color="var(--teal)" />
+              <SectionHeader icon={<Clock size={20} />} title={t('settings.hours')} description={t('settings.hoursDesc')} tint="rgba(13, 148, 136, 0.1)" color="var(--teal)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                <Input label="Opening Time" type="time" value={settings.openingTime} onChange={(e) => setSettings({ ...settings, openingTime: e.target.value })} />
-                <Input label="Closing Time" type="time" value={settings.closingTime} onChange={(e) => setSettings({ ...settings, closingTime: e.target.value })} />
+                <Input label={t('settings.openingTime')} type="time" value={settings.openingTime} onChange={(e) => setSettings({ ...settings, openingTime: e.target.value })} />
+                <Input label={t('settings.closingTime')} type="time" value={settings.closingTime} onChange={(e) => setSettings({ ...settings, closingTime: e.target.value })} />
               </div>
               <Input
-                label="No-Show Grace Period (minutes)"
+                label={t('settings.noShowGracePeriod')}
                 type="number"
                 value={String(settings.noShowGracePeriod)}
                 onChange={(e) => setSettings({ ...settings, noShowGracePeriod: Number.parseInt(e.target.value, 10) || 0 })}
               />
               <Input
-                label="Default Reservation Duration (minutes)"
+                label={t('settings.defaultReservationDuration')}
                 type="number"
                 value={String(settings.defaultReservationDuration)}
                 onChange={(e) => setSettings({ ...settings, defaultReservationDuration: Number.parseInt(e.target.value, 10) || 0 })}
@@ -145,11 +150,11 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Bell size={20} />} title="Notifications" description="Email and SMS notification settings" tint="rgba(139, 92, 246, 0.1)" color="var(--purple-500)" />
+              <SectionHeader icon={<Bell size={20} />} title={t('settings.notifications')} description={t('settings.notificationsDesc')} tint="rgba(139, 92, 246, 0.1)" color="var(--purple-500)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-              <ToggleSetting label="Email Notifications" description="Send email confirmations and reminders" checked={settings.emailNotifications} onChange={(checked) => setSettings({ ...settings, emailNotifications: checked })} />
-              <ToggleSetting label="SMS Notifications" description="Send SMS alerts for urgent updates" checked={settings.smsNotifications} onChange={(checked) => setSettings({ ...settings, smsNotifications: checked })} />
+              <ToggleSetting label={t('settings.emailNotifications')} description={t('settings.emailNotificationsDesc')} checked={settings.emailNotifications} onChange={(checked) => setSettings({ ...settings, emailNotifications: checked })} />
+              <ToggleSetting label={t('settings.smsNotifications')} description={t('settings.smsNotificationsDesc')} checked={settings.smsNotifications} onChange={(checked) => setSettings({ ...settings, smsNotifications: checked })} />
             </Card.Content>
           </Card>
         </motion.div>
@@ -157,16 +162,22 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Shield size={20} />} title="Loyalty & Rewards" description="Points system configuration" tint="rgba(251, 191, 36, 0.1)" color="var(--amber)" />
+              <SectionHeader icon={<Shield size={20} />} title={t('settings.rewards')} description={t('settings.rewardsDesc')} tint="rgba(251, 191, 36, 0.1)" color="var(--amber)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
               <Input
-                label="Points per $10 Spent"
+                label={t('settings.loyaltyPointsPerDollar')}
                 type="number"
                 value={String(settings.loyaltyPointsPerDollar)}
                 onChange={(e) => setSettings({ ...settings, loyaltyPointsPerDollar: Number.parseInt(e.target.value, 10) || 0 })}
               />
-              <ToggleSetting label="Auto-Assign Waiter" description="Automatically assign waiters to tables" checked={settings.autoAssignWaiter} onChange={(checked) => setSettings({ ...settings, autoAssignWaiter: checked })} />
+              <Input
+                label={t('settings.vipTableFee')}
+                type="number"
+                value={String(settings.vipTableFee)}
+                onChange={(e) => setSettings({ ...settings, vipTableFee: Number.parseFloat(e.target.value) || 0 })}
+              />
+              <ToggleSetting label={t('settings.autoAssignWaiter')} description={t('settings.autoAssignWaiterDesc')} checked={settings.autoAssignWaiter} onChange={(checked) => setSettings({ ...settings, autoAssignWaiter: checked })} />
             </Card.Content>
           </Card>
         </motion.div>
@@ -174,13 +185,13 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Palette size={20} />} title="Appearance" description="UI and language preferences" tint="rgba(236, 72, 153, 0.1)" color="var(--pink-500)" />
+              <SectionHeader icon={<Palette size={20} />} title={t('settings.appearance')} description={t('settings.appearanceDesc')} tint="rgba(236, 72, 153, 0.1)" color="var(--pink-500)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-              <ToggleSetting label="Dark Mode" description="Switch to dark theme" checked={settings.darkMode} onChange={(checked) => setSettings({ ...settings, darkMode: checked })} />
+              <ToggleSetting label={t('settings.darkMode')} description={t('settings.darkModeDesc')} checked={settings.darkMode} onChange={(checked) => setSettings({ ...settings, darkMode: checked })} />
               <div>
                 <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-heading)', marginBottom: 'var(--sp-2)' }}>
-                  Language
+                  {t('common.language')}
                 </label>
                 <select
                   value={settings.language}
@@ -195,8 +206,8 @@ export const AdminSettingsView = () => {
                     color: 'var(--text-main)'
                   }}
                 >
-                  <option value="en">English</option>
-                  <option value="vi">Tieng Viet</option>
+                  <option value="en">{t('common.english')}</option>
+                  <option value="vi">{t('common.vietnamese')}</option>
                 </select>
               </div>
             </Card.Content>
@@ -206,7 +217,7 @@ export const AdminSettingsView = () => {
         <motion.div variants={itemAnim}>
           <Card variant="elevated">
             <Card.Header>
-              <SectionHeader icon={<Database size={20} />} title="System Information" description="Version and database status" tint="rgba(59, 130, 246, 0.1)" color="var(--blue-500)" />
+              <SectionHeader icon={<Database size={20} />} title={t('settings.systemInfo')} description={t('settings.systemInfoDesc')} tint="rgba(59, 130, 246, 0.1)" color="var(--blue-500)" />
             </Card.Header>
             <Card.Content style={{ padding: 'var(--sp-5)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>

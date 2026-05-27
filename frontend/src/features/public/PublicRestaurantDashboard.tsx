@@ -1,93 +1,369 @@
 import { Link } from 'react-router-dom';
-import { CalendarCheck, ChevronRight, Clock, MapPin, Phone, Sparkles, Star, UtensilsCrossed, Wine } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ArrowRight,
+  Award,
+  CalendarCheck,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  MapPin,
+  MessageSquareQuote,
+  Phone,
+  Sparkles,
+  Star,
+  UtensilsCrossed,
+  Wine,
+  Users,
+  LayoutGrid,
+} from 'lucide-react';
 
-const highlights = [
-  { icon: <UtensilsCrossed size={20} />, label: 'Chef tasting menu', value: '8 courses' },
-  { icon: <Wine size={20} />, label: 'Wine cellar', value: '240 labels' },
-  { icon: <Clock size={20} />, label: 'Dinner service', value: '17:30 - 22:30' },
-  { icon: <CalendarCheck size={20} />, label: 'Reservations', value: 'Online only' },
-];
-
-const menuPreview = [
-  'Truffle Ribeye Steak',
-  'Lobster Ravioli',
-  'Wagyu Beef Tartare',
-  'Chocolate Souffle',
-];
+import i18n from '../../i18n';
+import './public.css';
 
 export const PublicRestaurantDashboard = () => {
+  const { t } = useTranslation();
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const features = [
+    {
+      icon: <Award size={28} />,
+      title: t('public.feature1Title'),
+      desc: t('public.feature1Desc'),
+    },
+    {
+      icon: <CalendarCheck size={28} />,
+      title: t('public.feature2Title'),
+      desc: t('public.feature2Desc'),
+    },
+    {
+      icon: <Wine size={28} />,
+      title: t('public.feature3Title'),
+      desc: t('public.feature3Desc'),
+    },
+    {
+      icon: <Clock3 size={28} />,
+      title: t('public.feature4Title'),
+      desc: t('public.feature4Desc'),
+    },
+  ];
+
+  const bookingSteps = [
+    { icon: <LayoutGrid size={24} />, title: t('public.step1Title'), desc: t('public.step1Desc') },
+    { icon: <CalendarCheck size={24} />, title: t('public.step2Title'), desc: t('public.step2Desc') },
+    { icon: <Users size={24} />, title: t('public.step3Title'), desc: t('public.step3Desc') },
+    { icon: <CheckCircle2 size={24} />, title: t('public.step4Title'), desc: t('public.step4Desc') },
+  ];
+
+  const dishes = [
+    'Truffle Ribeye Steak',
+    'Lobster Ravioli',
+    'Wagyu Beef Tartare',
+    'Chocolate Soufflé',
+  ];
+
+  const testimonials = [
+    {
+      name: 'Emily Carter',
+      text: i18n.language === 'vi'
+        ? 'Một trải nghiệm tuyệt vời từ lúc đặt bàn cho đến món tráng miệng.'
+        : 'An exceptional dining experience from reservation to dessert.',
+    },
+    {
+      name: 'Daniel Kim',
+      text: i18n.language === 'vi'
+        ? 'Quy trình đặt bàn trực tuyến rất mượt và thanh lịch.'
+        : 'The online booking process was effortless and elegant.',
+    },
+    {
+      name: 'Sophia Nguyen',
+      text: i18n.language === 'vi'
+        ? 'Rất phù hợp cho những dịp đặc biệt. Chuyên nghiệp và chỉn chu.'
+        : 'Perfect for special occasions. Professional and polished.',
+    },
+  ];
+
+  const faqs = [
+    { question: t('public.faq1Q'), answer: t('public.faq1A') },
+    { question: t('public.faq2Q'), answer: t('public.faq2A') },
+    { question: t('public.faq3Q'), answer: t('public.faq3A') },
+    { question: t('public.faq4Q'), answer: t('public.faq4A') },
+  ];
+
+  const languageOptions = [
+    { value: 'vi', label: 'VI' },
+    { value: 'en', label: 'EN' },
+  ];
+
   return (
     <main className="public-site">
-      <section className="public-hero">
-        <div className="public-nav">
-          <div className="public-brand">
-            <span><UtensilsCrossed size={18} /></span>
-            ServeGenius
+      <header className="public-header">
+        <div className="public-navbar">
+          <div className="public-navbar-brand">
+            <UtensilsCrossed size={22} />
+            <span>{t('public.brand')}</span>
           </div>
-          <div className="public-actions">
-            <Link to="/login" className="public-link">Dang nhap</Link>
-            <Link to="/register" className="public-button">Dang ky</Link>
-          </div>
-        </div>
 
-        <div className="public-hero-content">
-          <div className="public-kicker"><Sparkles size={16} /> Fine dining reservation experience</div>
-          <h1>ServeGenius Restaurant</h1>
-          <p>
-            Khong gian am thuc cao cap voi thuc don theo mua, dich vu ban rieng va he thong dat ban truc tuyen
-            giup moi bua toi duoc chuan bi tron ven tu truoc khi ban den.
-          </p>
-          <div className="public-cta-row">
-            <Link to="/register" className="public-primary-cta">
-              Dat ban voi tai khoan customer <ChevronRight size={18} />
-            </Link>
-            <Link to="/login" className="public-secondary-cta">Toi da co tai khoan</Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="public-section public-highlight-grid">
-        {highlights.map(item => (
-          <article className="public-highlight" key={item.label}>
-            <div>{item.icon}</div>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </article>
-        ))}
-      </section>
-
-      <section className="public-section public-story">
-        <div>
-          <span className="public-eyebrow">The dining room</span>
-          <h2>Duoc thiet ke cho nhung buoi toi can su rieng tu, chinh xac va tinh te.</h2>
-        </div>
-        <p>
-          Khach hang dang ky tai khoan customer de dat ban, xem so do ban, chon mon va theo doi diem thuong.
-          Nhan vien tiep nhan check-in, day order sang bep, phuc vu va thanh toan tren cung mot luong.
-        </p>
-      </section>
-
-      <section className="public-section public-menu-band">
-        <div className="public-menu-copy">
-          <span className="public-eyebrow">Signature menu</span>
-          <h2>Nhung mon noi bat cho bua toi hom nay</h2>
-          <p>Thuc don duoc cap nhat theo tinh trang mon, thoi gian chuan bi va suc chua cua nha hang.</p>
-        </div>
-        <div className="public-menu-list">
-          {menuPreview.map((item, index) => (
-            <div key={item}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <strong>{item}</strong>
-              <Star size={15} />
+          <div className="public-navbar-actions">
+            <div style={{ display: 'flex', gap: 8 }}>
+              {languageOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => void i18n.changeLanguage(option.value)}
+                  className="btn btn-ghost"
+                  style={{
+                    padding: '8px 12px',
+                    border: i18n.language === option.value ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid transparent',
+                    background: i18n.language === option.value ? 'rgba(212, 175, 55, 0.08)' : 'transparent',
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
-          ))}
+
+            <Link to="/login" className="public-nav-link">
+              {t('public.login')}
+            </Link>
+
+            <Link to="/reserve" className="public-nav-cta">
+              {t('public.reserveNow')}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="public-hero">
+        <div className="public-container">
+          <div className="public-hero-content">
+            <div className="public-pill">
+              <Sparkles size={16} />
+              {t('public.heroKicker')}
+            </div>
+
+            <h1 className="public-hero-title">{t('public.heroTitle')}</h1>
+
+            <p className="public-hero-subtitle">{t('public.heroSubtitle')}</p>
+
+            <div className="public-hero-buttons">
+              <Link to="/reserve" className="public-primary-btn">
+                {t('public.heroPrimary')}
+                <ChevronRight size={18} />
+              </Link>
+
+              <Link to="/login" className="public-secondary-btn">
+                {t('public.heroSecondary')}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      <footer className="public-footer">
-        <div><MapPin size={16} /> 88 Golden Avenue, District Dining</div>
-        <div><Phone size={16} /> 090 123 4567</div>
-        <div>Dang nhap de tiep tuc vao he thong quan ly va dat ban.</div>
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-grid-4">
+            {features.map((feature) => (
+              <div key={feature.title} className="public-card">
+                <div className="public-icon-accent">{feature.icon}</div>
+                <h3>{feature.title}</h3>
+                <p>{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-about-grid">
+            <div>
+              <div className="public-eyebrow">{t('public.aboutEyebrow')}</div>
+              <h2 className="public-section-title">{t('public.aboutTitle')}</h2>
+              <p className="public-body-text">{t('public.aboutBody')}</p>
+
+              <div className="public-check-list">
+                {[
+                  t('public.aboutPoint1'),
+                  t('public.aboutPoint2'),
+                  t('public.aboutPoint3'),
+                  t('public.aboutPoint4'),
+                ].map((item) => (
+                  <div key={item} className="public-check-item">
+                    <CheckCircle2 size={18} color="#059669" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <img
+              className="public-about-image"
+              src="https://images.unsplash.com/photo-1552566626-52f8b828add9"
+              alt="restaurant"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-center-heading">
+            <div className="public-eyebrow">{t('public.bookingEyebrow')}</div>
+            <h2 className="public-section-title">{t('public.bookingTitle')}</h2>
+          </div>
+
+          <div className="public-grid-4">
+            {bookingSteps.map((step, index) => (
+              <div key={step.title} className="public-card">
+                <div className="public-step-number">{String(index + 1).padStart(2, '0')}</div>
+                <div className="public-icon-accent">{step.icon}</div>
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-floor-preview">
+            <div>
+              <div className="public-eyebrow">{t('public.floorEyebrow')}</div>
+              <h2 className="public-section-title">{t('public.floorTitle')}</h2>
+              <p className="public-body-text">{t('public.floorBody')}</p>
+
+              <Link to="/reserve" className="public-primary-btn">
+                {t('public.floorAction')}
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+
+            <div className="public-floor-mock">
+              <div className="floor-grid">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className={`floor-table ${index % 4 === 0 ? 'selected' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-center-heading">
+            <div className="public-eyebrow">{t('public.menuEyebrow')}</div>
+            <h2 className="public-section-title">{t('public.menuTitle')}</h2>
+          </div>
+
+          <div className="public-grid-4">
+            {dishes.map((dish, index) => (
+              <div key={dish} className="public-card">
+                <div className="public-step-number">{String(index + 1).padStart(2, '0')}</div>
+                <h3>{dish}</h3>
+
+                <div className="public-stars">
+                  {Array.from({ length: 5 }).map((_, starIndex) => (
+                    <Star key={starIndex} size={16} fill="#F59E0B" color="#F59E0B" />
+                  ))}
+                </div>
+
+                <p>{t('public.menuBody')}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-center-heading">
+            <div className="public-eyebrow">{t('public.reviewsEyebrow')}</div>
+            <h2 className="public-section-title">{t('public.reviewsTitle')}</h2>
+          </div>
+
+          <div className="public-grid-3">
+            {testimonials.map((item) => (
+              <div key={item.name} className="public-card">
+                <div className="public-icon-accent">
+                  <MessageSquareQuote size={24} />
+                </div>
+
+                <p className="testimonial-text">"{item.text}"</p>
+                <strong>{item.name}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-center-heading">
+            <div className="public-eyebrow">{t('public.faqEyebrow')}</div>
+            <h2 className="public-section-title">{t('public.faqTitle')}</h2>
+          </div>
+
+          <div className="public-faq-list">
+            {faqs.map((faq, index) => {
+              const isOpen = openFaq === index;
+
+              return (
+                <div key={faq.question} className="public-faq-card">
+                  <button className="public-faq-button" onClick={() => setOpenFaq(isOpen ? null : index)}>
+                    <span>{faq.question}</span>
+                    <ChevronDown size={18} className={isOpen ? 'faq-open' : ''} />
+                  </button>
+
+                  {isOpen && <div className="public-faq-answer">{faq.answer}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="public-section">
+        <div className="public-container">
+          <div className="public-cta-box">
+            <h2>{t('public.ctaTitle')}</h2>
+            <p>{t('public.ctaBody')}</p>
+
+            <Link to="/reserve" className="public-white-btn">
+              {t('public.ctaAction')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="public-footer-wrap">
+        <div className="public-container">
+          <div className="public-footer">
+            <div>
+              <div className="public-footer-brand">{t('public.brand')}</div>
+              <div className="public-footer-copy">{t('public.footerBody')}</div>
+            </div>
+
+            <div className="public-footer-contact">
+              <div>
+                <MapPin size={16} />
+                {t('public.footerAddress')}
+              </div>
+
+              <div>
+                <Phone size={16} />
+                {t('public.footerPhone')}
+              </div>
+            </div>
+          </div>
+        </div>
       </footer>
     </main>
   );

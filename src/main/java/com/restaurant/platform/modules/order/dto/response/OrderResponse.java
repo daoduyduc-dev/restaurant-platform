@@ -1,5 +1,6 @@
 package com.restaurant.platform.modules.order.dto.response;
 
+import com.restaurant.platform.modules.table.enums.TableType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,12 +15,16 @@ public class OrderResponse {
 
     private UUID tableId;
     private String tableName;
+    private TableType tableType;
 
     private UUID reservationId;
 
     private String status;
 
     private BigDecimal totalAmount;
+    private BigDecimal vipSurchargeAmount;
+    private BigDecimal finalAmount;
+    private Boolean loyaltyEligible;
 
     private List<OrderItemResponse> items;
 
