@@ -6,6 +6,7 @@ import { toast } from '../../store/toastStore';
 import { FloorPlanEditor } from './FloorPlanEditor';
 import { getTableCanvasRect } from './editor/layout';
 import { useTableEditorStore, validateTableEditorForm } from './tableEditorStore';
+import { QrCode } from 'lucide-react';
 
 const TABLE_TYPE_OPTIONS = [
   { label: 'All Types', value: 'ALL' },
@@ -308,7 +309,15 @@ export const AdminTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title>Table Details</Card.Title>
           </Card.Header>
-          <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+          <Card.Content
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--sp-4)',
+              height: '100%',
+              overflowY: 'auto',
+            }}
+          >
             {selectedTable ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)', alignItems: 'flex-start' }}>
@@ -335,6 +344,41 @@ export const AdminTableView = () => {
                 <Input label="Position Y" value={selectedTableCanvasRect ? String(selectedTableCanvasRect.y) : '-'} readOnly />
 
                 <div style={{ padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--gray-50)', border: '1px solid var(--border-main)' }}>
+                <div
+                  style={{
+                    padding: 'var(--sp-4)',
+                    borderRadius: 'var(--r-md)',
+                    border: '1px solid var(--border-main)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      fontWeight: 700,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <QrCode size={16} />
+                    Table QR Code
+                  </div>
+
+                  <img
+                    alt={`QR for ${selectedTable.name}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                      `${window.location.origin}/menu?tableId=${selectedTable.id}&tableName=${selectedTable.name}`
+                    )}`}
+                    style={{
+                      width: 180,
+                      height: 180,
+                      borderRadius: 8,
+                      border: '1px solid var(--border-main)',
+                    }}
+                  />
+                </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>
                     <MapPin size={16} color="var(--orange-500)" />
                     Layout Coordinates

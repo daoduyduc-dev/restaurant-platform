@@ -158,19 +158,26 @@ public class AuthServiceImpl implements AuthService {
 
         String header = request.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ")) {
-            return;
+        if (header != null && header.startsWith("Bearer ")) {
+            String accessToken = header.substring(7);
+
+            BlacklistedToken blacklisted = new BlacklistedToken();
+            blacklisted.setToken(accessToken);
+            blacklisted.setExpiryDate(
+                    jwtService.extractExpiry(accessToken).toInstant()
+            );
+
+            blacklistRepository.save(blacklisted);
         }
 
-        String token = header.substring(7);
+        String refreshToken = request.getHeader("X-Refresh-Token");
 
-        BlacklistedToken blacklisted = new BlacklistedToken();
-        blacklisted.setToken(token);
-        blacklisted.setExpiryDate(
-                jwtService.extractExpiry(token).toInstant()
-        );
-
-        blacklistRepository.save(blacklisted);
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            refreshRepo.findByToken(refreshToken).ifPresent(token -> {
+                token.setRevoked(true);
+                refreshRepo.save(token);
+            });
+        }
     }
 
     private RefreshToken createRefreshToken(String username) {

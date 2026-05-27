@@ -246,11 +246,15 @@ public class OrderServiceImpl implements OrderService {
                     "Menu item is not available");
         }
 
-        // 🔥 merge item nếu đã tồn tại
         OrderItem existing = order.getItems().stream()
                 .filter(i -> i.getMenuItem().getId().equals(menuItem.getId()))
                 .findFirst()
                 .orElse(null);
+
+        boolean isActiveCookingOrder =
+                order.getStatus() == OrderStatus.COOKING
+                        || order.getStatus() == OrderStatus.READY
+                        || order.getStatus() == OrderStatus.SERVED;
 
         if (existing != null) {
             existing.setQuantity(existing.getQuantity() + request.getQuantity());
@@ -267,20 +271,36 @@ public class OrderServiceImpl implements OrderService {
 
         recalculate(order);
 
-        // Notify kitchen that order has been updated
+        Order saved = orderRepository.save(order);
+
         try {
-            var payload = java.util.Map.of(
-                    "type", "ORDER_UPDATED",
-                    "orderId", order.getId().toString(),
-                    "message", "Order items updated",
-                    "timestamp", java.time.Instant.now().toString()
-            );
-            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+            if (isActiveCookingOrder) {
+                var payload = java.util.Map.of(
+                        "type", "ORDER_ITEM_ADDED_TO_COOKING",
+                        "orderId", saved.getId().toString(),
+                        "tableName", saved.getTable().getName() + " - ADD",
+                        "message", "New add-on item for kitchen",
+                        "timestamp", java.time.Instant.now().toString()
+                );
+
+                messagingTemplate.convertAndSend("/topic/orders", mapToResponse(saved));
+                messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+            } else {
+                var payload = java.util.Map.of(
+                        "type", "ORDER_UPDATED",
+                        "orderId", saved.getId().toString(),
+                        "message", "Order items updated",
+                        "timestamp", java.time.Instant.now().toString()
+                );
+
+                messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+            }
+
         } catch (Exception e) {
             log.error("Failed to send WebSocket notification for order update", e);
         }
 
-        return mapToResponse(order);
+        return mapToResponse(saved);
     }
 
     // ================= UPDATE ITEM =================
@@ -527,6 +547,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         recalculate(order);
+
+        if (order.getStatus() == OrderStatus.COOKING) {
+            try {
+                messagingTemplate.convertAndSend("/topic/orders", mapToResponse(order));
+            } catch (Exception e) {
+                log.error("Failed to notify kitchen for bulk add", e);
+            }
+        }
     }
 
     private OrderResponse mapToResponse(Order order) {

@@ -175,7 +175,15 @@ export const WaiterTableView = () => {
               Table Details
             </Card.Title>
           </Card.Header>
-          <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
+          <Card.Content
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--sp-4)',
+              height: '100%',
+              overflowY: 'auto',
+            }}
+          >
             {selectedTable ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)', alignItems: 'flex-start' }}>
@@ -262,7 +270,14 @@ export const WaiterTableView = () => {
                   </div>
                 )}
 
-                <div style={{ marginTop: 'auto', paddingTop: 'var(--sp-4)', borderTop: '1px solid var(--border-main)' }}>
+                <div
+                  style={{
+                    marginTop: '24px',
+                    paddingTop: 'var(--sp-4)',
+                    borderTop: '1px solid var(--border-main)',
+                    textAlign: 'center',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, marginBottom: 10 }}>
                     <QrCode size={16} />
                     Table QR Code

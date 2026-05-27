@@ -165,8 +165,14 @@ export const CustomerTableView = () => {
       return;
     }
 
-    if (!availableTables.has(table.id)) {
-      toast.error('Bàn này không còn trống trong khung giờ đã chọn.');
+    // chỉ chặn nếu bàn đang thật sự bận vật lý
+    if (table.status === 'OCCUPIED') {
+      toast.error('Bàn này hiện đang có khách.');
+      return;
+    }
+
+    if (table.status === 'DIRTY') {
+      toast.error('Bàn này đang được dọn dẹp.');
       return;
     }
 
@@ -189,6 +195,22 @@ export const CustomerTableView = () => {
     }
 
     try {
+      const availabilityResponse = await api.get('/reservations/available-tables', {
+        params: {
+          reservationTime: `${date}T${time}:00`,
+          numberOfGuests: guests,
+        },
+      });
+
+      const availableIds = new Set<string>(
+        (availabilityResponse.data.data || []).map((table: TableDTO) => table.id)
+      );
+
+      if (!availableIds.has(selectedTable.id)) {
+        toast.error('Bàn này không còn trống trong khung giờ đã chọn.');
+        return;
+      }
+
       const response = await api.post('/reservations', {
         tableId: selectedTable.id,
         customerName: name,
@@ -337,8 +359,8 @@ export const CustomerTableView = () => {
                   <div>
                     <h3 style={{ margin: 0, fontSize: 22, color: 'var(--text-heading)' }}>{selectedTable.name}</h3>
                     <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 8, flexWrap: 'wrap' }}>
-                      <Badge variant={availableTables.has(selectedTable.id) ? 'success' : STATUS_VARIANTS[selectedTable.status]}>
-                        {availableTables.has(selectedTable.id) ? 'Có thể đặt' : selectedTable.status}
+                      <Badge variant={STATUS_VARIANTS[selectedTable.status]}>
+                        {selectedTable.status}
                       </Badge>
                       <Badge variant="info">Tầng {selectedTable.floor ?? '-'}</Badge>
                       {selectedTable.type === 'VIP' ? <Badge variant="warning">VIP</Badge> : null}
