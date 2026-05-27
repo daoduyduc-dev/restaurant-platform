@@ -32,7 +32,6 @@ public class ReservationController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasAnyRole('CUSTOMER','STAFF') and hasAuthority('RESERVATION_CREATE')")
     public ApiResponse<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
         return ApiResponse.success("Reservation created successfully",
                 reservationService.create(request));
@@ -107,7 +106,6 @@ public class ReservationController {
     
     // ================= GET AVAILABLE TABLES =================
     @GetMapping("/available-tables")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TableResponse>> getAvailableTables(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime reservationTime,
             @RequestParam int numberOfGuests

@@ -108,6 +108,11 @@ function App() {
           element={<PublicReservationPage />}
         />
 
+        <Route
+          path="/menu"
+          element={<MenuPage />}
+        />
+
         {/* AUTH */}
         <Route
           element={

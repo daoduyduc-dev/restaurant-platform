@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { OrderDTO, ReservationDTO } from '../../services/types';
 import { AlertTriangle, Calendar, Clock, MapPin, ShoppingBag, Users } from 'lucide-react';
@@ -10,6 +11,7 @@ import { translateStatus } from '../../utils/translations';
 const money = (value: unknown) => Number(value || 0).toFixed(2);
 
 export const CustomerReservationView = () => {
+  const navigate = useNavigate();
   const [reservations, setReservations] = useState<ReservationDTO[]>([]);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export const CustomerReservationView = () => {
           <h1 style={{ color: 'var(--orange-600)' }}>Đặt bàn của tôi</h1>
           <p>Các đặt bàn sắp tới và đã qua</p>
         </div>
-        <Button variant="primary" onClick={() => window.location.href = '/tables'}><Calendar size={16} /> Đặt bàn mới</Button>
+        <Button variant="primary" onClick={() => navigate('/app/tables')}><Calendar size={16} /> Đặt bàn mới</Button>
       </div>
 
       <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>

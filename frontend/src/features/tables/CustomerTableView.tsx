@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { TableDTO } from '../../services/types';
 import { FloorPlanEditor } from './FloorPlanEditor';
@@ -6,6 +7,7 @@ import { useWebSocket } from '../../services/useWebSocket';
 import { Button, Card, Input, Badge } from '../../components/ui';
 import { Building2, Calendar, CheckCircle, Clock, Layers3, Users } from 'lucide-react';
 import { toast } from '../../store/toastStore';
+import { useAuthStore } from '../../store/authStore';
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
@@ -15,6 +17,8 @@ const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error
 };
 
 export const CustomerTableView = () => {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [selectedTable, setSelectedTable] = useState<TableDTO | null>(null);
   const [availableTables, setAvailableTables] = useState<Set<string>>(new Set());
@@ -23,7 +27,7 @@ export const CustomerTableView = () => {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('19:00');
   const [guests, setGuests] = useState(2);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState('');
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [bookedTimeSlots, setBookedTimeSlots] = useState<Set<string>>(new Set());
@@ -40,6 +44,12 @@ export const CustomerTableView = () => {
   useEffect(() => {
     void fetchTables();
   }, []);
+
+  useEffect(() => {
+    if (user?.name) {
+      setName((current) => current || user.name);
+    }
+  }, [user?.name]);
 
   useWebSocket<any>('/topic/tables', () => {
     void fetchTables();
@@ -89,14 +99,14 @@ export const CustomerTableView = () => {
         setAvailableTables(availableIds);
       } catch (error) {
         console.error('Failed to check availability:', error);
-        setAvailableTables(new Set(tables.filter((table) => table.status === 'AVAILABLE').map((table) => table.id)));
+        setAvailableTables(new Set());
       } finally {
         setCheckingAvailability(false);
       }
     };
 
     void checkAvailability();
-  }, [date, guests, tables, time]);
+  }, [date, guests, time]);
 
   useEffect(() => {
     if (!date || !selectedTable) {
@@ -143,22 +153,11 @@ export const CustomerTableView = () => {
     setSelectedTable(null);
   }, [selectedFloor, selectedTable]);
 
-  const tablesWithAvailability = useMemo(() => (
-    tables.map((table) => {
-      const availabilityStatus: TableDTO['status'] = availableTables.has(table.id) ? 'AVAILABLE' : 'OCCUPIED';
-
-      return {
-        ...table,
-        status: availabilityStatus,
-      };
-    })
-  ), [availableTables, tables]);
-
   const tablesOnSelectedFloor = selectedFloor == null
-    ? tablesWithAvailability
-    : tablesWithAvailability.filter((table) => table.floor === selectedFloor);
+    ? tables
+    : tables.filter((table) => table.floor === selectedFloor);
 
-  const availableCountOnFloor = tablesOnSelectedFloor.filter((table) => table.status === 'AVAILABLE').length;
+  const availableCountOnFloor = tablesOnSelectedFloor.filter((table) => availableTables.has(table.id)).length;
 
   const handleTableSelect = (table: TableDTO | null) => {
     if (!table) {
@@ -167,7 +166,7 @@ export const CustomerTableView = () => {
     }
 
     if (!availableTables.has(table.id)) {
-      toast.error('This table is not available for the selected date and time.');
+      toast.error('Bàn này không còn trống trong khung giờ đã chọn.');
       return;
     }
 
@@ -177,7 +176,7 @@ export const CustomerTableView = () => {
 
   const submitBooking = async () => {
     if (!selectedTable || !name || !phone) {
-      toast.error('Please fill all fields');
+      toast.error('Vui lòng điền đầy đủ thông tin.');
       return;
     }
 
@@ -185,12 +184,12 @@ export const CustomerTableView = () => {
     const now = new Date();
 
     if (reservationDateTime < now) {
-      toast.error('Cannot book a table in the past. Please select a future date and time.');
+      toast.error('Không thể đặt bàn trong quá khứ.');
       return;
     }
 
     try {
-      await api.post('/reservations', {
+      const response = await api.post('/reservations', {
         tableId: selectedTable.id,
         customerName: name,
         phone,
@@ -198,14 +197,16 @@ export const CustomerTableView = () => {
         numberOfGuests: guests,
       });
 
-      toast.success('Table booked successfully.');
+      const reservation = response.data.data;
+      toast.success('Đặt bàn thành công. Mời bạn chọn món tiếp theo.');
       setSelectedTable(null);
-      setName('');
-      setPhone('');
       await fetchTables();
+
+      const destination = user ? '/app/menu' : '/menu';
+      navigate(`${destination}?reservationId=${reservation.id}&tableId=${reservation.tableId}&tableName=${encodeURIComponent(reservation.tableName || selectedTable.name)}`);
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message;
-      toast.error(errorMessage || 'Failed to book table. Please try again.');
+      toast.error(errorMessage || 'Không thể đặt bàn. Vui lòng thử lại.');
     }
   };
 
@@ -225,15 +226,15 @@ export const CustomerTableView = () => {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Book a Table</h1>
+            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Đặt bàn</h1>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)' }}>
-              Browse each floor and select an available table for your reservation.
+              Chọn tầng, chọn bàn, sau đó chuyển sang màn hình chọn món để hoàn tất trải nghiệm.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-            <Badge variant="success">{availableCountOnFloor} available</Badge>
-            <Badge variant="info">{guests} guest(s)</Badge>
+            <Badge variant="success">{availableCountOnFloor} bàn trống</Badge>
+            <Badge variant="info">{guests} khách</Badge>
           </div>
         </div>
 
@@ -241,7 +242,7 @@ export const CustomerTableView = () => {
           <Card.Content style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginRight: 'var(--sp-2)' }}>
               <Building2 size={18} color="var(--text-muted)" />
-              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Floor Tabs</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Chọn tầng</span>
             </div>
             {availableFloors.map((floor) => (
               <Button
@@ -250,7 +251,7 @@ export const CustomerTableView = () => {
                 size="small"
                 onClick={() => setSelectedFloor(floor)}
               >
-                Floor {floor}
+                Tầng {floor}
               </Button>
             ))}
           </Card.Content>
@@ -260,14 +261,14 @@ export const CustomerTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
-                <Card.Title>Floor Layout</Card.Title>
+                <Card.Title>Sơ đồ bàn</Card.Title>
                 <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                  {selectedFloor != null ? `Showing Floor ${selectedFloor}` : 'No floor selected'} with {tablesOnSelectedFloor.length} table(s). Only available tables can be selected.
+                  {selectedFloor != null ? `Đang xem tầng ${selectedFloor}` : 'Chưa chọn tầng'} với {tablesOnSelectedFloor.length} bàn. Màu bàn là cố định, trạng thái nằm ở phần thông tin và khả năng chọn bàn.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-                <Badge variant="info">{tablesOnSelectedFloor.length} total</Badge>
-                <Badge variant="success">{availableCountOnFloor} open</Badge>
+                <Badge variant="info">{tablesOnSelectedFloor.length} tổng số bàn</Badge>
+                <Badge variant="success">{availableCountOnFloor} chọn được</Badge>
               </div>
             </div>
           </Card.Header>
@@ -283,7 +284,7 @@ export const CustomerTableView = () => {
               />
             ) : (
               <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No tables are available on the selected floor.
+                Không có bàn ở tầng này.
               </div>
             )}
           </Card.Content>
@@ -303,7 +304,7 @@ export const CustomerTableView = () => {
             }}>
               <div className="spinner" />
               <p style={{ margin: 'var(--sp-2) 0 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-                Checking availability...
+                Đang kiểm tra bàn trống...
               </p>
             </div>
           ) : null}
@@ -311,22 +312,22 @@ export const CustomerTableView = () => {
       </div>
 
       <div
-  style={{
-    width: '100%',
-    maxWidth: 420,
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'sticky',
-    top: 24,
-    alignSelf: 'start',
-    maxHeight: 'calc(100vh - 120px)',
-  }}
->
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'sticky',
+          top: 24,
+          alignSelf: 'start',
+          maxHeight: 'calc(100vh - 120px)',
+        }}
+      >
         <Card variant="elevated" style={{ height: '100%' }}>
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Layers3 size={18} color="var(--orange-500)" />
-              Reservation Details
+              Thông tin đặt bàn
             </Card.Title>
           </Card.Header>
           <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
@@ -337,17 +338,18 @@ export const CustomerTableView = () => {
                     <h3 style={{ margin: 0, fontSize: 22, color: 'var(--text-heading)' }}>{selectedTable.name}</h3>
                     <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 8, flexWrap: 'wrap' }}>
                       <Badge variant={availableTables.has(selectedTable.id) ? 'success' : STATUS_VARIANTS[selectedTable.status]}>
-                        {availableTables.has(selectedTable.id) ? 'Available now' : selectedTable.status}
+                        {availableTables.has(selectedTable.id) ? 'Có thể đặt' : selectedTable.status}
                       </Badge>
-                      <Badge variant="info">Floor {selectedTable.floor ?? '-'}</Badge>
+                      <Badge variant="info">Tầng {selectedTable.floor ?? '-'}</Badge>
+                      {selectedTable.type === 'VIP' ? <Badge variant="warning">VIP</Badge> : null}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Up to {selectedTable.capacity} guests</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Tối đa {selectedTable.capacity} khách</div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
                   <div>
-                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Date</label>
+                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Ngày</label>
                     <div className="input-container">
                       <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
                       <input
@@ -362,7 +364,7 @@ export const CustomerTableView = () => {
                   </div>
 
                   <div>
-                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Time</label>
+                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Giờ</label>
                     <div className="input-container">
                       <Clock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
                       <select
@@ -378,12 +380,8 @@ export const CustomerTableView = () => {
                             const isBooked = bookedTimeSlots.has(slot);
 
                             return (
-                              <option
-                                key={slot}
-                                value={slot}
-                                disabled={isBooked}
-                              >
-                                {slot} {isBooked ? '(Booked)' : ''}
+                              <option key={slot} value={slot} disabled={isBooked}>
+                                {slot} {isBooked ? '(Đã kín)' : ''}
                               </option>
                             );
                           });
@@ -394,7 +392,7 @@ export const CustomerTableView = () => {
                 </div>
 
                 <div>
-                  <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Guests</label>
+                  <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Số khách</label>
                   <div className="input-container">
                     <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
                     <input
@@ -409,20 +407,25 @@ export const CustomerTableView = () => {
                   </div>
                 </div>
 
-                <Input label="Your Name" value={name} onChange={(event) => setName(event.target.value)} placeholder="John Doe" />
-                <Input label="Phone Number" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+1 234 567 890" />
+                <Input label="Tên người đặt" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nguyễn Văn A" />
+                <Input label="Số điện thoại" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0901234567" />
 
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+                  {!user && (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Bạn vẫn có thể đặt bàn và xem menu khi chưa đăng nhập. Đăng nhập sẽ giúp lưu lịch sử, quản lý đơn và tích điểm đổi thưởng.
+                    </div>
+                  )}
                   <Button variant="primary" size="large" style={{ width: '100%', justifyContent: 'center' }} onClick={() => void submitBooking()}>
                     <CheckCircle size={18} />
-                    Confirm Booking
+                    Xác nhận đặt bàn và chọn món
                   </Button>
                 </div>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}>
                 <SelectIndicator />
-                <p style={{ margin: 0 }}>Select an available table to complete your reservation.</p>
+                <p style={{ margin: 0 }}>Chọn một bàn đang trống để tiếp tục đặt bàn và sang màn hình chọn món.</p>
               </div>
             )}
           </Card.Content>

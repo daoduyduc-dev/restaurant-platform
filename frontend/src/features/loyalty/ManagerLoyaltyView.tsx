@@ -117,7 +117,7 @@ export const ManagerLoyaltyView = () => {
         <Card.Header>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Card.Title>Members</Card.Title>
-            <Button variant="ghost" size="small" onClick={() => navigate('/report')}>View All <ArrowUpRight size={14} /></Button>
+            <Button variant="ghost" size="small" onClick={() => navigate('/app/report')}>View All <ArrowUpRight size={14} /></Button>
           </div>
         </Card.Header>
         <Card.Content style={{ padding: 0 }}>

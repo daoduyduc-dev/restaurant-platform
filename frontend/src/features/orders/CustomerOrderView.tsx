@@ -46,7 +46,7 @@ export const CustomerOrderView = () => {
           <h1 style={{ color: 'var(--orange-600)' }}>Order của tôi</h1>
           <p>Theo dõi order hiện tại và lịch sử</p>
         </div>
-        <Button variant="primary" size="medium" onClick={() => navigate('/menu')}>
+        <Button variant="primary" size="medium" onClick={() => navigate('/app/menu')}>
           <ShoppingBag size={16} /> Đặt món từ Menu
         </Button>
       </motion.div>

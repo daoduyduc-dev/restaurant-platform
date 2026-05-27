@@ -130,7 +130,7 @@ export const ReceptionistTableView = () => {
                     )}
                     
                     <div style={{ marginTop: 'auto', paddingTop: 'var(--sp-4)', borderTop: '1px solid var(--border-main)' }}>
-                       <Button variant="outline" style={{ width: '100%' }} onClick={() => navigate('/reservations')}>
+                       <Button variant="outline" style={{ width: '100%' }} onClick={() => navigate('/app/reservations')}>
                          Create Walk-in Reservation
                        </Button>
                     </div>

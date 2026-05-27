@@ -71,7 +71,7 @@ export const PublicNavbar = () => {
             Login
           </Button>
 
-          <Button variant="primary" onClick={() => navigate('/tables')}>
+          <Button variant="primary" onClick={() => navigate('/reserve')}>
             Reserve Now
           </Button>
         </nav>

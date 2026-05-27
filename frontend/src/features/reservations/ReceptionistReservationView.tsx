@@ -92,7 +92,7 @@ export const ReceptionistReservationView = () => {
                <p>Manage bookings, walk-ins, and seating assignments</p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--sp-3)' }}>
-               <Button variant="secondary" onClick={() => window.location.href = '/tables'}><MapPin size={16} /> View Floor Plan</Button>
+               <Button variant="secondary" onClick={() => window.location.href = '/app/tables'}><MapPin size={16} /> View Floor Plan</Button>
                <Button variant="primary" onClick={() => setIsModalOpen(true)}><Calendar size={16} /> Add Walk-in / Booking</Button>
             </div>
          </div>

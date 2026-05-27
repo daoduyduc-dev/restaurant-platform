@@ -213,11 +213,11 @@ export const WaiterTableView = () => {
                             Mark as served
                           </Button>
                         ) : null}
-                        <Button variant="secondary" onClick={() => navigate('/menu')}>
+                        <Button variant="secondary" onClick={() => navigate('/app/menu')}>
                           <PlusCircle size={16} />
                           Add items
                         </Button>
-                        <Button variant="outline" onClick={() => navigate('/orders')}>
+                        <Button variant="outline" onClick={() => navigate('/app/orders')}>
                           <QrCode size={16} />
                           View order
                         </Button>
@@ -250,7 +250,7 @@ export const WaiterTableView = () => {
                   </>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
-                    <Button variant="primary" size="large" style={{ justifyContent: 'center', padding: '16px' }} onClick={() => navigate('/menu')}>
+                    <Button variant="primary" size="large" style={{ justifyContent: 'center', padding: '16px' }} onClick={() => navigate('/app/menu')}>
                       <PlusCircle size={18} />
                       New order
                     </Button>

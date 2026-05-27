@@ -87,7 +87,7 @@ export const ManagerOrderView = () => {
               <AlertTriangle size={14} /> {delayedOrders.length} Delayed
             </Badge>
           )}
-          <Button variant="secondary" size="medium" onClick={() => navigate('/report')}>
+          <Button variant="secondary" size="medium" onClick={() => navigate('/app/report')}>
             <TrendingUp size={16} /> Full Reports
           </Button>
         </div>

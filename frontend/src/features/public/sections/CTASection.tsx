@@ -35,7 +35,7 @@ export const CTASection = () => {
           Reserve your table now in just a few clicks.
         </p>
 
-        <Button variant="secondary" size="large" onClick={() => navigate('/tables')}>
+        <Button variant="secondary" size="large" onClick={() => navigate('/reserve')}>
           Book Now
         </Button>
       </div>

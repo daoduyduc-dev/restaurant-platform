@@ -4,6 +4,7 @@ import com.restaurant.platform.security.JwtAuthenticationFilter;
 import com.restaurant.platform.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -47,6 +48,13 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/v1/settings/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tables").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tables/floors").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reservations/available-tables").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/reservations").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
 
                         // Profile - Any authenticated user
                         .requestMatchers("/api/v1/profile/**").authenticated()

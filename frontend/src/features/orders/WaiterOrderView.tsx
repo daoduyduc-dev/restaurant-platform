@@ -113,7 +113,7 @@ export const WaiterOrderView = () => {
           <Button variant="secondary" onClick={fetchOrders}>
             <RefreshCw size={16} /> Lam moi
           </Button>
-          <Button variant="primary" onClick={() => navigate('/tables')}>
+          <Button variant="primary" onClick={() => navigate('/app/tables')}>
             <ClipboardList size={16} /> Tao order tu ban
           </Button>
         </div>

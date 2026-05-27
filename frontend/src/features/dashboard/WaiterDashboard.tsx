@@ -105,7 +105,7 @@ export const WaiterDashboard = () => {
           <Button variant="secondary" onClick={refresh} disabled={loading}>
             <RefreshCw size={16} /> Lam moi
           </Button>
-          <Button variant="primary" onClick={() => navigate('/tables')}>
+          <Button variant="primary" onClick={() => navigate('/app/tables')}>
             <Table2 size={16} /> Mo so do ban
           </Button>
         </div>
@@ -149,7 +149,7 @@ export const WaiterDashboard = () => {
                     {order.items?.length || 0} mon - {(order.totalAmount || 0).toLocaleString('vi-VN')} VND
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <Button variant="secondary" size="small" onClick={() => navigate('/orders')}>
+                    <Button variant="secondary" size="small" onClick={() => navigate('/app/orders')}>
                       Chi tiet
                     </Button>
                     {nextStatus[order.status] && (

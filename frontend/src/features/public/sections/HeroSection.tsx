@@ -47,7 +47,7 @@ export const HeroSection = () => {
             <Button
               variant="primary"
               size="large"
-              onClick={() => navigate('/tables')}
+              onClick={() => navigate('/reserve')}
             >
               Reserve a Table
             </Button>

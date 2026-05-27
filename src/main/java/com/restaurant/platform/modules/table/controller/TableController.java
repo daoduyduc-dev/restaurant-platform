@@ -34,7 +34,6 @@ public class TableController {
 
     // ================= GET ALL =================
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TableResponse>> getAll(
             @RequestParam(required = false) List<TableStatus> status,
             @RequestParam(required = false) Integer floor,
@@ -48,7 +47,6 @@ public class TableController {
 
     // ================= GET FLOORS =================
     @GetMapping("/floors")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<Integer>> getAvailableFloors() {
         return ApiResponse.success(tableService.getAvailableFloors());
     }

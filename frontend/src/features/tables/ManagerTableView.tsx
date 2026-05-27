@@ -192,8 +192,8 @@ export const ManagerTableView = () => {
                              </div>
                              
                              <div style={{ display: 'flex', gap: 8 }}>
-                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/orders')}>View Order</Button>
-                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/orders')}>View Order</Button>
+                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/app/orders')}>View Order</Button>
+                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/app/orders')}>View Order</Button>
                              </div>
                           </div>
                        );

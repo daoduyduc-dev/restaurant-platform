@@ -48,7 +48,6 @@ public class OrderController {
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') or (hasRole('STAFF') and hasAuthority('ORDER_CREATE'))")
     public ApiResponse<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse order = orderService.create(request);
         notifyKitchen(order);

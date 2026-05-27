@@ -7,32 +7,20 @@ import {
   resolveCollisions,
 } from './positioning';
 
-const STATUS_COLORS: Record<string, { fill: string; border: string; text: string; gradient: string }> = {
-  AVAILABLE: { 
-    fill: '#ECFDF5', 
-    border: '#10B981', 
-    text: '#059669',
-    gradient: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)'
+const FIXED_TABLE_STYLES = {
+  NORMAL: {
+    fill: '#EEF6FF',
+    border: '#2563EB',
+    text: '#1D4ED8',
+    gradient: 'linear-gradient(135deg, #EEF6FF, #DBEAFE)'
   },
-  OCCUPIED:  { 
-    fill: '#FEF2F2', 
-    border: '#EF4444', 
-    text: '#DC2626',
-    gradient: 'linear-gradient(135deg, #FEF2F2, #FEE2E2)'
+  VIP: {
+    fill: '#FFF7D6',
+    border: '#D4AF37',
+    text: '#7C5A00',
+    gradient: 'linear-gradient(135deg, #FFF7D6, #FDE68A)'
   },
-  RESERVED:  { 
-    fill: '#FFFBEB', 
-    border: '#F59E0B', 
-    text: '#D97706',
-    gradient: 'linear-gradient(135deg, #FFFBEB, #FEF3C7)'
-  },
-  DIRTY:     { 
-    fill: '#F3F4F6', 
-    border: '#9CA3AF', 
-    text: '#6B7280',
-    gradient: 'linear-gradient(135deg, #F3F4F6, #E5E7EB)'
-  },
-};
+} as const;
 
 interface FloorPlanProps {
   tables: TableDTO[];
@@ -201,7 +189,7 @@ export const FloorPlan = ({
         {/* Tables */}
         {resolvedTables.map((table, i) => {
           const pos = getDefaultTableFallbackPosition(i);
-        const colors = STATUS_COLORS[table.status] || STATUS_COLORS.AVAILABLE;
+        const colors = table.type === 'VIP' ? FIXED_TABLE_STYLES.VIP : FIXED_TABLE_STYLES.NORMAL;
         const isSelected = selectedId === table.id;
         const isDimmed = dimUnavailable && table.status !== 'AVAILABLE';
         const isHighlighted = highlightStatuses?.includes(table.status);
@@ -296,18 +284,16 @@ export const FloorPlan = ({
       </div>
 
       <div className="floor-plan-legend" style={{ backdropFilter: 'blur(10px)' }}>
-        {Object.entries(STATUS_COLORS).map(([status, c]) => (
-          <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%', 
-              background: c.border,
-              boxShadow: `0 0 8px ${c.border}40`,
-            }} />
-            <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{status}</span>
-          </div>
-        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ 
+            width: 12, 
+            height: 12, 
+            borderRadius: '50%', 
+            background: FIXED_TABLE_STYLES.NORMAL.border,
+            boxShadow: `0 0 8px ${FIXED_TABLE_STYLES.NORMAL.border}40`,
+          }} />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Standard</span>
+        </div>
         {vipTables.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Crown size={12} color="#B8860B" />

@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +69,17 @@ public class OrderServiceImpl implements OrderService {
                         ErrorCode.TABLE_NOT_FOUND, "Table not found"));
 
         Reservation reservation = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean authenticatedUser = authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal());
+
+        if (!authenticatedUser && request.getReservationId() == null) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Guest orders must be linked to an existing reservation");
+        }
+
         if (request.getReservationId() != null) {
             reservation = reservationRepository.findById(request.getReservationId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -80,8 +92,8 @@ public class OrderServiceImpl implements OrderService {
                         "Only active reservations (RESERVED or CHECKED_IN) can place orders");
             }
 
-            String email = SecurityContextHolder.getContext().getAuthentication() != null
-                    ? SecurityContextHolder.getContext().getAuthentication().getName()
+            String email = authenticatedUser
+                    ? authentication.getName()
                     : null;
 
             // Only check reservation ownership for customers, not for staff

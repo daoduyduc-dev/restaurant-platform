@@ -9,23 +9,31 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
+  LayoutGrid,
   MapPin,
   MessageSquareQuote,
   Phone,
   Sparkles,
   Star,
+  Users,
   UtensilsCrossed,
   Wine,
-  Users,
-  LayoutGrid,
 } from 'lucide-react';
 
 import i18n from '../../i18n';
+import { useAuthStore } from '../../store/authStore';
 import './public.css';
 
 export const PublicRestaurantDashboard = () => {
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const user = useAuthStore((state) => state.user);
+  const isVi = i18n.language === 'vi';
+
+  const reserveHref = user ? '/app/tables' : '/reserve';
+  const menuHref = user ? '/app/menu' : '/menu';
+  const accountHref = user ? '/app/dashboard' : '/login';
+  const rewardHref = user ? '/app/loyalty' : '/login';
 
   const features = [
     {
@@ -58,29 +66,29 @@ export const PublicRestaurantDashboard = () => {
   ];
 
   const dishes = [
-    'Truffle Ribeye Steak',
-    'Lobster Ravioli',
-    'Wagyu Beef Tartare',
-    'Chocolate Soufflé',
+    isVi ? 'Bít tết Ribeye sốt nấm truffle' : 'Truffle Ribeye Steak',
+    isVi ? 'Ravioli tôm hùm' : 'Lobster Ravioli',
+    isVi ? 'Bò Wagyu tartare' : 'Wagyu Beef Tartare',
+    isVi ? 'Souffle chocolate' : 'Chocolate Souffle',
   ];
 
   const testimonials = [
     {
       name: 'Emily Carter',
-      text: i18n.language === 'vi'
-        ? 'Một trải nghiệm tuyệt vời từ lúc đặt bàn cho đến món tráng miệng.'
+      text: isVi
+        ? 'Một trải nghiệm trọn vẹn từ lúc chọn bàn, gọi món cho tới khi thanh toán.'
         : 'An exceptional dining experience from reservation to dessert.',
     },
     {
       name: 'Daniel Kim',
-      text: i18n.language === 'vi'
-        ? 'Quy trình đặt bàn trực tuyến rất mượt và thanh lịch.'
+      text: isVi
+        ? 'Quy trình đặt bàn trực tuyến mượt, rõ ràng và rất dễ dùng.'
         : 'The online booking process was effortless and elegant.',
     },
     {
       name: 'Sophia Nguyen',
-      text: i18n.language === 'vi'
-        ? 'Rất phù hợp cho những dịp đặc biệt. Chuyên nghiệp và chỉn chu.'
+      text: isVi
+        ? 'Rất phù hợp cho dịp đặc biệt, đặc biệt là khu VIP và trải nghiệm phục vụ chỉn chu.'
         : 'Perfect for special occasions. Professional and polished.',
     },
   ];
@@ -125,12 +133,12 @@ export const PublicRestaurantDashboard = () => {
               ))}
             </div>
 
-            <Link to="/login" className="public-nav-link">
-              {t('public.login')}
+            <Link to={accountHref} className="public-nav-link">
+              {user ? (isVi ? 'Tài khoản' : 'Account') : t('public.login')}
             </Link>
 
-            <Link to="/reserve" className="public-nav-cta">
-              {t('public.reserveNow')}
+            <Link to={reserveHref} className="public-nav-cta">
+              {isVi ? 'Đặt bàn' : t('public.reserveNow')}
             </Link>
           </div>
         </div>
@@ -149,14 +157,37 @@ export const PublicRestaurantDashboard = () => {
             <p className="public-hero-subtitle">{t('public.heroSubtitle')}</p>
 
             <div className="public-hero-buttons">
-              <Link to="/reserve" className="public-primary-btn">
-                {t('public.heroPrimary')}
+              <Link to={reserveHref} className="public-primary-btn">
+                {isVi ? 'Đặt bàn và chọn món' : t('public.heroPrimary')}
                 <ChevronRight size={18} />
               </Link>
 
-              <Link to="/login" className="public-secondary-btn">
-                {t('public.heroSecondary')}
+              <Link to={menuHref} className="public-secondary-btn">
+                {isVi ? 'Xem thực đơn trước' : 'View menu first'}
               </Link>
+            </div>
+
+            <div
+              style={{
+                marginTop: 24,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 14,
+                maxWidth: 760,
+              }}
+            >
+              <div className="public-card" style={{ background: 'rgba(255,255,255,0.12)', color: 'white', borderColor: 'rgba(255,255,255,0.15)' }}>
+                <h3 style={{ marginTop: 0, color: 'white' }}>{isVi ? 'Đặt bàn không cần đăng nhập' : 'Book without an account'}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.82)' }}>
+                  {isVi ? 'Khách mới vẫn có thể chọn bàn và chọn món ngay.' : 'Guests can still reserve a table and pre-order dishes instantly.'}
+                </p>
+              </div>
+              <div className="public-card" style={{ background: 'rgba(255,255,255,0.12)', color: 'white', borderColor: 'rgba(255,255,255,0.15)' }}>
+                <h3 style={{ marginTop: 0, color: 'white' }}>{isVi ? 'Đăng nhập để tích điểm' : 'Sign in for rewards'}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.82)' }}>
+                  {isVi ? 'Tài khoản giúp lưu lịch sử, hóa đơn và cộng điểm đổi ưu đãi.' : 'Accounts unlock order history, invoices, and loyalty rewards.'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -197,6 +228,15 @@ export const PublicRestaurantDashboard = () => {
                   </div>
                 ))}
               </div>
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
+                <Link to={accountHref} className="public-primary-btn">
+                  {user ? (isVi ? 'Vào dashboard của tôi' : 'Open my dashboard') : (isVi ? 'Đăng nhập để quản lý đơn' : 'Sign in to manage orders')}
+                </Link>
+                <Link to={rewardHref} className="public-secondary-btn" style={{ color: '#92400e', borderColor: 'rgba(146,64,14,0.2)' }}>
+                  {isVi ? 'Tìm hiểu tích điểm' : 'Explore loyalty'}
+                </Link>
+              </div>
             </div>
 
             <img
@@ -228,6 +268,28 @@ export const PublicRestaurantDashboard = () => {
         </div>
       </section>
 
+      <section className="public-section" style={{ paddingTop: 0 }}>
+        <div className="public-container">
+          <div className="public-grid-3">
+            <div className="public-card">
+              <div className="public-icon-accent"><CalendarCheck size={24} /></div>
+              <h3>{isVi ? '1. Chọn bàn phù hợp' : '1. Pick the right table'}</h3>
+              <p>{isVi ? 'Xem sơ đồ bàn thường và VIP, số chỗ ngồi, tầng và khung giờ còn trống.' : 'Review standard and VIP tables, seating capacity, floors, and available time slots.'}</p>
+            </div>
+            <div className="public-card">
+              <div className="public-icon-accent"><UtensilsCrossed size={24} /></div>
+              <h3>{isVi ? '2. Chọn món ngay sau khi đặt' : '2. Pre-order right after booking'}</h3>
+              <p>{isVi ? 'Sau khi gửi đặt bàn thành công, hệ thống chuyển thẳng sang bước chọn món để nhà hàng chuẩn bị trước.' : 'Once the reservation is created, the app moves directly to the menu so the kitchen can prepare ahead.'}</p>
+            </div>
+            <div className="public-card">
+              <div className="public-icon-accent"><Award size={24} /></div>
+              <h3>{isVi ? '3. Thanh toán và tích điểm' : '3. Pay and earn rewards'}</h3>
+              <p>{isVi ? 'Khách đã có tài khoản sẽ được cộng điểm sau khi nhân viên xác nhận thanh toán thành công.' : 'Registered customers receive loyalty points after staff confirms a successful payment.'}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="public-section">
         <div className="public-container">
           <div className="public-floor-preview">
@@ -236,8 +298,8 @@ export const PublicRestaurantDashboard = () => {
               <h2 className="public-section-title">{t('public.floorTitle')}</h2>
               <p className="public-body-text">{t('public.floorBody')}</p>
 
-              <Link to="/reserve" className="public-primary-btn">
-                {t('public.floorAction')}
+              <Link to={reserveHref} className="public-primary-btn">
+                {isVi ? 'Chọn bàn trên sơ đồ' : t('public.floorAction')}
                 <ArrowRight size={18} />
               </Link>
             </div>
@@ -336,9 +398,19 @@ export const PublicRestaurantDashboard = () => {
             <h2>{t('public.ctaTitle')}</h2>
             <p>{t('public.ctaBody')}</p>
 
-            <Link to="/reserve" className="public-white-btn">
-              {t('public.ctaAction')}
-            </Link>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <Link to={reserveHref} className="public-white-btn">
+                {isVi ? 'Bắt đầu đặt bàn' : t('public.ctaAction')}
+              </Link>
+              <Link to={menuHref} className="public-secondary-btn">
+                {isVi ? 'Xem món trước' : 'Browse menu'}
+              </Link>
+            </div>
+            <div style={{ marginTop: 18, color: 'rgba(255,255,255,0.88)', fontSize: 15 }}>
+              {isVi
+                ? 'Đăng nhập để theo dõi lịch sử đặt bàn, đơn món và tích điểm đổi thưởng sau thanh toán.'
+                : 'Sign in to track reservations, orders, and earn loyalty points after payment.'}
+            </div>
           </div>
         </div>
       </section>

@@ -7,12 +7,10 @@ import {
   resolveCollisions,
 } from './positioning';
 
-const STATUS_COLORS: Record<string, { fill: string; border: string; text: string }> = {
-  AVAILABLE: { fill: '#ECFDF5', border: '#10B981', text: '#059669' },
-  OCCUPIED:  { fill: '#FEF2F2', border: '#EF4444', text: '#DC2626' },
-  RESERVED:  { fill: '#FFFBEB', border: '#F59E0B', text: '#D97706' },
-  DIRTY:     { fill: '#F3F4F6', border: '#9CA3AF', text: '#6B7280' },
-};
+const FIXED_TABLE_STYLES = {
+  NORMAL: { fill: '#EEF6FF', border: '#2563EB', text: '#1D4ED8' },
+  VIP: { fill: '#FFF7D6', border: '#D4AF37', text: '#7C5A00' },
+} as const;
 
 interface FloorPlanProps {
   tables: TableDTO[];
@@ -38,7 +36,7 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
           const size = getTableRenderSize(table.capacity);
           const x = getBoundedTablePosition(table.positionX, pos.x, 'x', size);
           const y = getBoundedTablePosition(table.positionY, pos.y, 'y', size);
-        const colors = STATUS_COLORS[table.status] || STATUS_COLORS.AVAILABLE;
+        const colors = table.type === 'VIP' ? FIXED_TABLE_STYLES.VIP : FIXED_TABLE_STYLES.NORMAL;
         const isSelected = selectedId === table.id;
         const isDimmed = dimUnavailable && table.status !== 'AVAILABLE';
         const isHighlighted = highlightStatuses?.includes(table.status);
@@ -113,12 +111,10 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
       </div>
 
       <div className="floor-plan-legend">
-        {Object.entries(STATUS_COLORS).map(([status, c]) => (
-          <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.border }} />
-            <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>{status}</span>
-          </div>
-        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: FIXED_TABLE_STYLES.NORMAL.border }} />
+          <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>Standard</span>
+        </div>
         {hasVipTables && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Crown size={12} color="#B8860B" />

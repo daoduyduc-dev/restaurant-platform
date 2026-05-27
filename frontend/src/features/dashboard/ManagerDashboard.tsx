@@ -93,10 +93,10 @@ export const ManagerDashboard = () => {
           <p>Monitor operations and manage your restaurant</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-          <Button variant="secondary" size="medium" onClick={() => navigate('/report')}>
+          <Button variant="secondary" size="medium" onClick={() => navigate('/app/report')}>
             <BarChart3 size={16} /> Reports
           </Button>
-          <Button variant="primary" size="medium" onClick={() => navigate('/settings')}>
+          <Button variant="primary" size="medium" onClick={() => navigate('/app/settings')}>
             <Settings size={16} /> Settings
           </Button>
         </div>
@@ -221,16 +221,16 @@ export const ManagerDashboard = () => {
           </Card.Header>
           <Card.Content style={{ padding: 'var(--sp-4)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--sp-3)' }}>
-              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/staff')}>
+              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/app/staff')}>
                 <Users size={16} /> Manage Staff
               </Button>
-              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/menu')}>
+              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/app/menu')}>
                 <ShoppingBag size={16} /> Menu Items
               </Button>
-              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/report')}>
+              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/app/report')}>
                 <BarChart3 size={16} /> View Reports
               </Button>
-              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/settings')}>
+              <Button variant="secondary" size="medium" style={{ justifyContent: 'flex-start' }} onClick={() => navigate('/app/settings')}>
                 <Settings size={16} /> System Config
               </Button>
             </div>
