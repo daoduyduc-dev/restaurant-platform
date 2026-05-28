@@ -39,14 +39,14 @@ export const ManagerOrderView = () => {
   const fetchStaff = async () => {
     try {
       const res = await api.get('/users');
-      if (res.data.data?.items) setStaff(res.data.data.items.filter((u: UserDTO) => u.roles?.some(r => ['WAITER', 'KITCHEN'].includes(r.toUpperCase()))));
+      if (res.data.data?.items) setStaff(res.data.data.items.filter((u: UserDTO) => u.roles?.some(r => r.toUpperCase() === 'STAFF')));
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     }
   };
 
   useEffect(() => { fetchOrders(); fetchStaff(); }, []);
-  useWebSocket<OrderDTO>('/topic/orders/role/MANAGER', () => fetchOrders());
+  useWebSocket<OrderDTO>('/topic/orders/role/ADMIN', () => fetchOrders());
 
   const grouped = ALL_STATUSES.map(s => ({
     status: s,

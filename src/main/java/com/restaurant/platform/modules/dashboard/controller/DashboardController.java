@@ -23,7 +23,7 @@ public class DashboardController {
 
     // Alerts: orders stuck in a status longer than threshold (minutes)
     @GetMapping("/alerts")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<OrderResponse>> getAlerts(@RequestParam(defaultValue = "20") int cookThresholdMinutes) {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(cookThresholdMinutes);
         List<com.restaurant.platform.modules.order.entity.Order> stuck = orderRepository.findByStatusAndCreatedDateBefore(OrderStatus.COOKING, threshold);

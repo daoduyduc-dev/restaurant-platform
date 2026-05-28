@@ -51,6 +51,7 @@ function timeSince(date?: string) {
 export const WaiterOrderView = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
+  const [addOnTableLabels, setAddOnTableLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
@@ -70,6 +71,28 @@ export const WaiterOrderView = () => {
   }, []);
 
   useWebSocket<OrderDTO>(['/topic/orders', '/topic/orders/role/STAFF'], fetchOrders);
+  useWebSocket<{ type?: string; orderId?: string; tableName?: string }>('/topic/notifications/role/STAFF', (payload) => {
+    if (payload?.type === 'ORDER_ITEM_ADDED_TO_COOKING' && payload.orderId && payload.tableName) {
+      setAddOnTableLabels((prev) => ({ ...prev, [payload.orderId as string]: payload.tableName as string }));
+      fetchOrders();
+    }
+  });
+
+  useEffect(() => {
+    const activeCookingOrderIds = new Set(
+      orders.filter((order) => order.status === 'COOKING').map((order) => order.id),
+    );
+
+    setAddOnTableLabels((prev) => {
+      const next: Record<string, string> = {};
+      Object.entries(prev).forEach(([orderId, label]) => {
+        if (activeCookingOrderIds.has(orderId)) {
+          next[orderId] = label;
+        }
+      });
+      return next;
+    });
+  }, [orders]);
 
   const grouped = useMemo(() => columns.map(col => ({
     ...col,
@@ -133,7 +156,7 @@ export const WaiterOrderView = () => {
                 <Card key={order.id} hover>
                   <Card.Content style={{ padding: 'var(--sp-4)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <strong>{order.tableName || 'Order'}</strong>
+                      <strong>{addOnTableLabels[order.id] || order.tableName || 'Order'}</strong>
                       <Badge variant={group.tone} size="small">{translateStatus(order.status)}</Badge>
                     </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginTop: 8 }}>

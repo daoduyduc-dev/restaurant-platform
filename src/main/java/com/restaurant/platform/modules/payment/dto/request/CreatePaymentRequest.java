@@ -12,5 +12,5 @@ public class CreatePaymentRequest {
     private UUID orderId;
 
     @NotNull
-    private String method; // CASH / MOMO / VNPAY
+    private String method; // CASH only
 }

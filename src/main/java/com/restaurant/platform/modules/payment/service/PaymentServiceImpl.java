@@ -15,7 +15,6 @@ import com.restaurant.platform.modules.payment.enums.PaymentStatus;
 import com.restaurant.platform.modules.payment.mapper.PaymentMapper;
 import com.restaurant.platform.modules.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +29,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final EmailService emailService;
     private final OrderBillingService orderBillingService;
     private final OrderService orderService;
-
-    @Value("${payment.gateway.vnpay.url:https://sandbox.vnpayment.vn/paymentgate/Embedded}")
-    private String vnpayUrl;
-
-    @Value("${payment.gateway.momo.url:https://test-payment.momo.vn/web/paymentgateway}")
-    private String momoUrl;
-
-    @Value("${payment.gateway.default.url:https://payment-gateway.restaurant.local/callback}")
-    private String defaultUrl;
 
     @Override
     public PaymentResponse create(CreatePaymentRequest request) {
@@ -56,21 +46,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment = paymentRepository.save(payment);
         payment.setTransactionId(payment.getId().toString());
-
-        payment.setPaymentUrl(generatePaymentUrl(payment, request.getMethod()));
+        payment.setPaymentUrl(null);
 
         return paymentMapper.toResponse(paymentRepository.save(payment));
-    }
-
-    private String generatePaymentUrl(Payment payment, String method) {
-        String token = payment.getId().toString();
-        if ("VNPAY".equalsIgnoreCase(method)) {
-            return vnpayUrl + "?token=" + token;
-        } else if ("MOMO".equalsIgnoreCase(method)) {
-            return momoUrl + "?token=" + token;
-        } else {
-            return defaultUrl.endsWith("/") ? defaultUrl + token : defaultUrl + "/" + token;
-        }
     }
 
     @Override

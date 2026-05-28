@@ -12,10 +12,8 @@ import {
   Users,
   LogOut,
   Settings,
-  Search,
   UserCircle,
   CreditCard,
-  Bell,
   Home,
 } from 'lucide-react';
 
@@ -111,6 +109,7 @@ export const MainLayout = () => {
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
   const logout = useAuthStore((state) => state.logout);
   const primaryRole = getPrimaryRole(user?.roles || []);
   const navSections = useMemo(() => buildNav(primaryRole, t), [primaryRole, t]);
@@ -129,7 +128,11 @@ export const MainLayout = () => {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', null, {
+        headers: refreshToken
+          ? { 'X-Refresh-Token': refreshToken }
+          : undefined,
+      });
     } catch {
       // Ignore logout transport errors and clear local auth state anyway.
     }
@@ -235,11 +238,6 @@ export const MainLayout = () => {
               gap: 12,
             }}
           >
-            <div className="search-bar" style={{ width: 280 }}>
-              <Search size={16} color="var(--text-muted)" />
-              <input placeholder={t('ui.searchPlaceholder')} />
-            </div>
-
             <select
               value={i18n.language}
               onChange={(event) => void i18n.changeLanguage(event.target.value)}
@@ -254,14 +252,6 @@ export const MainLayout = () => {
               <option value="vi">{t('common.vietnamese')}</option>
               <option value="en">{t('common.english')}</option>
             </select>
-
-            <button
-              className="btn btn-ghost"
-              style={{ padding: 10 }}
-              onClick={() => navigate('/app/notifications')}
-            >
-              <Bell size={18} />
-            </button>
 
             {primaryRole === 'ADMIN' && (
               <button

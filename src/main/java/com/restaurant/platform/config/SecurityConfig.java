@@ -62,7 +62,7 @@ public class SecurityConfig {
                         // Dashboard - ADMIN only; staff dashboards compose operational endpoints on the frontend.
                         .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
 
-                        // Menu - CUSTOMER/STAFF can view, ADMIN/MANAGER can manage
+                        // Menu - authenticated users can access role-scoped actions
                         .requestMatchers("/api/v1/menu").authenticated()
                         .requestMatchers("/api/v1/menu/**").authenticated()
                         .requestMatchers("/api/v1/categories").authenticated()
@@ -82,7 +82,7 @@ public class SecurityConfig {
                         // Payments - All authenticated (CUSTOMER for self-checkout)
                         .requestMatchers("/api/v1/payments/**").authenticated()
 
-                        // Loyalty - CUSTOMER can view/redeem own, ADMIN/MANAGER can view all
+                        // Loyalty - CUSTOMER can view/redeem own, ADMIN can view all
                         .requestMatchers("/api/v1/loyalty/me").authenticated()
                         .requestMatchers("/api/v1/loyalty/history").authenticated()
                         .requestMatchers("/api/v1/loyalty/redeem").hasRole("CUSTOMER")
@@ -91,9 +91,6 @@ public class SecurityConfig {
 
                         // Reports - All authenticated (role-specific data filtered in controller)
                         .requestMatchers("/api/v1/reports/**").authenticated()
-
-                        // Notifications - Any authenticated user
-                        .requestMatchers("/api/v1/notifications/**").authenticated()
 
                         // User management - ADMIN only
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")

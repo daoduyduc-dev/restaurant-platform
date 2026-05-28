@@ -95,7 +95,7 @@ export const ProfilePage = () => {
   }
 
   const isCustomer = profile.roles?.includes('CUSTOMER');
-  const isStaff = profile.roles?.some(r => ['WAITER', 'RECEPTIONIST', 'KITCHEN', 'MANAGER', 'ADMIN'].includes(r));
+  const isStaff = profile.roles?.some(r => ['STAFF', 'ADMIN'].includes(r));
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" style={{ padding: 'var(--sp-8)', maxWidth: '1200px', margin: '0 auto' }}>

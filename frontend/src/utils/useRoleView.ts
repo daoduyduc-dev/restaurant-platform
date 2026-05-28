@@ -12,8 +12,8 @@ export interface RoleViewConfig {
   canDelete: boolean;
   canAssign: boolean;
   canConfigure: boolean;
-  isOperational: boolean;   // Active work mode (WAITER, RECEPTIONIST, KITCHEN)
-  isMonitoring: boolean;    // Observation mode (MANAGER)
+  isOperational: boolean;   // Active work mode (STAFF)
+  isMonitoring: boolean;    // Reserved for monitoring mode
   isAdministrative: boolean; // Config/audit mode (ADMIN)
   isCustomer: boolean;
 }

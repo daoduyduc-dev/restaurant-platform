@@ -19,7 +19,6 @@ import { LoyaltyPage } from './features/loyalty/LoyaltyPage';
 import { PaymentPage } from './features/payment/PaymentPage';
 import { ReportPage } from './features/report/ReportPage';
 import { StaffPage } from './features/staff/StaffPage';
-import { NotificationsPage } from './features/notifications/NotificationsPage';
 
 import { PublicRestaurantDashboard } from './features/public/PublicRestaurantDashboard';
 import { PublicReservationPage } from './features/public/PublicReservationPage';
@@ -187,11 +186,6 @@ function App() {
           <Route
             path="report"
             element={<ReportPage />}
-          />
-
-          <Route
-            path="notifications"
-            element={<NotificationsPage />}
           />
 
           <Route

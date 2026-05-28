@@ -26,8 +26,8 @@ export function getPrimaryRole(roles: string[]): UserRole {
 
 export function normalizeRole(role: string): UserRole {
   const upperRole = role.toUpperCase();
-  if (['ADMIN', 'MANAGER'].includes(upperRole)) return 'ADMIN';
-  if (['STAFF', 'WAITER', 'RECEPTIONIST', 'KITCHEN'].includes(upperRole)) return 'STAFF';
+  if (upperRole === 'ADMIN') return 'ADMIN';
+  if (upperRole === 'STAFF') return 'STAFF';
   return 'CUSTOMER';
 }
 

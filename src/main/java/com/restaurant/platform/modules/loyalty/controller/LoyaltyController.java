@@ -64,7 +64,7 @@ public class LoyaltyController {
 
     // 🔥 admin get all
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<java.util.List<com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse>> getAll() {
         return ApiResponse.success(loyaltyService.getAllLoyalties());
     }

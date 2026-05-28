@@ -116,6 +116,12 @@ public class OrderServiceImpl implements OrderService {
             // Check if this reservation already has an OPEN, COOKING, or SERVED order
             Order existing = orderRepository.findByReservationId(request.getReservationId()).orElse(null);
             if (existing != null && !existing.getStatus().equals(OrderStatus.PAID) && !existing.getStatus().equals(OrderStatus.CANCELED)) {
+                // For checked-in reservations, create a separate add-on order
+                // so existing served/ready items are not moved back to cooking.
+                if (reservation.getStatus() == ReservationStatus.CHECKED_IN) {
+                    return createAddOnOrder(table, reservation, request.getItems());
+                }
+
                 addItems(existing, request.getItems());
                 return mapToResponse(orderRepository.save(existing));
             }
@@ -278,7 +284,7 @@ public class OrderServiceImpl implements OrderService {
                 var payload = java.util.Map.of(
                         "type", "ORDER_ITEM_ADDED_TO_COOKING",
                         "orderId", saved.getId().toString(),
-                        "tableName", saved.getTable().getName() + " - ADD",
+                        "tableName", saved.getTable().getName() + " - add",
                         "message", "New add-on item for kitchen",
                         "timestamp", java.time.Instant.now().toString()
                 );
@@ -399,7 +405,7 @@ public class OrderServiceImpl implements OrderService {
                 messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
             }
 
-            messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
+            messagingTemplate.convertAndSend("/topic/notifications/role/ADMIN", payload);
             // Send to assigned user directly if present
             var assigned = saved.getAssignedTo();
             if (assigned != null && assigned.getId() != null) {
@@ -557,6 +563,39 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    private OrderResponse createAddOnOrder(Table table, Reservation reservation, List<AddOrderItemRequest> items) {
+        Order addOnOrder = Order.builder()
+                .table(table)
+                .reservation(reservation)
+                .status(OrderStatus.COOKING)
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        addOnOrder = orderRepository.save(addOnOrder);
+        addItems(addOnOrder, items);
+        addOnOrder = orderRepository.save(addOnOrder);
+
+        notifyKitchenForAddOn(addOnOrder);
+
+        return mapToResponse(addOnOrder);
+    }
+
+    private void notifyKitchenForAddOn(Order order) {
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_ITEM_ADDED_TO_COOKING",
+                    "orderId", order.getId().toString(),
+                    "tableName", order.getTable().getName() + " - add",
+                    "message", "New add-on item for kitchen",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/orders", mapToResponse(order));
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for add-on order", e);
+        }
+    }
+
     private OrderResponse mapToResponse(Order order) {
 
         OrderResponse response = orderMapper.toResponse(order);
@@ -632,7 +671,7 @@ public class OrderServiceImpl implements OrderService {
             if (user.getId() != null) {
                 messagingTemplate.convertAndSendToUser(user.getId().toString(), "/queue/notifications", payload);
             }
-            messagingTemplate.convertAndSend("/topic/notifications/role/MANAGER", payload);
+            messagingTemplate.convertAndSend("/topic/notifications/role/ADMIN", payload);
         } catch (Exception e) {
             log.error("Failed to send WebSocket notification for order assignment", e);
         }
