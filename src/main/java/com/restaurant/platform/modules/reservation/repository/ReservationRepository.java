@@ -44,6 +44,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     Page<Reservation> findByPhoneContaining(String phone, Pageable pageable);
 
+    List<Reservation> findByTableIdAndReservationTimeBetween(UUID tableId, LocalDateTime start, LocalDateTime end);
+
     long count();
     Long countByStatus(ReservationStatus status);
     

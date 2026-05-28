@@ -8,6 +8,7 @@ import { Button, Card, Input, Badge } from '../../components/ui';
 import { Building2, Calendar, CheckCircle, Clock, Layers3, Users } from 'lucide-react';
 import { toast } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
@@ -116,26 +117,12 @@ export const CustomerTableView = () => {
 
     const checkBookedSlots = async () => {
       try {
-        const response = await api.get('/reservations', {
-          params: {
-            tableId: selectedTable.id,
-            date,
-            page: 0,
-            size: 100,
-          },
+        const response = await api.get(`/reservations/table/${selectedTable.id}/booked-slots`, {
+          params: { date },
         });
 
-        const reservations = response.data.data?.items || response.data.data || [];
-        const bookedSlots = new Set<string>();
-
-        reservations.forEach((reservation: any) => {
-          if (['PENDING', 'RESERVED', 'CHECKED_IN'].includes(reservation.status)) {
-            const reservationDate = new Date(reservation.reservationTime);
-            bookedSlots.add(reservationDate.toTimeString().substring(0, 5));
-          }
-        });
-
-        setBookedTimeSlots(bookedSlots);
+        const bookedTimes: string[] = response.data.data || [];
+        setBookedTimeSlots(new Set(bookedTimes));
       } catch (error) {
         console.error('Failed to check booked slots:', error);
         setBookedTimeSlots(new Set());
@@ -162,12 +149,6 @@ export const CustomerTableView = () => {
   const handleTableSelect = (table: TableDTO | null) => {
     if (!table) {
       setSelectedTable(null);
-      return;
-    }
-
-    // chỉ chặn nếu bàn đang thật sự bận vật lý
-    if (table.status === 'OCCUPIED') {
-      toast.error('Bàn này hiện đang có khách.');
       return;
     }
 
@@ -233,11 +214,14 @@ export const CustomerTableView = () => {
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       style={{
         display: 'grid',
         gridTemplateColumns:
-          window.innerWidth < 1600
+          window.innerWidth < 1024
             ? '1fr'
             : 'minmax(0, 1fr) 420px',
         gap: 'var(--sp-6)',
@@ -354,7 +338,11 @@ export const CustomerTableView = () => {
           </Card.Header>
           <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
             {selectedTable ? (
-              <>
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)', alignItems: 'flex-start' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: 22, color: 'var(--text-heading)' }}>{selectedTable.name}</h3>
@@ -443,17 +431,21 @@ export const CustomerTableView = () => {
                     Xác nhận đặt bàn và chọn món
                   </Button>
                 </div>
-              </>
+              </motion.div>
             ) : (
-              <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}>
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}
+              >
                 <SelectIndicator />
                 <p style={{ margin: 0 }}>Chọn một bàn đang trống để tiếp tục đặt bàn và sang màn hình chọn món.</p>
-              </div>
+              </motion.div>
             )}
           </Card.Content>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

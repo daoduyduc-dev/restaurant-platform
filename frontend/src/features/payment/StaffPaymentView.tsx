@@ -258,6 +258,11 @@ export const StaffPaymentView = () => {
                       </div>
                     )}
 
+                    <div style={{ textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
+                      <div style={{ fontWeight: 600, marginBottom: 'var(--sp-2)' }}>Scan to Pay</div>
+                      <img src="/MaQR.jpg" alt="Bank Transfer QR Code" style={{ width: 180, height: 180, borderRadius: 'var(--r-md)', border: '1px solid var(--border-main)', objectFit: 'contain' }} />
+                    </div>
+
                     <Button
                       variant="primary"
                       onClick={handlePayment}

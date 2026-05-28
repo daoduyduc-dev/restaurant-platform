@@ -122,4 +122,13 @@ public class ReservationController {
     ) {
         return ApiResponse.success(reservationService.getTableAvailabilityByTimeSlots(date, numberOfGuests));
     }
+
+    // ================= GET BOOKED SLOTS FOR TABLE =================
+    @GetMapping("/table/{tableId}/booked-slots")
+    public ApiResponse<List<String>> getBookedSlotsForTable(
+            @PathVariable UUID tableId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate date
+    ) {
+        return ApiResponse.success(reservationService.getBookedSlotsForTable(tableId, date));
+    }
 }

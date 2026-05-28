@@ -344,4 +344,22 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getBookedSlotsForTable(UUID tableId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        
+        List<Reservation> reservations = reservationRepository.findByTableIdAndReservationTimeBetween(tableId, startOfDay, endOfDay);
+        
+        return reservations.stream()
+                .filter(r -> r.getStatus() == ReservationStatus.PENDING 
+                          || r.getStatus() == ReservationStatus.RESERVED 
+                          || r.getStatus() == ReservationStatus.CHECKED_IN)
+                .map(r -> {
+                    java.time.LocalTime time = r.getReservationTime().toLocalTime();
+                    return String.format("%02d:%02d", time.getHour(), time.getMinute());
+                })
+                .toList();
+    }
 }

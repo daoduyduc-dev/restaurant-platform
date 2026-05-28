@@ -33,6 +33,8 @@ public interface ReservationService {
 
     List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDateTime date, int numberOfGuests);
 
+    List<String> getBookedSlotsForTable(UUID tableId, java.time.LocalDate date);
+
     ReservationResponse checkIn(UUID id);
 
     ReservationResponse cancel(UUID id);

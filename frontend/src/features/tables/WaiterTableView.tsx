@@ -258,7 +258,7 @@ export const WaiterTableView = () => {
                   </>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
-                    <Button variant="primary" size="large" style={{ justifyContent: 'center', padding: '16px' }} onClick={() => navigate('/app/menu')}>
+                    <Button variant="primary" size="large" style={{ justifyContent: 'center', padding: '16px' }} onClick={() => navigate(`/app/menu?tableId=${selectedTable.id}&tableName=${encodeURIComponent(selectedTable.name)}`)}>
                       <PlusCircle size={18} />
                       New order
                     </Button>
