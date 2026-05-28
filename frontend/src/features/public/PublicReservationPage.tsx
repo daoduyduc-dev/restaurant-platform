@@ -10,7 +10,8 @@ export const PublicReservationPage = () => {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
+        overflowY: 'auto',
         background: '#FAF7F2',
       }}
     >

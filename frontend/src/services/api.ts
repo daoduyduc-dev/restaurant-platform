@@ -25,10 +25,12 @@ api.interceptors.response.use(
   async (error) => {
     // Handle 401 Unauthorized - try refresh token flow
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const authState = useAuthStore.getState();
+    const hasAccessToken = Boolean(authState.token);
+    if (error.response?.status === 401 && !originalRequest._retry && hasAccessToken) {
       originalRequest._retry = true;
       try {
-        const refreshToken = useAuthStore.getState().refreshToken;
+        const refreshToken = authState.refreshToken;
         if (!refreshToken) {
           useAuthStore.getState().logout();
           window.location.href = '/login';
