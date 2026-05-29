@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tables").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tables/floors").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reservations/available-tables").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/reservations/table/**/booked-slots").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reservations/table/*/booked-slots").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/reservations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
 
