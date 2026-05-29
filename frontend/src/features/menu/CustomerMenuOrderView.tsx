@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle, MapPin, Minus, Plus, Search, ShoppingCart, Tag } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -17,6 +17,7 @@ interface CartItem extends MenuItemDTO {
 const formatMoney = (value: number) => `${Number(value || 0).toLocaleString('vi-VN')} đ`;
 
 export const CustomerMenuOrderView = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [searchParams] = useSearchParams();
   const queryReservationId = searchParams.get('reservationId');
@@ -143,9 +144,17 @@ export const CustomerMenuOrderView = () => {
         })),
       });
 
-      toast.success('Đơn của bạn đã được gửi đến bếp.');
+      toast.success('Đã xác nhận order của bạn.');
       setCart([]);
       setIsDrawerOpen(false);
+
+      // If not logged in, redirect to home after a short delay
+      if (!user) {
+        setTimeout(() => {
+          toast.success('Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!');
+          navigate('/');
+        }, 1500);
+      }
     } catch (error: any) {
       const message = error?.response?.data?.message || 'Không thể gửi đơn. Vui lòng thử lại.';
       toast.error(message);
@@ -363,7 +372,7 @@ export const CustomerMenuOrderView = () => {
                   disabled={cart.length === 0 || !canOrder}
                   onClick={handlePlaceOrder}
                 >
-                  Gửi đơn cho bếp
+                  Xác nhận
                 </Button>
               </Card.Footer>
             </Card>

@@ -48,16 +48,19 @@ export const StaffPaymentView = () => {
   }, []);
 
   const activeReservations = reservations.filter((reservation) => reservation.status === 'CHECKED_IN');
-  const filteredReservations = activeReservations.filter((reservation) =>
-    reservation.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-    reservation.tableName?.toLowerCase().includes(search.toLowerCase()) ||
-    reservation.phone?.includes(search)
+  
+  // Get unpaid orders (both from reservations and direct staff orders)
+  const unpaidOrders = orders.filter((order) => !['PAID', 'CANCELED'].includes(order.status));
+  
+  const filteredOrders = unpaidOrders.filter((order) =>
+    order.tableName?.toLowerCase().includes(search.toLowerCase()) ||
+    order.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSelectReservation = (reservation: ReservationDTO) => {
-    setSelectedReservation(reservation);
-    const order = orders.find((item) => item.reservationId === reservation.id);
-    setSelectedOrder(order || null);
+  const handleSelectOrder = (order: OrderDTO) => {
+    const reservation = reservations.find((r) => r.id === order.reservationId);
+    setSelectedOrder(order);
+    setSelectedReservation(reservation || null);
   };
 
   const handlePayment = async () => {
@@ -105,43 +108,43 @@ export const StaffPaymentView = () => {
           </Card.Header>
 
           <Card.Content style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-2)' }}>
-            {filteredReservations.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>
                 {t('payment.noActiveGuests')}
               </div>
             ) : (
-              filteredReservations.map((reservation) => {
-                const order = orders.find((item) => item.reservationId === reservation.id);
+              filteredOrders.map((order) => {
+                const reservation = reservations.find((r) => r.id === order.reservationId);
 
                 return (
                   <div
-                    key={reservation.id}
-                    onClick={() => handleSelectReservation(reservation)}
+                    key={order.id}
+                    onClick={() => handleSelectOrder(order)}
                     style={{
                       padding: 'var(--sp-3)',
                       margin: 'var(--sp-2)',
                       borderRadius: 'var(--r-md)',
-                      background: selectedReservation?.id === reservation.id ? 'var(--orange-50)' : 'var(--white)',
-                      border: `2px solid ${selectedReservation?.id === reservation.id ? 'var(--orange-500)' : 'var(--gray-200)'}`,
+                      background: selectedOrder?.id === order.id ? 'var(--orange-50)' : 'var(--white)',
+                      border: `2px solid ${selectedOrder?.id === order.id ? 'var(--orange-500)' : 'var(--gray-200)'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 16 }}>{reservation.tableName}</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{reservation.customerName}</div>
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>{order.tableName}</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Order #{order.id.substring(0, 8)}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: 700, color: 'var(--orange-600)' }}>
                           ${money(order?.finalAmount ?? order?.totalAmount)}
                         </div>
-                        <Badge variant="success" size="small">{translateStatus(reservation.status)}</Badge>
+                        <Badge variant="warning" size="small">{translateStatus(order.status)}</Badge>
                       </div>
                     </div>
 
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {reservation.numberOfGuests} · {new Date(reservation.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {order.items?.length || 0} items · {new Date(order.createdAt || order.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 );

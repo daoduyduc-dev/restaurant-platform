@@ -56,6 +56,25 @@ export const CustomerPaymentView = () => {
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
+        {/* Bank Account Info */}
+        <Card variant="elevated" style={{ background: 'linear-gradient(135deg, var(--orange-100) 0%, #FFFDF5 100%)', borderLeft: '4px solid var(--orange-500)' }}>
+          <Card.Content style={{ padding: 'var(--sp-5)' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
+              Thông tin chuyển khoản
+            </div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Tên tài khoản:</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>Dao Duy Duc</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Ngân hàng:</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>VietComBank</span>
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+
         {unpaidOrders.length === 0 ? (
           <Card variant="elevated" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <CheckCircle size={48} style={{ margin: '0 auto 16px', opacity: 0.2 }} />

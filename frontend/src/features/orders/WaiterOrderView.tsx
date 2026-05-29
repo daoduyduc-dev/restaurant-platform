@@ -10,24 +10,22 @@ import { translateStatus } from '../../utils/translations';
 
 const columns: Array<{ status: OrderDTO['status']; tone: 'info' | 'warning' | 'success' | 'neutral' }> = [
   { status: 'OPEN', tone: 'info' },
-  { status: 'PENDING', tone: 'warning' },
   { status: 'COOKING', tone: 'warning' },
   { status: 'READY', tone: 'success' },
   { status: 'SERVED', tone: 'neutral' },
 ];
 
 const nextStatus: Partial<Record<OrderDTO['status'], OrderDTO['status']>> = {
-  OPEN: 'PENDING',
-  PENDING: 'COOKING',
+  OPEN: 'COOKING',
   COOKING: 'READY',
   READY: 'SERVED',
 };
 
 const actionLabel: Partial<Record<OrderDTO['status'], string>> = {
-  OPEN: 'Gui bep',
-  PENDING: 'Bat dau nau',
-  COOKING: 'Bao san sang',
-  READY: 'Da phuc vu',
+  OPEN: 'Gửi bếp',
+  COOKING: 'Bắt đầu nấu',
+  READY: 'Báo sẵn sàng',
+  SERVED: 'Đã phục vụ',
 };
 
 function unpackOrders(payload: unknown): OrderDTO[] {
@@ -104,20 +102,31 @@ export const WaiterOrderView = () => {
     if (!status) return;
     try {
       await api.patch(`/orders/${order.id}/status?status=${status}`);
-      toast.success('Da cap nhat order');
+      toast.success('Đã cập nhật order');
       fetchOrders();
     } catch {
-      toast.error('Khong the cap nhat order');
+      toast.error('Không thể cập nhật order');
+    }
+  };
+
+  const cancelOrder = async (order: OrderDTO) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy order này?')) return;
+    try {
+      await api.patch(`/orders/${order.id}/status?status=CANCELED`);
+      toast.success('Đã hủy order');
+      fetchOrders();
+    } catch {
+      toast.error('Không thể hủy order');
     }
   };
 
   const payOrder = async (order: OrderDTO) => {
     try {
       await api.post(`/orders/${order.id}/pay`);
-      toast.success('Da thanh toan order');
+      toast.success('Đã thanh toán order');
       fetchOrders();
     } catch {
-      toast.error('Khong the thanh toan order');
+      toast.error('Không thể thanh toán order');
     }
   };
 
@@ -129,15 +138,15 @@ export const WaiterOrderView = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
       <div className="page-header">
         <div>
-          <h1>Order & bep</h1>
-          <p>Quan ly trang thai order theo dung luong van hanh cua nha hang.</p>
+          <h1>Quản lý Order</h1>
+          <p>Quản lý trạng thái order theo đúng lưu lượng vận hành của nhà hàng.</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={fetchOrders}>
-            <RefreshCw size={16} /> Lam moi
+            <RefreshCw size={16} /> Làm mới
           </Button>
           <Button variant="primary" onClick={() => navigate('/app/tables')}>
-            <ClipboardList size={16} /> Tao order tu ban
+            <ClipboardList size={16} /> Tạo order từ bàn
           </Button>
         </div>
       </div>
@@ -171,9 +180,14 @@ export const WaiterOrderView = () => {
                           <CheckCircle size={14} /> {actionLabel[order.status]}
                         </Button>
                       )}
+                      {order.status === 'OPEN' && (
+                        <Button variant="outline" size="small" onClick={() => cancelOrder(order)} style={{ color: 'var(--rose)' }}>
+                          ✕ Hủy
+                        </Button>
+                      )}
                       {order.status === 'SERVED' && (
                         <Button variant="secondary" size="small" onClick={() => payOrder(order)}>
-                          <CreditCard size={14} /> Thanh toan
+                          <CreditCard size={14} /> Thanh toán
                         </Button>
                       )}
                     </div>

@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -107,6 +107,7 @@ export const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
 
   const user = useAuthStore((state) => state.user);
   const refreshToken = useAuthStore((state) => state.refreshToken);
@@ -152,28 +153,56 @@ export const MainLayout = () => {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <motion.aside 
+        className="sidebar"
+        onMouseEnter={() => setSidebarExpanded(true)}
+        onMouseLeave={() => setSidebarExpanded(false)}
+        animate={{ width: sidebarExpanded ? 'var(--sidebar-width)' : '80px' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        style={{ overflow: 'hidden' }}
+      >
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
             <UtensilsCrossed size={18} />
           </div>
-          <span className="sidebar-brand-text">ServeGenius</span>
+          <motion.span 
+            className="sidebar-brand-text"
+            animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
+          >
+            ServeGenius
+          </motion.span>
         </div>
 
         <nav className="sidebar-nav">
           {navSections.map((section) => (
             <div key={section.section}>
-              <div className="sidebar-section-label">{section.section}</div>
+              <motion.div 
+                className="sidebar-section-label"
+                animate={{ opacity: sidebarExpanded ? 1 : 0, height: sidebarExpanded ? 'auto' : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: 'hidden' }}
+              >
+                {section.section}
+              </motion.div>
               {section.items.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+                  title={sidebarExpanded ? undefined : item.label}
                 >
                   {({ isActive }) => (
                     <>
                       <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                      <span>{item.label}</span>
+                      <motion.span
+                        animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
+                      >
+                        {item.label}
+                      </motion.span>
                     </>
                   )}
                 </NavLink>
@@ -183,20 +212,33 @@ export const MainLayout = () => {
         </nav>
 
         <div className="sidebar-footer">
-          <NavLink to="/" className="sidebar-link" style={{ marginBottom: 8 }}>
+          <NavLink to="/" className="sidebar-link" style={{ marginBottom: 8 }} title={sidebarExpanded ? undefined : 'Home'}>
             <Home size={18} />
-            <span>{t('nav.home')}</span>
+            <motion.span
+              animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
+            >
+              {t('nav.home')}
+            </motion.span>
           </NavLink>
 
           <NavLink
             to="/app/profile"
             className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             style={{ marginBottom: 8 }}
+            title={sidebarExpanded ? undefined : 'Profile'}
           >
             {({ isActive }) => (
               <>
                 <UserCircle size={18} strokeWidth={isActive ? 2.5 : 2} />
-                <span>{t('common.profile')}</span>
+                <motion.span
+                  animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
+                >
+                  {t('common.profile')}
+                </motion.span>
               </>
             )}
           </NavLink>
@@ -206,16 +248,23 @@ export const MainLayout = () => {
             className="btn btn-ghost"
             style={{
               width: '100%',
-              justifyContent: 'flex-start',
+              justifyContent: sidebarExpanded ? 'flex-start' : 'center',
               gap: 12,
               padding: '10px 12px',
             }}
+            title={sidebarExpanded ? undefined : 'Logout'}
           >
             <LogOut size={18} />
-            <span>{t('common.logout')}</span>
+            <motion.span
+              animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
+            >
+              {t('common.logout')}
+            </motion.span>
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       <div className="main-content">
         <header className="top-bar">

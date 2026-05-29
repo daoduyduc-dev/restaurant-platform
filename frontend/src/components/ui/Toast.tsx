@@ -13,11 +13,11 @@ export const ToastContainer: React.FC = () => {
       className="toast-container"
       style={{
         position: 'fixed',
-        top: 'var(--sp-6)',
+        bottom: 'var(--sp-6)',
         right: 'var(--sp-6)',
         zIndex: 9999,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'column-reverse',
         gap: 'var(--sp-3)',
         pointerEvents: 'none',
         maxWidth: '420px',

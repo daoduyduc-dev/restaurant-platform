@@ -105,22 +105,6 @@ export const CustomerLoyaltyView = () => {
 
          <Card variant="elevated">
             <Card.Header>
-               <Card.Title>Your QR Code</Card.Title>
-               <Card.Description>Scan this code at the table or checkout</Card.Description>
-            </Card.Header>
-            <Card.Content style={{ padding: 'var(--sp-8)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-               <div style={{ width: 240, height: 240, background: 'var(--gray-100)', borderRadius: 16, border: '2px dashed var(--gray-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-                  <Gift size={64} style={{ opacity: 0.1 }} />
-                  {/* Real QR would go here */}
-               </div>
-               <div style={{ letterSpacing: '0.2em', fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: 'var(--text-muted)' }}>
-                  ID: {loyalty?.userId || '----'}
-               </div>
-            </Card.Content>
-         </Card>
-
-         <Card variant="elevated">
-            <Card.Header>
                <Card.Title>Points History</Card.Title>
                <Card.Description>Earned and redeemed loyalty activity</Card.Description>
             </Card.Header>
