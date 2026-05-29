@@ -43,6 +43,10 @@ export const CustomerReservationView = () => {
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--sp-16)' }}><div className="spinner" /></div>;
 
+  const sortedReservations = [...reservations].sort((a, b) => 
+    new Date(b.reservationTime).getTime() - new Date(a.reservationTime).getTime()
+  );
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="page-header">
@@ -61,7 +65,7 @@ export const CustomerReservationView = () => {
              <p style={{ color: 'var(--text-muted)' }}>You haven't made any bookings yet.</p>
           </Card>
         ) : (
-          reservations.map(res => {
+          sortedReservations.map(res => {
             const date = new Date(res.reservationTime);
             const late = ['RESERVED', 'CHECKED_IN'].includes(res.status) && Date.now() > date.getTime() + 15 * 60 * 1000;
             const reservationOrders = orders.filter(order => order.reservationId === res.id);

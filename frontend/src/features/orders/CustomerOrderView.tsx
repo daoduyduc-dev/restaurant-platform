@@ -34,8 +34,10 @@ export const CustomerOrderView = () => {
     })();
   }, []);
 
-  const activeOrders = orders.filter(o => !['PAID', 'CANCELED'].includes(o.status));
-  const pastOrders = orders.filter(o => ['PAID', 'CANCELED'].includes(o.status));
+  const activeOrders = orders.filter(o => !['PAID', 'CANCELED'].includes(o.status))
+    .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
+  const pastOrders = orders.filter(o => ['PAID', 'CANCELED'].includes(o.status))
+    .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--sp-16)' }}><div className="spinner" /></div>;
 
