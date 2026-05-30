@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import type { UserDTO, OrderDTO } from '../../services/types';
 import {
@@ -11,6 +12,7 @@ import { Button, Card, Badge } from '../../components/ui';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell
 } from 'recharts';
+import i18n from '../../i18n';
 
 const containerAnim: Variants = {
   hidden: { opacity: 0 },
@@ -50,6 +52,7 @@ interface TopSellingItem {
 const COLORS = ['var(--blue-500)', 'var(--green-500)', 'var(--orange-500)', 'var(--purple-500)', 'var(--teal)'];
 
 export const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [revenue, setRevenue] = useState<RevenueReport | null>(null);
   const [occupancy, setOccupancy] = useState<OccupancyReport | null>(null);
   const [noShow, setNoShow] = useState<NoShowReport | null>(null);
@@ -95,9 +98,11 @@ export const AdminDashboard = () => {
     }
   };
 
-  const formatCurrency = (amount: number = 0) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  };
+  const formatCurrency = (amount: number = 0) => new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency: i18n.language === 'vi' ? 'VND' : 'USD',
+    maximumFractionDigits: i18n.language === 'vi' ? 0 : 2,
+  }).format(amount);
 
   return (
     <motion.div variants={containerAnim} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
@@ -106,13 +111,13 @@ export const AdminDashboard = () => {
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
             <Shield size={28} color="var(--orange-500)" />
-            Admin Dashboard
+            {t('dashboard.title')}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>Real-time platform metrics and system health</p>
+          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>{t('dashboard.subtitle')}</p>
         </div>
         <Button variant="ghost" onClick={fetchData} disabled={loading}>
           <RefreshCw size={18} className={loading ? 'spin' : ''} style={{ marginRight: 8 }} />
-          {loading ? 'Refreshing...' : 'Refresh'}
+          {loading ? t('dashboard.refreshing') : t('dashboard.refresh')}
         </Button>
       </motion.div>
 
@@ -125,12 +130,12 @@ export const AdminDashboard = () => {
               <TrendingUp size={24} color="var(--blue-500)" />
             </div>
             <div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>Today's Revenue</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>{t('dashboard.todaysRevenue')}</div>
               <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-heading)' }}>
                 {revenue ? formatCurrency(revenue.todayRevenue) : '...'}
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
-                Month: {revenue ? formatCurrency(revenue.monthlyRevenue) : '...'}
+                {t('dashboard.month')}: {revenue ? formatCurrency(revenue.monthlyRevenue) : '...'}
               </div>
             </div>
           </Card.Content>
@@ -143,12 +148,12 @@ export const AdminDashboard = () => {
               <Users size={24} color="var(--green-500)" />
             </div>
             <div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>Active Users</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>{t('dashboard.activeUsers')}</div>
               <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-heading)' }}>
                 {userStats.activeUsers}
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
-                Out of {userStats.totalUsers} registered
+                {t('dashboard.outOf', { totalUsers: userStats.totalUsers })}
               </div>
             </div>
           </Card.Content>
@@ -161,7 +166,7 @@ export const AdminDashboard = () => {
               <PieChart size={24} color="var(--purple-500)" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>Table Occupancy</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>{t('dashboard.tableOccupancy')}</div>
               <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-heading)', display: 'flex', alignItems: 'baseline', gap: 4 }}>
                 {occupancy ? (occupancy.occupancyRate * 100).toFixed(1) : 0}%
                 <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' }}>({occupancy?.occupiedTables || 0}/{occupancy?.totalTables || 0})</span>
@@ -180,12 +185,12 @@ export const AdminDashboard = () => {
               <CalendarX size={24} color="var(--orange-500)" />
             </div>
             <div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>No-Show Rate</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>{t('dashboard.noShowRate')}</div>
               <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: noShow && noShow.rate > 0.15 ? 'var(--red-500)' : 'var(--text-heading)' }}>
                 {noShow ? (noShow.rate * 100).toFixed(1) : 0}%
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
-                {noShow?.noShowCount || 0} missed reservations
+                {t('dashboard.missedReservations', { count: noShow?.noShowCount || 0 })}
               </div>
             </div>
           </Card.Content>
@@ -199,8 +204,8 @@ export const AdminDashboard = () => {
         <motion.div variants={itemAnim}>
           <Card style={{ height: '100%' }}>
             <Card.Header>
-              <Card.Title>Top Selling Items</Card.Title>
-              <Card.Description>Most popular menu items by quantity</Card.Description>
+              <Card.Title>{t('dashboard.topSellingItems')}</Card.Title>
+              <Card.Description>{t('dashboard.topSellingDesc')}</Card.Description>
             </Card.Header>
             <Card.Content style={{ height: 320 }}>
               {topSelling.length > 0 ? (
@@ -223,7 +228,7 @@ export const AdminDashboard = () => {
                 </ResponsiveContainer>
               ) : (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  No sales data available
+                  {t('dashboard.noSales')}
                 </div>
               )}
             </Card.Content>
@@ -238,11 +243,11 @@ export const AdminDashboard = () => {
                 <div>
                   <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <AlertTriangle size={18} color="var(--red-500)" />
-                    System Alerts
+                    {t('dashboard.systemAlerts')}
                   </Card.Title>
-                  <Card.Description>Requires immediate attention</Card.Description>
+                  <Card.Description>{t('dashboard.alertsDesc')}</Card.Description>
                 </div>
-                {alerts.length > 0 && <Badge variant="error" size="small">{alerts.length} New</Badge>}
+                {alerts.length > 0 && <Badge variant="error" size="small">{t('dashboard.newAlerts', { count: alerts.length })}</Badge>}
               </div>
             </Card.Header>
             <Card.Content style={{ flex: 1, padding: 0, overflowY: 'auto' }}>
@@ -252,22 +257,22 @@ export const AdminDashboard = () => {
                     <div key={order.id} style={{ padding: 'var(--sp-4)', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: 'var(--sp-4)', alignItems: 'center' }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--red-500)' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-heading)' }}>Order #{order.id.substring(0,6)} stuck in COOKING</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Table {order.tableName} • Status: {order.status}</div>
+                        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-heading)' }}>{t('dashboard.alertOrder', { orderId: order.id.substring(0, 6) })}</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('dashboard.alertTableStatus', { tableName: order.tableName, status: order.status })}</div>
                       </div>
-                      <Badge variant="warning">{new Date(order.createdDate || order.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Badge>
+                      <Badge variant="warning">{new Date(order.createdDate || order.createdAt || Date.now()).toLocaleTimeString(i18n.language, {hour: '2-digit', minute:'2-digit'})}</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div style={{ height: '100%', minHeight: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: 12 }}>
                   <Activity size={32} style={{ opacity: 0.5 }} />
-                  <p>All systems operational. No active alerts.</p>
+                  <p>{t('dashboard.noAlerts')}</p>
                 </div>
               )}
             </Card.Content>
             <div style={{ padding: 'var(--sp-3)', borderTop: '1px solid var(--border-color)', background: 'var(--bg-secondary)', textAlign: 'center' }}>
-              <Button variant="ghost" size="small" style={{ width: '100%', color: 'var(--text-secondary)' }}>View All Logs <ChevronRight size={14} style={{ marginLeft: 4 }}/></Button>
+              <Button variant="ghost" size="small" style={{ width: '100%', color: 'var(--text-secondary)' }}>{t('dashboard.viewLogs')} <ChevronRight size={14} style={{ marginLeft: 4 }}/></Button>
             </div>
           </Card>
         </motion.div>

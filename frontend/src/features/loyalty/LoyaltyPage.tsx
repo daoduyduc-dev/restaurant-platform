@@ -1,6 +1,7 @@
 import { useRoleView } from '../../utils/useRoleView';
-import { ManagerLoyaltyView } from './ManagerLoyaltyView';
+import { StaffLoyaltyView } from './StaffLoyaltyView';
 import { CustomerLoyaltyView } from './CustomerLoyaltyView';
+
 
 export const LoyaltyPage = () => {
   const { role } = useRoleView();
@@ -8,7 +9,7 @@ export const LoyaltyPage = () => {
   switch (role) {
     case 'ADMIN':
     case 'STAFF':
-      return <ManagerLoyaltyView />;
+      return <StaffLoyaltyView />;
     case 'CUSTOMER':
     default:
       return <CustomerLoyaltyView />;

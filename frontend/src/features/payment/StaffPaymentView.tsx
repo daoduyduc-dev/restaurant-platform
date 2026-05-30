@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, CreditCard, DollarSign, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 import api from '../../services/api';
 import type { OrderDTO, ReservationDTO } from '../../services/types';
@@ -10,7 +11,9 @@ import { toast } from '../../store/toastStore';
 import { translateStatus } from '../../utils/translations';
 
 const money = (value: number | undefined) =>
-  new Intl.NumberFormat(undefined, {
+  new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value || 0);
@@ -137,14 +140,14 @@ export const StaffPaymentView = () => {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: 700, color: 'var(--orange-600)' }}>
-                          ${money(order?.finalAmount ?? order?.totalAmount)}
+                          {money(order?.finalAmount ?? order?.totalAmount)}
                         </div>
                         <Badge variant="warning" size="small">{translateStatus(order.status)}</Badge>
                       </div>
                     </div>
 
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {order.items?.length || 0} items · {new Date(order.createdAt || order.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {order.items?.length || 0} {t('payment.items')} · {new Date(order.createdAt || order.createdDate).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 );
@@ -168,7 +171,7 @@ export const StaffPaymentView = () => {
                   <div>
                     <Card.Title>{selectedReservation.tableName} - {selectedReservation.customerName}</Card.Title>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                      {selectedReservation.phone} · {selectedReservation.numberOfGuests}
+                      {selectedReservation.phone} · {selectedReservation.numberOfGuests} {t('payment.guests')}
                     </div>
                   </div>
                   <Badge variant="success">{translateStatus(selectedReservation.status)}</Badge>
@@ -206,9 +209,9 @@ export const StaffPaymentView = () => {
                       <InfoCell label={t('payment.guests')} value={String(selectedReservation.numberOfGuests)} />
                       <InfoCell
                         label={t('payment.checkInTime')}
-                        value={new Date(selectedReservation.reservationTime).toLocaleString()}
+                        value={new Date(selectedReservation.reservationTime).toLocaleString(i18n.language)}
                       />
-                      <InfoCell label={t('payment.paymentTime')} value={new Date().toLocaleString()} />
+                      <InfoCell label={t('payment.paymentTime')} value={new Date().toLocaleString(i18n.language)} />
                     </div>
 
                     <div style={{ marginBottom: 'var(--sp-4)' }}>
@@ -230,8 +233,8 @@ export const StaffPaymentView = () => {
                             <tr key={item.id} style={{ borderBottom: '1px solid var(--border-main)' }}>
                               <td style={{ padding: 'var(--sp-2)' }}>{item.menuItemName}</td>
                               <td style={{ padding: 'var(--sp-2)', textAlign: 'center' }}>{item.quantity}</td>
-                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right' }}>${money(item.price)}</td>
-                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right', fontWeight: 600 }}>${money(item.total)}</td>
+                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right' }}>{money(item.price)}</td>
+                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right', fontWeight: 600 }}>{money(item.total)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -244,13 +247,13 @@ export const StaffPaymentView = () => {
                       borderRadius: 'var(--r-md)',
                       marginBottom: 'var(--sp-4)',
                     }}>
-                      <SummaryRow label={t('payment.subtotal')} value={`$${money(selectedOrder.totalAmount)}`} />
+                      <SummaryRow label={t('payment.subtotal')} value={money(selectedOrder.totalAmount)} />
                       {(selectedOrder.vipSurchargeAmount || 0) > 0 && (
-                        <SummaryRow label={t('payment.vipSurcharge')} value={`$${money(selectedOrder.vipSurchargeAmount)}`} />
+                        <SummaryRow label={t('payment.vipSurcharge')} value={money(selectedOrder.vipSurchargeAmount)} />
                       )}
                       <SummaryRow
                         label={t('payment.grandTotal')}
-                        value={`$${money(selectedOrder.finalAmount ?? selectedOrder.totalAmount)}`}
+                        value={money(selectedOrder.finalAmount ?? selectedOrder.totalAmount)}
                         strong
                       />
                     </div>
@@ -262,8 +265,8 @@ export const StaffPaymentView = () => {
                     )}
 
                     <div style={{ textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
-                      <div style={{ fontWeight: 600, marginBottom: 'var(--sp-2)' }}>Scan to Pay</div>
-                      <img src="/MaQR.jpg" alt="Bank Transfer QR Code" style={{ width: 180, height: 180, borderRadius: 'var(--r-md)', border: '1px solid var(--border-main)', objectFit: 'contain' }} />
+                      <div style={{ fontWeight: 600, marginBottom: 'var(--sp-2)' }}>{t('payment.scanToPay')}</div>
+                      <img src="/MaQR.jpg" alt={t('payment.qrAlt')} style={{ width: 180, height: 180, borderRadius: 'var(--r-md)', border: '1px solid var(--border-main)', objectFit: 'contain' }} />
                     </div>
 
                     <Button

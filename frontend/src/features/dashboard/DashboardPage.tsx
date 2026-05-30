@@ -1,7 +1,7 @@
 import { useAuthStore } from '../../store/authStore';
 import { getPrimaryRole } from '../../utils/roleUtils';
 import { CustomerDashboard } from './CustomerDashboard';
-import { WaiterDashboard } from './WaiterDashboard';
+import { StaffDashboard } from './StaffDashboard';
 import { AdminDashboard } from './AdminDashboard';
 
 export const DashboardPage = () => {
@@ -13,7 +13,7 @@ export const DashboardPage = () => {
       case 'CUSTOMER':
         return <CustomerDashboard />;
       case 'STAFF':
-        return <WaiterDashboard />;
+        return <StaffDashboard />;
       case 'ADMIN':
         return <AdminDashboard />;
       default:

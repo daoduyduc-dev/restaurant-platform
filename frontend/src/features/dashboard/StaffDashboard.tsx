@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CalendarCheck, CreditCard, RefreshCw, Table2, UtensilsCrossed } from 'lucide-react';
 import api from '../../services/api';
 import type { OrderDTO, ReservationDTO, TableDTO } from '../../services/types';
@@ -35,7 +36,8 @@ function unpack<T>(payload: unknown): T[] {
   return [];
 }
 
-export const WaiterDashboard = () => {
+export const StaffDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
@@ -54,7 +56,7 @@ export const WaiterDashboard = () => {
       setOrders(unpack<OrderDTO>(orderRes).filter(order => !['PAID', 'CANCELED'].includes(order.status)));
       setReservations(unpack<ReservationDTO>(reservationRes));
     } catch {
-      toast.error('Khong tai duoc du lieu ca lam');
+      toast.error(t('staffDashboard.loadError'));
     } finally {
       setLoading(false);
     }
@@ -76,6 +78,7 @@ export const WaiterDashboard = () => {
       unpaid: orders.filter(order => order.status === 'SERVED').length,
     };
   }, [orders, tables]);
+  const workflowSteps = t('staffDashboard.workflowSteps', { returnObjects: true }) as string[];
 
   const groupedOrders = ORDER_FLOW.map(status => ({
     status,
@@ -87,10 +90,10 @@ export const WaiterDashboard = () => {
     if (!status) return;
     try {
       await api.patch(`/orders/${order.id}/status?status=${status}`);
-      toast.success('Da cap nhat trang thai order');
+      toast.success(t('staffDashboard.updated'));
       refresh();
     } catch {
-      toast.error('Khong the cap nhat order');
+      toast.error(t('staffDashboard.updateError'));
     }
   };
 
@@ -98,28 +101,28 @@ export const WaiterDashboard = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
       <div className="page-header">
         <div>
-          <h1>Ca lam hom nay</h1>
-          <p>Theo luong: dat ban, check-in, order, bep, phuc vu, thanh toan.</p>
+          <h1>{t('staffDashboard.title')}</h1>
+          <p>{t('staffDashboard.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={refresh} disabled={loading}>
-            <RefreshCw size={16} /> Lam moi
+            <RefreshCw size={16} /> {loading ? t('staffDashboard.refreshing') : t('staffDashboard.refresh')}
           </Button>
           <Button variant="primary" onClick={() => navigate('/app/tables')}>
-            <Table2 size={16} /> Mo so do ban
+            <Table2 size={16} /> {t('staffDashboard.openTables')}
           </Button>
         </div>
       </div>
 
       <div className="stats-grid">
-        <Card><Card.Content><Metric icon={<Table2 size={20} />} label="Ban dang dung" value={counts.occupied} /></Card.Content></Card>
-        <Card><Card.Content><Metric icon={<CalendarCheck size={20} />} label="Dat ban can xu ly" value={reservations.length} /></Card.Content></Card>
-        <Card><Card.Content><Metric icon={<UtensilsCrossed size={20} />} label="Mon san sang" value={counts.ready} /></Card.Content></Card>
-        <Card><Card.Content><Metric icon={<CreditCard size={20} />} label="Cho thanh toan" value={counts.unpaid} /></Card.Content></Card>
+        <Card><Card.Content><Metric icon={<Table2 size={20} />} label={t('staffDashboard.occupied')} value={counts.occupied} /></Card.Content></Card>
+        <Card><Card.Content><Metric icon={<CalendarCheck size={20} />} label={t('staffDashboard.pendingReservations')} value={reservations.length} /></Card.Content></Card>
+        <Card><Card.Content><Metric icon={<UtensilsCrossed size={20} />} label={t('staffDashboard.ready')} value={counts.ready} /></Card.Content></Card>
+        <Card><Card.Content><Metric icon={<CreditCard size={20} />} label={t('staffDashboard.unpaid')} value={counts.unpaid} /></Card.Content></Card>
       </div>
 
       <div className="workflow-strip">
-        {['Dat ban', 'Check-in', 'Goi mon', 'Bep xu ly', 'Phuc vu', 'Thanh toan'].map((step, index) => (
+        {workflowSteps.map((step, index) => (
           <div className="workflow-step" key={step}>
             <span>{index + 1}</span>
             {step}
@@ -136,7 +139,7 @@ export const WaiterDashboard = () => {
             </div>
             <div className="kanban-col-body">
               {group.orders.length === 0 ? (
-                <div className="empty-state">Khong co order</div>
+                <div className="empty-state">{t('staffDashboard.noOrders')}</div>
               ) : group.orders.map(order => (
                 <article className="kanban-ticket" key={order.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>

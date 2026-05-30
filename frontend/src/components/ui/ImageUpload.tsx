@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { resolveMediaUrl } from '../../services/media';
+import { DEFAULT_FALLBACK_IMAGE_URL, resolveMediaUrl } from '../../services/media';
 import { toast } from '../../store/toastStore';
 
 export interface ImageUploadProps {
@@ -15,6 +15,7 @@ export interface ImageUploadProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   label?: string;
   className?: string;
+  fallbackUrl?: string;
   // For two-step upload: first create item, then upload image
   onFileSelect?: (file: File) => void; // Callback when file is selected (for later upload)
 }
@@ -36,6 +37,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   size = 'md',
   label,
   className = '',
+  fallbackUrl,
   onFileSelect,
 }) => {
   const [uploading, setUploading] = useState(false);
@@ -107,7 +109,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     toast.info('Image removed');
   };
 
-  const imageUrl = previewUrl || resolveMediaUrl(currentImageUrl);
+  const resolvedFallbackUrl = fallbackUrl || DEFAULT_FALLBACK_IMAGE_URL;
+  const imageUrl = previewUrl || resolveMediaUrl(currentImageUrl, resolvedFallbackUrl);
 
   const borderRadius = shape === 'circle' ? '50%' : shape === 'rounded' ? 'var(--r-lg)' : 'var(--r-none)';
   const dimension = SIZE_MAP[size];
@@ -149,6 +152,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
+              }}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.src !== resolvedFallbackUrl) {
+                  img.src = resolvedFallbackUrl;
+                }
               }}
             />
           ) : (

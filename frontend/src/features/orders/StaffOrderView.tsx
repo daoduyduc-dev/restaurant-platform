@@ -46,7 +46,7 @@ function timeSince(date?: string) {
   return `${Math.floor(minutes / 60)} gio ${minutes % 60} phut`;
 }
 
-export const WaiterOrderView = () => {
+export const StaffOrderView = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [addOnTableLabels, setAddOnTableLabels] = useState<Record<string, string>>({});

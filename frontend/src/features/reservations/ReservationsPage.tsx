@@ -1,6 +1,7 @@
 import { useRoleView } from '../../utils/useRoleView';
 import { CustomerReservationView } from './CustomerReservationView';
-import { ReceptionistReservationView } from './ReceptionistReservationView';
+import { StaffReservationView } from './StaffReservationView';
+
 
 export const ReservationsPage = () => {
   const { role } = useRoleView();
@@ -10,8 +11,8 @@ export const ReservationsPage = () => {
       return <CustomerReservationView />;
     case 'STAFF':
     case 'ADMIN':
-      return <ReceptionistReservationView />;
+      return <StaffReservationView />;
     default:
-      return <ReceptionistReservationView />;
+      return <StaffReservationView />;
   }
 };

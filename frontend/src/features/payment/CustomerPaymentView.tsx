@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 import api from '../../services/api';
 import type { OrderDTO } from '../../services/types';
@@ -10,7 +11,9 @@ import { toast } from '../../store/toastStore';
 import { translateStatus } from '../../utils/translations';
 
 const money = (value: number | undefined) =>
-  new Intl.NumberFormat(undefined, {
+  new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value || 0);
@@ -60,15 +63,15 @@ export const CustomerPaymentView = () => {
         <Card variant="elevated" style={{ background: 'linear-gradient(135deg, var(--orange-100) 0%, #FFFDF5 100%)', borderLeft: '4px solid var(--orange-500)' }}>
           <Card.Content style={{ padding: 'var(--sp-5)' }}>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
-              Thông tin chuyển khoản
+              {t('payment.transferInfo')}
             </div>
             <div style={{ display: 'grid', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Tên tài khoản:</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{t('payment.accountName')}:</span>
                 <span style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>Dao Duy Duc</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Ngân hàng:</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{t('payment.bank')}:</span>
                 <span style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>VietComBank</span>
               </div>
             </div>
@@ -88,7 +91,7 @@ export const CustomerPaymentView = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <Card.Title>{t('payment.table')}: {order.tableName}</Card.Title>
-                    <Card.Description>Order #{order.id.substring(0, 8)}</Card.Description>
+                    <Card.Description>{t('payment.orderLabel')} #{order.id.substring(0, 8)}</Card.Description>
                   </div>
                   <Badge variant="warning">{translateStatus(order.status)}</Badge>
                 </div>
@@ -100,19 +103,19 @@ export const CustomerPaymentView = () => {
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px dashed var(--gray-200)' }}>
                       <div>
                         <div style={{ fontWeight: 600 }}>{item.quantity}x {item.menuItemName}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>${money(item.price)} / item</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{money(item.price)} / {t('payment.itemUnit')}</div>
                       </div>
-                      <div style={{ fontWeight: 600 }}>${money(item.total)}</div>
+                      <div style={{ fontWeight: 600 }}>{money(item.total)}</div>
                     </div>
                   ))}
                 </div>
 
                 <div style={{ background: 'var(--gray-50)', padding: 16, borderRadius: 'var(--r-md)', marginTop: 16 }}>
-                  <SummaryRow label={t('payment.subtotal')} value={`$${money(order.totalAmount)}`} />
+                  <SummaryRow label={t('payment.subtotal')} value={money(order.totalAmount)} />
                   {(order.vipSurchargeAmount || 0) > 0 && (
-                    <SummaryRow label={t('payment.vipSurcharge')} value={`$${money(order.vipSurchargeAmount)}`} />
+                    <SummaryRow label={t('payment.vipSurcharge')} value={money(order.vipSurchargeAmount)} />
                   )}
-                  <SummaryRow label={t('payment.grandTotal')} value={`$${money(order.finalAmount ?? order.totalAmount)}`} strong />
+                  <SummaryRow label={t('payment.grandTotal')} value={money(order.finalAmount ?? order.totalAmount)} strong />
                 </div>
 
                 <div style={{ marginTop: 16, fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>

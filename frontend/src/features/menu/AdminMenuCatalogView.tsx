@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, Filter, Star, Trash2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
@@ -6,10 +7,13 @@ import { resolveMediaUrl } from '../../services/media';
 import type { MenuItemDTO } from '../../services/types';
 import { Button, Input, Modal, Badge, ImageUpload } from '../../components/ui';
 import { toast } from '../../store/toastStore';
-
-const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop';
+import i18n from '../../i18n';
+import { translateCategoryName } from '../../utils/menuCategories';
+import { formatVndCurrency } from '../../utils/formatters';
+import { DEFAULT_FALLBACK_IMAGE_URL } from '../../services/media';
 
 export const AdminMenuCatalogView = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<MenuItemDTO[]>([]);
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<{ id: string, name: string, icon?: string, color?: string }[]>([]);
@@ -34,7 +38,7 @@ export const AdminMenuCatalogView = () => {
       setItems(Array.isArray(data) ? data : []);
     }).catch(() => {
       setItems([]);
-      toast.error('Failed to fetch menu items');
+      toast.error(t('adminMenu.loadError'));
     });
   };
 
@@ -69,27 +73,27 @@ export const AdminMenuCatalogView = () => {
         });
       }
 
-      toast.success('Menu item created');
+      toast.success(t('adminMenu.created'));
       setIsModalOpen(false);
       setFormData({ name: '', description: '', price: '', categoryId: '', imageUrl: '' });
       setSelectedImageFile(null);
       fetchMenu();
     } catch {
-      toast.error('Failed to create menu item');
+      toast.error(t('adminMenu.createError'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
+    if (!window.confirm(t('adminMenu.confirmDelete', { name }))) return;
 
     try {
       await api.delete(`/menu/${id}`);
-      toast.success(`${name} deleted!`);
+      toast.success(t('adminMenu.deleted', { name }));
       fetchMenu();
     } catch {
-      toast.error('Failed to delete item');
+      toast.error(t('adminMenu.deleteError'));
     }
   };
 
@@ -107,12 +111,12 @@ export const AdminMenuCatalogView = () => {
         categoryId: editingItem.categoryId,
         preparationTime: editingItem.preparationTime,
       });
-      toast.success('Menu item updated');
+      toast.success(t('adminMenu.updated'));
       setEditingItem(null);
       setEditForm({ name: '', description: '', price: '', imageUrl: '' });
       fetchMenu();
     } catch {
-      toast.error('Failed to update menu item');
+      toast.error(t('adminMenu.updateError'));
     } finally {
       setEditLoading(false);
     }
@@ -137,13 +141,13 @@ export const AdminMenuCatalogView = () => {
     <div className="animate-in">
       <div className="page-header">
         <div>
-          <h1>Menu Catalog</h1>
-          <p>Manage your culinary offerings.</p>
+          <h1>{t('adminMenu.title')}</h1>
+          <p>{t('adminMenu.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Input
             type="text"
-            placeholder="Search items..."
+            placeholder={t('adminMenu.searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -153,10 +157,10 @@ export const AdminMenuCatalogView = () => {
             style={{ width: '240px', paddingLeft: '36px' }}
           />
           <Button variant="secondary" size="medium" onClick={() => setShowFilter(!showFilter)}>
-            <Filter size={16} /> {showFilter ? 'Hide Filter' : 'Filter'}
+            <Filter size={16} /> {showFilter ? t('adminMenu.hideFilter') : t('adminMenu.filter')}
           </Button>
           <Button variant="primary" size="medium" onClick={() => setIsModalOpen(true)}>
-            <Plus size={16} /> Add Item
+            <Plus size={16} /> {t('adminMenu.addItem')}
           </Button>
         </div>
       </div>
@@ -177,7 +181,7 @@ export const AdminMenuCatalogView = () => {
             size="small"
             onClick={() => setSelectedCategory(null)}
           >
-            All
+            {t('adminMenu.all')}
           </Button>
           {categories.map((cat) => (
             <Button
@@ -191,7 +195,7 @@ export const AdminMenuCatalogView = () => {
               }}
             >
               {cat.icon && <span style={{ marginRight: '4px' }}>{cat.icon}</span>}
-              {cat.name}
+              {translateCategoryName(cat.name, i18n.language)}
             </Button>
           ))}
         </div>
@@ -215,7 +219,7 @@ export const AdminMenuCatalogView = () => {
             >
               <div style={{ position: 'relative', overflow: 'hidden', height: '200px' }}>
                 <img
-                  src={resolveMediaUrl(item.imageUrl) || FALLBACK_IMAGE_URL}
+                  src={resolveMediaUrl(item.imageUrl, DEFAULT_FALLBACK_IMAGE_URL)}
                   alt={item.name}
                   style={{
                     width: '100%',
@@ -223,6 +227,12 @@ export const AdminMenuCatalogView = () => {
                     objectFit: 'cover',
                     filter: item.isAvailable ? 'none' : 'grayscale(70%) brightness(0.7)',
                     transition: 'transform 300ms ease',
+                  }}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (img.src !== DEFAULT_FALLBACK_IMAGE_URL) {
+                      img.src = DEFAULT_FALLBACK_IMAGE_URL;
+                    }
                   }}
                   onMouseEnter={(e) => {
                     if (item.isAvailable) (e.target as HTMLImageElement).style.transform = 'scale(1.05)';
@@ -233,7 +243,7 @@ export const AdminMenuCatalogView = () => {
                 />
                 <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
                   <Badge variant={item.isAvailable ? 'success' : 'error'} size="small">
-                    {item.isAvailable ? 'Available' : 'Out of Stock'}
+                    {item.isAvailable ? t('adminMenu.available') : t('adminMenu.outOfStock')}
                   </Badge>
                 </div>
                 <motion.button
@@ -265,18 +275,18 @@ export const AdminMenuCatalogView = () => {
               </div>
               <div style={{ padding: 'var(--sp-4)' }}>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                  {item.categoryName}
+                  {translateCategoryName(item.categoryName, i18n.language)}
                 </div>
                 <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '12px', lineHeight: 1.3 }}>{item.name}</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--orange-600)' }}>${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
+                  <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--orange-600)' }}>{formatVndCurrency(Number(item.price || 0), i18n.language)}</span>
                   <div style={{ display: 'flex', gap: '2px', color: 'var(--amber)' }}>
                     {[1, 2, 3, 4, 5].map((rating) => <Star key={rating} size={14} fill={rating <= 4 ? 'currentColor' : 'none'} />)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--sp-3)' }}>
-                  <Button variant="secondary" size="small" style={{ flex: 1 }} onClick={() => setEditingItem(item)}>Edit</Button>
-                  <Button variant="outline" size="small" style={{ flex: 1 }} onClick={() => setSelectedItem(item)}>View</Button>
+                  <Button variant="secondary" size="small" style={{ flex: 1 }} onClick={() => setEditingItem(item)}>{t('adminMenu.edit')}</Button>
+                  <Button variant="outline" size="small" style={{ flex: 1 }} onClick={() => setSelectedItem(item)}>{t('adminMenu.view')}</Button>
                 </div>
               </div>
             </div>
@@ -284,20 +294,20 @@ export const AdminMenuCatalogView = () => {
         ))}
       </div>
 
-      <Modal title="Add Menu Item" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="medium">
+      <Modal title={t('adminMenu.addTitle')} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="medium">
         <form id="menu-form" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <div>
             <Input
-              label="Name"
+              label={t('adminMenu.name')}
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Wagyu Steak"
+              placeholder={t('adminMenu.namePlaceholder')}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-4)' }}>
             <Input
-              label="Price ($)"
+              label={t('adminMenu.price')}
               type="number"
               required
               step="0.01"
@@ -306,7 +316,7 @@ export const AdminMenuCatalogView = () => {
               placeholder="0.00"
             />
             <div>
-              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Category</label>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>{t('adminMenu.category')}</label>
               <select
                 required
                 value={formData.categoryId}
@@ -322,8 +332,8 @@ export const AdminMenuCatalogView = () => {
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                <option value="">Select Category</option>
-                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                <option value="">{t('adminMenu.selectCategory')}</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{translateCategoryName(category.name, i18n.language)}</option>)}
               </select>
             </div>
           </div>
@@ -333,15 +343,15 @@ export const AdminMenuCatalogView = () => {
             onFileSelect={(file) => setSelectedImageFile(file)}
             shape="rounded"
             size="lg"
-            label="Item Image"
+            label={t('adminMenu.itemImage')}
           />
           <div>
-            <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Description</label>
+            <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>{t('adminMenu.description')}</label>
             <textarea
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Brief description..."
+              placeholder={t('adminMenu.descriptionPlaceholder')}
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -356,43 +366,49 @@ export const AdminMenuCatalogView = () => {
             />
           </div>
           <Button type="submit" variant="primary" size="medium" disabled={loading} style={{ marginTop: 'var(--sp-2)', width: '100%' }}>
-            {loading ? 'Saving...' : 'Save Item'}
+            {loading ? t('adminMenu.saving') : t('adminMenu.saveItem')}
           </Button>
         </form>
       </Modal>
 
-      <Modal title="Menu Item Details" isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} size="medium">
+      <Modal title={t('adminMenu.detailsTitle')} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} size="medium">
         {selectedItem && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
             <img
-              src={resolveMediaUrl(selectedItem.imageUrl) || FALLBACK_IMAGE_URL}
+              src={resolveMediaUrl(selectedItem.imageUrl, DEFAULT_FALLBACK_IMAGE_URL)}
               alt={selectedItem.name}
               style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: 'var(--r-md)' }}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.src !== DEFAULT_FALLBACK_IMAGE_URL) {
+                  img.src = DEFAULT_FALLBACK_IMAGE_URL;
+                }
+              }}
             />
             <div>
               <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, marginBottom: '4px' }}>{selectedItem.name}</h3>
               <Badge variant={selectedItem.isAvailable ? 'success' : 'error'} size="small">
-                {selectedItem.isAvailable ? 'Available' : 'Out of Stock'}
+                {selectedItem.isAvailable ? t('adminMenu.available') : t('adminMenu.outOfStock')}
               </Badge>
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-              <strong>Category:</strong> {selectedItem.categoryName}
+              <strong>{t('adminMenu.category')}:</strong> {translateCategoryName(selectedItem.categoryName, i18n.language)}
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-              <strong>Prep Time:</strong> {selectedItem.preparationTime || 'N/A'} minutes
+              <strong>{t('adminMenu.prepTime')}:</strong> {selectedItem.preparationTime || 'N/A'} {t('adminMenu.minutes')}
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-              <strong>Description:</strong> {selectedItem.description || 'No description available.'}
+              <strong>{t('adminMenu.description')}:</strong> {selectedItem.description || t('adminMenu.noDescription')}
             </div>
             <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--orange-600)' }}>
-              ${typeof selectedItem.price === 'number' ? selectedItem.price.toFixed(2) : selectedItem.price}
+              {formatVndCurrency(Number(selectedItem.price || 0), i18n.language)}
             </div>
           </div>
         )}
       </Modal>
 
       <Modal
-        title="Edit Menu Item"
+        title={t('adminMenu.editTitle')}
         isOpen={!!editingItem}
         onClose={() => {
           setEditingItem(null);
@@ -403,13 +419,13 @@ export const AdminMenuCatalogView = () => {
         {editingItem && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
             <Input
-              label="Name"
+              label={t('adminMenu.name')}
               defaultValue={editingItem.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              placeholder="e.g. Wagyu Steak"
+              placeholder={t('adminMenu.namePlaceholder')}
             />
             <Input
-              label="Price ($)"
+              label={t('adminMenu.price')}
               type="number"
               step="0.01"
               defaultValue={editingItem.price}
@@ -422,15 +438,15 @@ export const AdminMenuCatalogView = () => {
               uploadEndpoint={`/menu/${editingItem.id}/image`}
               shape="rounded"
               size="lg"
-              label="Item Image"
+              label={t('adminMenu.itemImage')}
             />
             <div>
-              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Description</label>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>{t('adminMenu.description')}</label>
               <textarea
                 rows={3}
                 defaultValue={editingItem.description || ''}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                placeholder="Brief description..."
+                placeholder={t('adminMenu.descriptionPlaceholder')}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -445,7 +461,7 @@ export const AdminMenuCatalogView = () => {
               />
             </div>
             <Button variant="primary" size="medium" onClick={handleEditSave} disabled={editLoading} style={{ width: '100%' }}>
-              {editLoading ? 'Saving...' : 'Save Changes'}
+              {editLoading ? t('adminMenu.saving') : t('adminMenu.saveChanges')}
             </Button>
           </div>
         )}

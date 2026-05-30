@@ -6,15 +6,21 @@ import { AlertCircle, CheckCircle, MapPin, Search, Plus, ShoppingCart, Minus, Ta
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Input, Badge, Card } from '../../components/ui';
 import { toast } from '../../store/toastStore';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
+import { translateCategoryName } from '../../utils/menuCategories';
+import { DEFAULT_FALLBACK_IMAGE_URL, resolveMediaUrl } from '../../services/media';
+import { formatVndCurrency } from '../../utils/formatters';
 
 interface CartItem extends MenuItemDTO {
   cartQuantity: number;
 }
 
 export const StaffMenuView = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const qrTableId = searchParams.get('tableId');
-  const qrTableName = searchParams.get('tableName') || 'QR table';
+  const qrTableName = searchParams.get('tableName') || t('menu.qrTable');
   const [items, setItems] = useState<MenuItemDTO[]>([]);
   const [reservations, setReservations] = useState<ReservationDTO[]>([]);
   const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
@@ -32,7 +38,7 @@ export const StaffMenuView = () => {
         : responseData;
       if (Array.isArray(data)) setItems(data.filter(i => i.isAvailable ?? i.available));
     }).catch(() => {
-      toast.error('Failed to fetch menu items');
+      toast.error(t('menu.loadItemsError'));
     });
 
     api.get('/categories').then((res) => {
@@ -62,7 +68,7 @@ export const StaffMenuView = () => {
 
   const addToCart = (item: MenuItemDTO) => {
     if (!canOrder) {
-      toast.error('Please select a table first');
+      toast.error(t('menu.selectTableFirst'));
       return;
     }
     setCart(prev => {
@@ -72,7 +78,7 @@ export const StaffMenuView = () => {
       }
       return [...prev, { ...item, cartQuantity: 1 }];
     });
-    toast.success(`${item.name} added to order`);
+    toast.success(t('menu.itemAdded', { itemName: item.name }));
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -96,7 +102,7 @@ export const StaffMenuView = () => {
         reservationId: selectedReservation?.id,
         items: cart.map(c => ({ menuItemId: c.id, quantity: c.cartQuantity }))
       });
-      toast.success('Order sent to kitchen!');
+      toast.success(t('menu.orderSent'));
       setCart([]);
       setIsDrawerOpen(false);
     } catch (error: any) {
@@ -104,7 +110,7 @@ export const StaffMenuView = () => {
       if (errorMessage) {
         toast.error(errorMessage);
       } else {
-        toast.error('Failed to place order. Please try again.');
+        toast.error(t('menu.placeOrderError'));
       }
       console.error('Order error:', error?.response?.data || error);
     }
@@ -118,24 +124,24 @@ export const StaffMenuView = () => {
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
 
   return (
-    <div style={{ display: 'flex', height: '100%', gap: 'var(--sp-6)' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-6)' }}>
       {/* Menu Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div className="page-header" style={{ marginBottom: 'var(--sp-4)' }}>
           <div>
-            <h1 style={{ color: 'var(--orange-600)' }}>Menu Collection</h1>
-            <p>{canOrder ? `${tableLabel} - Select items to order` : 'Select a table to take order'}</p>
+            <h1 style={{ color: 'var(--orange-600)' }}>{t('menu.title')}</h1>
+            <p>{canOrder ? t('menu.orderPrompt', { tableLabel }) : t('menu.selectTable')}</p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <Input
-              type="text" placeholder="Search menu..." value={search} onChange={(e) => {
+              type="text" placeholder={t('menu.searchPlaceholder')} value={search} onChange={(e) => {
                 setSearch(e.target.value);
                 setSelectedCategory(null);
               }}
               icon={<Search size={16} />} style={{ width: '240px', paddingLeft: '36px' }}
             />
             <Button onClick={() => setIsDrawerOpen(true)} variant={cart.length > 0 ? 'primary' : 'secondary'} disabled={!canOrder}>
-              <ShoppingCart size={16} /> Order ({cart.length})
+              <ShoppingCart size={16} /> {t('menu.orderButton', { count: cart.length })}
             </Button>
           </div>
         </div>
@@ -152,10 +158,8 @@ export const StaffMenuView = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
                     <AlertCircle size={20} color="var(--amber)" />
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: '4px' }}>Select a Table</div>
-                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-                        Choose a reservation below to take order
-                      </div>
+                      <div style={{ fontWeight: 600, marginBottom: '4px' }}>{t('menu.selectTableTitle')}</div>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('menu.selectTableHint')}</div>
                     </div>
                   </div>
                 </Card.Content>
@@ -165,7 +169,7 @@ export const StaffMenuView = () => {
             {activeReservations.length > 0 && (
               <Card variant="elevated">
                 <Card.Header>
-                  <Card.Title>Active Reservations</Card.Title>
+                  <Card.Title>{t('menu.activeReservations')}</Card.Title>
                 </Card.Header>
                 <Card.Content>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--sp-3)' }}>
@@ -200,7 +204,7 @@ export const StaffMenuView = () => {
                             {res.customerName}
                           </div>
                           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                            {res.numberOfGuests} guests · {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {res.numberOfGuests} {t('menu.guests')} · {new Date(res.reservationTime).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </button>
                       </motion.div>
@@ -220,7 +224,7 @@ export const StaffMenuView = () => {
               size="small"
               onClick={() => { setSelectedCategory(null); setSearch(''); }}
             >
-              All
+              {t('menu.all')}
             </Button>
             {categories.map(cat => (
               <Button
@@ -229,7 +233,7 @@ export const StaffMenuView = () => {
                 size="small"
                 onClick={() => { setSelectedCategory(cat.id); setSearch(''); }}
               >
-                {cat.name}
+                {translateCategoryName(cat.name, i18n.language)}
               </Button>
             ))}
           </div>
@@ -240,12 +244,25 @@ export const StaffMenuView = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: 'var(--sp-4)',
-          overflowY: 'auto',
-          flex: 1,
+          width: '100%',
+          marginBottom: 'var(--sp-6)',
         }}>
           {filtered.map(item => (
             <motion.div key={item.id} layout>
               <Card variant="elevated" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ height: 180, overflow: 'hidden' }}>
+                  <img
+                    src={resolveMediaUrl(item.imageUrl, DEFAULT_FALLBACK_IMAGE_URL)}
+                    alt={item.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src !== DEFAULT_FALLBACK_IMAGE_URL) {
+                        img.src = DEFAULT_FALLBACK_IMAGE_URL;
+                      }
+                    }}
+                  />
+                </div>
                 <Card.Content style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ marginBottom: 'var(--sp-3)' }}>
                     <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--sp-1)' }}>{item.name}</h3>
@@ -253,10 +270,10 @@ export const StaffMenuView = () => {
                   </div>
                   <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--orange-600)' }}>
-                      ${(item.price || 0).toFixed(2)}
+                      {formatVndCurrency(item.price || 0, i18n.language)}
                     </span>
                     <Button variant="primary" size="small" onClick={() => addToCart(item)} disabled={!canOrder}>
-                      <Plus size={14} /> Add
+                      <Plus size={14} /> {t('menu.add')}
                     </Button>
                   </div>
                 </Card.Content>
@@ -281,7 +298,7 @@ export const StaffMenuView = () => {
           flexDirection: 'column',
         }}>
           <div style={{ padding: 'var(--sp-5)', borderBottom: '1px solid var(--border-main)' }}>
-            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>Order Summary</h2>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>{t('menu.orderSummary')}</h2>
             {selectedReservation && (
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
                 {selectedReservation.tableName} - {selectedReservation.customerName}
@@ -292,7 +309,7 @@ export const StaffMenuView = () => {
           <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-4)' }}>
             {cart.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>
-                No items in order
+                {t('menu.emptyCart')}
               </div>
             ) : (
               cart.map(item => (
@@ -306,7 +323,7 @@ export const StaffMenuView = () => {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600 }}>{item.name}</div>
                     <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-                      ${(item.price || 0).toFixed(2)} each
+                      {formatVndCurrency(item.price || 0, i18n.language)} {t('menu.each')}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
@@ -345,7 +362,7 @@ export const StaffMenuView = () => {
                     </button>
                   </div>
                   <div style={{ minWidth: 70, textAlign: 'right', fontWeight: 600 }}>
-                    ${((item.price || 0) * item.cartQuantity).toFixed(2)}
+                    {formatVndCurrency((item.price || 0) * item.cartQuantity, i18n.language)}
                   </div>
                 </div>
               ))
@@ -354,15 +371,15 @@ export const StaffMenuView = () => {
 
           <div style={{ padding: 'var(--sp-5)', borderTop: '1px solid var(--border-main)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', fontSize: 'var(--text-lg)', fontWeight: 700 }}>
-              <span>Total</span>
-              <span style={{ color: 'var(--orange-600)' }}>${cartTotal.toFixed(2)}</span>
+              <span>{t('menu.total')}</span>
+              <span style={{ color: 'var(--orange-600)' }}>{formatVndCurrency(cartTotal, i18n.language)}</span>
             </div>
             <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
               <Button variant="ghost" onClick={() => setIsDrawerOpen(false)} style={{ flex: 1 }}>
-                Close
+                {t('common.close')}
               </Button>
               <Button variant="primary" onClick={handlePlaceOrder} disabled={cart.length === 0} style={{ flex: 1 }}>
-                Place Order
+                {t('menu.placeOrder')}
               </Button>
             </div>
           </div>

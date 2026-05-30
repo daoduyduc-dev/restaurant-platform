@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import type { ReservationDTO, TableDTO } from '../../services/types';
 import { useWebSocket } from '../../services/useWebSocket';
@@ -6,8 +7,10 @@ import { Calendar, Phone, Users, CheckCircle, XCircle, Search, MapPin } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { toast } from '../../store/toastStore';
+import i18n from '../../i18n';
 
-export const ReceptionistReservationView = () => {
+export const StaffReservationView = () => {
+   const { t } = useTranslation();
    const [reservations, setReservations] = useState<ReservationDTO[]>([]);
    const [tables, setTables] = useState<TableDTO[]>([]);
    const [search, setSearch] = useState('');
@@ -38,10 +41,10 @@ export const ReceptionistReservationView = () => {
    const handleCreate = async () => {
       try {
          await api.post('/reservations', formData);
-         toast.success('Reservation created');
+         toast.success(t('reservations.created'));
          setIsModalOpen(false);
          fetchData();
-      } catch { toast.error('Failed to create'); }
+      } catch { toast.error(t('reservations.createError')); }
    };
 
    const updateStatus = async (id: string, status: string) => {
@@ -53,9 +56,9 @@ export const ReceptionistReservationView = () => {
          } else {
             await api.patch(`/reservations/${id}/status?status=${status}`);
          }
-         toast.success(`Updated to ${status}`);
+         toast.success(t('reservations.updatedTo', { status }));
          fetchData();
-      } catch { toast.error('Failed to update'); }
+      } catch { toast.error(t('reservations.updateError')); }
    };
 
    // Filter and sort reservations
@@ -88,12 +91,12 @@ export const ReceptionistReservationView = () => {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
          <div className="page-header">
             <div>
-               <h1 style={{ color: 'var(--orange-600)' }}><Calendar size={28} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} /> Guest Reservations</h1>
-               <p>Manage bookings, walk-ins, and seating assignments</p>
+               <h1 style={{ color: 'var(--orange-600)' }}><Calendar size={28} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} /> {t('reservations.title')}</h1>
+               <p>{t('reservations.subtitle')}</p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--sp-3)' }}>
-               <Button variant="secondary" onClick={() => window.location.href = '/app/tables'}><MapPin size={16} /> View Floor Plan</Button>
-               <Button variant="primary" onClick={() => setIsModalOpen(true)}><Calendar size={16} /> Add Walk-in / Booking</Button>
+               <Button variant="secondary" onClick={() => window.location.href = '/app/tables'}><MapPin size={16} /> {t('reservations.viewFloorPlan')}</Button>
+               <Button variant="primary" onClick={() => setIsModalOpen(true)}><Calendar size={16} /> {t('reservations.addBooking')}</Button>
             </div>
          </div>
 
@@ -102,7 +105,7 @@ export const ReceptionistReservationView = () => {
                <Card.Content style={{ padding: 'var(--sp-5)' }}>
                   <div className="stat-card">
                      <div className="stat-card-value">{todayRes.length}</div>
-                     <div className="stat-card-label">Total Today</div>
+                     <div className="stat-card-label">{t('reservations.totalToday')}</div>
                   </div>
                </Card.Content>
             </Card>
@@ -110,7 +113,7 @@ export const ReceptionistReservationView = () => {
                <Card.Content style={{ padding: 'var(--sp-5)' }}>
                   <div className="stat-card">
                      <div className="stat-card-value" style={{ color: 'var(--orange-500)' }}>{pendingCount}</div>
-                     <div className="stat-card-label">Pending Arrival</div>
+                     <div className="stat-card-label">{t('reservations.pendingArrival')}</div>
                   </div>
                </Card.Content>
             </Card>
@@ -118,7 +121,7 @@ export const ReceptionistReservationView = () => {
                <Card.Content style={{ padding: 'var(--sp-5)' }}>
                   <div className="stat-card">
                      <div className="stat-card-value" style={{ color: 'var(--teal)' }}>{checkedInCount}</div>
-                     <div className="stat-card-label">Seated Currently</div>
+                     <div className="stat-card-label">{t('reservations.seatedCurrently')}</div>
                   </div>
                </Card.Content>
             </Card>
@@ -127,7 +130,7 @@ export const ReceptionistReservationView = () => {
          <Card variant="elevated">
             <Card.Header>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
-                  <Card.Title>All Reservations</Card.Title>
+                  <Card.Title>{t('reservations.allReservations')}</Card.Title>
                   <div style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' }}>
                      <Input
                         type="date"
@@ -140,15 +143,15 @@ export const ReceptionistReservationView = () => {
                         onChange={e => setFilterStatus(e.target.value)}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-main)', borderRadius: 'var(--r-sm)', fontSize: '14px' }}
                      >
-                        <option value="">All Status</option>
+                        <option value="">{t('reservations.allStatus')}</option>
                         <option value="PENDING">PENDING</option>
                         <option value="RESERVED">RESERVED</option>
                         <option value="CHECKED_IN">CHECKED_IN</option>
                         <option value="CANCELLED">CANCELLED</option>
                         <option value="COMPLETED">COMPLETED</option>
                      </select>
-                     <Input
-                        placeholder="Search name, phone..."
+                        <Input
+                        placeholder={t('reservations.searchPlaceholder')}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         icon={<Search size={16} />}
@@ -161,7 +164,7 @@ export const ReceptionistReservationView = () => {
                <table className="data-table">
                   <thead>
                      <tr>
-                        <th>Guest Name</th><th>Phone</th><th>Date & Time</th><th>Party Size</th><th>Table</th><th>Status</th><th>Actions</th>
+                        <th>{t('reservations.guestName')}</th><th>{t('reservations.phone')}</th><th>{t('reservations.dateTime')}</th><th>{t('reservations.partySize')}</th><th>{t('reservations.table')}</th><th>{t('reservations.status')}</th><th>{t('reservations.actions')}</th>
                      </tr>
                   </thead>
                   <tbody>
@@ -172,10 +175,10 @@ export const ReceptionistReservationView = () => {
                               <td style={{ fontWeight: 600 }}>{res.customerName}</td>
                               <td style={{ color: 'var(--text-muted)' }}>{res.phone}</td>
                               <td>
-                                 <div style={{ fontWeight: 600 }}>{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{date.toLocaleDateString()}</div>
+                                 <div style={{ fontWeight: 600 }}>{date.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</div>
+                                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{date.toLocaleDateString(i18n.language)}</div>
                               </td>
-                              <td>{res.numberOfGuests} guests</td>
+                              <td>{res.numberOfGuests} {t('reservations.guests')}</td>
                               <td>{res.tableName || '—'}</td>
                               <td>
                                  <Badge variant={res.status === 'PENDING' ? 'warning' : res.status === 'CHECKED_IN' ? 'success' : res.status === 'CANCELLED' ? 'error' : 'neutral'}>{res.status}</Badge>
@@ -184,18 +187,18 @@ export const ReceptionistReservationView = () => {
                                  <div style={{ display: 'flex', gap: 6 }}>
                                     {res.status === 'PENDING' && (
                                        <>
-                                          <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14} /> Check In</Button>
-                                          <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14} /> Cancel</Button>
+                                          <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14} /> {t('reservations.checkIn')}</Button>
+                                          <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14} /> {t('common.cancel')}</Button>
                                        </>
                                     )}
                                     {res.status === 'RESERVED' && (
                                        <>
-                                          <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14} /> Check In</Button>
-                                          <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14} /> Cancel</Button>
+                                          <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'CHECKED_IN')}><CheckCircle size={14} /> {t('reservations.checkIn')}</Button>
+                                          <Button variant="danger" size="small" onClick={() => updateStatus(res.id, 'CANCELLED')}><XCircle size={14} /> {t('common.cancel')}</Button>
                                        </>
                                     )}
                                     {res.status === 'CHECKED_IN' && (
-                                       <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'COMPLETED')}>Complete</Button>
+                                       <Button variant="primary" size="small" onClick={() => updateStatus(res.id, 'COMPLETED')}>{t('reservations.complete')}</Button>
                                     )}
                                  </div>
                               </td>
@@ -207,21 +210,21 @@ export const ReceptionistReservationView = () => {
             </Card.Content>
          </Card>
 
-         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Reservation">
+         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('reservations.newReservation')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-               <Input label="Customer Name" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
-               <Input label="Phone Number" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-               <Input type="datetime-local" label="Reservation Time" value={formData.reservationTime} onChange={e => setFormData({ ...formData, reservationTime: e.target.value })} />
-               <Input type="number" label="Number of Guests" value={formData.numberOfGuests} onChange={e => setFormData({ ...formData, numberOfGuests: parseInt(e.target.value, 10) || 1 })} />
+               <Input label={t('reservations.customerName')} value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
+               <Input label={t('reservations.phoneNumber')} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+               <Input type="datetime-local" label={t('reservations.reservationTime')} value={formData.reservationTime} onChange={e => setFormData({ ...formData, reservationTime: e.target.value })} />
+               <Input type="number" label={t('reservations.numberOfGuests')} value={formData.numberOfGuests} onChange={e => setFormData({ ...formData, numberOfGuests: parseInt(e.target.value, 10) || 1 })} />
 
                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: 'block' }}>Assign Table (Optional)</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: 'block' }}>{t('reservations.assignTable')}</label>
                   <select
                      value={formData.tableId}
                      onChange={e => setFormData({ ...formData, tableId: e.target.value })}
                      style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-main)', borderRadius: 'var(--r-sm)' }}
                   >
-                     <option value="">No table assigned yet</option>
+                     <option value="">{t('reservations.noTable')}</option>
                      {tables.map(t => (
                         <option key={t.id} value={t.id}>{t.name} ({t.capacity} seats) - {t.status}</option>
                      ))}
@@ -229,8 +232,8 @@ export const ReceptionistReservationView = () => {
                </div>
 
                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
-                  <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                  <Button variant="primary" onClick={handleCreate}>Save Booking</Button>
+                  <Button variant="ghost" onClick={() => setIsModalOpen(false)}>{t('common.cancel')}</Button>
+                  <Button variant="primary" onClick={handleCreate}>{t('reservations.saveBooking')}</Button>
                </div>
             </div>
          </Modal>

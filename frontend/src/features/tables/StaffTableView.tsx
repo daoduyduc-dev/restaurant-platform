@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { OrderDTO, TableDTO } from '../../services/types';
@@ -7,6 +8,7 @@ import { Building2, CheckCircle, Layers3, PlusCircle, QrCode } from 'lucide-reac
 import { FloorPlanEditor } from './FloorPlanEditor';
 import { useWebSocket } from '../../services/useWebSocket';
 import { translateStatus } from '../../utils/translations';
+import i18n from '../../i18n';
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
@@ -15,7 +17,8 @@ const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error
   DIRTY: 'neutral',
 };
 
-export const WaiterTableView = () => {
+export const StaffTableView = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [activeOrders, setActiveOrders] = useState<Record<string, OrderDTO>>({});
@@ -102,15 +105,15 @@ export const WaiterTableView = () => {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Table Operations</h1>
+          <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>{t('staffTables.title')}</h1>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)' }}>
-              Monitor floor status and open each table to manage active orders.
+              {t('staffTables.subtitle')}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-            <Badge variant="warning">{cookingOrdersCount} cooking</Badge>
-            <Badge variant="success">{readyOrdersCount} ready</Badge>
+            <Badge variant="warning">{cookingOrdersCount} {t('staffTables.cooking')}</Badge>
+            <Badge variant="success">{readyOrdersCount} {t('staffTables.ready')}</Badge>
           </div>
         </div>
 
@@ -118,7 +121,7 @@ export const WaiterTableView = () => {
           <Card.Content style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginRight: 'var(--sp-2)' }}>
               <Building2 size={18} color="var(--text-muted)" />
-              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Floor Tabs</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{t('staffTables.floorTabs')}</span>
             </div>
             {availableFloors.map((floor) => (
               <Button
@@ -127,7 +130,7 @@ export const WaiterTableView = () => {
                 size="small"
                 onClick={() => setSelectedFloor(floor)}
               >
-                Floor {floor}
+                {t('staffTables.floor')} {floor}
               </Button>
             ))}
           </Card.Content>
@@ -137,14 +140,14 @@ export const WaiterTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
-                <Card.Title>Floor Layout</Card.Title>
+                <Card.Title>{t('staffTables.floorLayout')}</Card.Title>
                 <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                  {selectedFloor != null ? `Showing Floor ${selectedFloor}` : 'No floor selected'} with {tablesOnSelectedFloor.length} table(s). Select a table to open order actions.
+                  {selectedFloor != null ? t('staffTables.showingFloor', { floor: selectedFloor }) : t('staffTables.noFloor')} {t('staffTables.withTables', { count: tablesOnSelectedFloor.length })}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-                <Badge variant="info">{activeOrdersOnFloor} active orders</Badge>
-                <Badge variant="neutral">{dirtyTablesOnFloor} dirty</Badge>
+                <Badge variant="info">{activeOrdersOnFloor} {t('staffTables.activeOrders')}</Badge>
+                <Badge variant="neutral">{dirtyTablesOnFloor} {t('staffTables.dirty')}</Badge>
               </div>
             </div>
           </Card.Header>
@@ -160,7 +163,7 @@ export const WaiterTableView = () => {
               />
             ) : (
               <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No tables are available on the selected floor.
+                {t('staffTables.noTables')}
               </div>
             )}
           </Card.Content>
@@ -172,7 +175,7 @@ export const WaiterTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Layers3 size={18} color="var(--orange-500)" />
-              Table Details
+              {t('staffTables.tableDetails')}
             </Card.Title>
           </Card.Header>
           <Card.Content
@@ -199,42 +202,42 @@ export const WaiterTableView = () => {
 
                 {selectedTable.status === 'DIRTY' ? (
                   <div style={{ textAlign: 'center', padding: 'var(--sp-8) var(--sp-4)' }}>
-                    <div style={{ fontSize: 40, marginBottom: 16 }}>Clean-up</div>
-                    <h3 style={{ marginBottom: 8 }}>This table needs cleaning</h3>
-                    <Button variant="outline" style={{ width: '100%' }}>Mark as cleaned</Button>
+                    <div style={{ fontSize: 40, marginBottom: 16 }}>{t('staffTables.cleanUp')}</div>
+                    <h3 style={{ marginBottom: 8 }}>{t('staffTables.needsCleaning')}</h3>
+                    <Button variant="outline" style={{ width: '100%' }}>{t('staffTables.markCleaned')}</Button>
                   </div>
                 ) : selectedOrder ? (
                   <>
                     <div style={{ background: 'var(--gray-50)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', border: '1px solid var(--border-main)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, gap: 'var(--sp-2)' }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Active order</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{t('staffTables.activeOrder')}</span>
                         <Badge variant="info">{translateStatus(selectedOrder.status)}</Badge>
                       </div>
                       <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
-                        {selectedOrder.items?.length || 0} item(s) | ${(selectedOrder.totalAmount || 0).toFixed(2)}
+                        {selectedOrder.items?.length || 0} {t('staffTables.items')} | {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(selectedOrder.totalAmount || 0)}
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {selectedOrder.status === 'READY' ? (
                           <Button variant="primary" style={{ background: 'var(--teal)', borderColor: 'var(--teal)' }}>
                             <CheckCircle size={16} />
-                            Mark as served
+                            {t('staffTables.markServed')}
                           </Button>
                         ) : null}
                         <Button variant="secondary" onClick={() => navigate('/app/menu')}>
                           <PlusCircle size={16} />
-                          Add items
+                          {t('staffTables.addItems')}
                         </Button>
                         <Button variant="outline" onClick={() => navigate('/app/orders')}>
                           <QrCode size={16} />
-                          View order
+                          {t('staffTables.viewOrder')}
                         </Button>
                       </div>
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                       <h4 style={{ fontSize: 13, textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>
-                        Items
+                        {t('staffTables.itemsTitle')}
                       </h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {selectedOrder.items?.map((item) => (
@@ -250,7 +253,7 @@ export const WaiterTableView = () => {
                             }}
                           >
                             <span>{item.quantity}x {item.menuItemName}</span>
-                            <span style={{ fontWeight: 600 }}>${item.total?.toFixed(2)}</span>
+                            <span style={{ fontWeight: 600 }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(item.total || 0)}</span>
                           </div>
                         ))}
                       </div>
@@ -260,11 +263,11 @@ export const WaiterTableView = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
                     <Button variant="primary" size="large" style={{ justifyContent: 'center', padding: '16px' }} onClick={() => navigate(`/app/menu?tableId=${selectedTable.id}&tableName=${encodeURIComponent(selectedTable.name)}`)}>
                       <PlusCircle size={18} />
-                      New order
+                      {t('staffTables.newOrder')}
                     </Button>
                     {selectedTable.status !== 'OCCUPIED' ? (
                       <Button variant="secondary" size="large" style={{ justifyContent: 'center' }}>
-                        Mark as occupied
+                        {t('staffTables.markOccupied')}
                       </Button>
                     ) : null}
                   </div>
@@ -280,7 +283,7 @@ export const WaiterTableView = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, marginBottom: 10 }}>
                     <QrCode size={16} />
-                    Table QR Code
+                    {t('staffTables.qrCode')}
                   </div>
                   <img
                     alt={`QR for ${selectedTable.name}`}
@@ -292,7 +295,7 @@ export const WaiterTableView = () => {
             ) : (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}>
                 <SelectIndicator />
-                <p style={{ margin: 0 }}>Select a table to review its status and order actions.</p>
+                <p style={{ margin: 0 }}>{t('staffTables.selectTableHint')}</p>
               </div>
             )}
           </Card.Content>

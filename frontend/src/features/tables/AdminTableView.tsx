@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TableDTO, TableType } from '../../services/types';
 import { Card, Button, Input, Badge, Modal, Select } from '../../components/ui';
 import { Building2, Crown, Layers3, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -7,17 +8,6 @@ import { FloorPlanEditor } from './FloorPlanEditor';
 import { getTableCanvasRect } from './editor/layout';
 import { useTableEditorStore, validateTableEditorForm } from './tableEditorStore';
 import { QrCode } from 'lucide-react';
-
-const TABLE_TYPE_OPTIONS = [
-  { label: 'All Types', value: 'ALL' },
-  { label: 'Normal', value: 'NORMAL' },
-  { label: 'VIP', value: 'VIP' },
-];
-
-const TYPE_OPTIONS = [
-  { label: 'Normal', value: 'NORMAL' },
-  { label: 'VIP', value: 'VIP' },
-];
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
@@ -33,6 +23,7 @@ const vipBadgeStyle = {
 };
 
 export const AdminTableView = () => {
+  const { t } = useTranslation();
   const tables = useTableEditorStore((state) => state.tables);
   const loading = useTableEditorStore((state) => state.loading);
   const saving = useTableEditorStore((state) => state.saving);
@@ -54,11 +45,20 @@ export const AdminTableView = () => {
   const commitTablePosition = useTableEditorStore((state) => state.commitTablePosition);
   const saveTable = useTableEditorStore((state) => state.saveTable);
   const deleteTable = useTableEditorStore((state) => state.deleteTable);
+  const tableTypeOptions = [
+    { label: t('adminTable.allTypes'), value: 'ALL' },
+    { label: t('adminTable.normal'), value: 'NORMAL' },
+    { label: t('adminTable.vip'), value: 'VIP' },
+  ];
+  const tableEditTypeOptions = [
+    { label: t('adminTable.normal'), value: 'NORMAL' },
+    { label: t('adminTable.vip'), value: 'VIP' },
+  ];
 
   useEffect(() => {
     loadTables().catch((error) => {
       console.error('Failed to fetch tables', error);
-      toast.error('Failed to load tables');
+      toast.error(t('adminTable.loadError'));
     });
   }, [loadTables]);
 
@@ -85,7 +85,7 @@ export const AdminTableView = () => {
       await commitTablePosition(tableId);
     } catch (error) {
       console.error('Failed to persist table position', error);
-      toast.error('Failed to save table position');
+      toast.error(t('adminTable.savePositionError'));
     }
   };
 
@@ -100,24 +100,24 @@ export const AdminTableView = () => {
 
     try {
       await saveTable();
-      toast.success(isEditing ? 'Table updated successfully' : 'Table created successfully');
+      toast.success(isEditing ? t('adminTable.updated') : t('adminTable.created'));
     } catch (error) {
       console.error('Failed to save table', error);
-      toast.error('Failed to save table');
+      toast.error(t('adminTable.saveError'));
     }
   };
 
   const handleDeleteTable = async (table: TableDTO) => {
-    if (!window.confirm(`Soft delete table ${table.name}?`)) {
+    if (!window.confirm(t('adminTable.confirmDelete', { name: table.name }))) {
       return;
     }
 
     try {
       await deleteTable(table.id);
-      toast.success('Table deleted successfully');
+      toast.success(t('adminTable.deleted'));
     } catch (error) {
       console.error('Failed to delete table', error);
-      toast.error('Failed to delete table');
+      toast.error(t('adminTable.deleteError'));
     }
   };
 
@@ -129,22 +129,22 @@ export const AdminTableView = () => {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Table Administration</h1>
+            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>{t('adminTable.title')}</h1>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)' }}>
-              Manage floor layout, VIP type, zone, capacity, and coordinates without touching positioning logic.
+              {t('adminTable.subtitle')}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <Select
-              label="Table Type"
-              options={TABLE_TYPE_OPTIONS}
+              label={t('adminTable.tableType')}
+              options={tableTypeOptions}
               value={typeFilter}
               onChange={(value) => setTypeFilter(value as 'ALL' | TableType)}
             />
             <Button variant="primary" onClick={openCreateModal}>
               <Plus size={16} />
-              Add Table
+              {t('adminTable.addTable')}
             </Button>
           </div>
         </div>
@@ -153,7 +153,7 @@ export const AdminTableView = () => {
           <Card.Content style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginRight: 'var(--sp-2)' }}>
               <Building2 size={18} color="var(--text-muted)" />
-              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Floor Tabs</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{t('adminTable.floorTabs')}</span>
             </div>
             {availableFloors.map((floor) => (
               <Button
@@ -162,7 +162,7 @@ export const AdminTableView = () => {
                 size="small"
                 onClick={() => setSelectedFloor(floor)}
               >
-                Floor {floor}
+                {t('adminTable.floor')} {floor}
               </Button>
             ))}
           </Card.Content>
@@ -172,21 +172,21 @@ export const AdminTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
-                <Card.Title>Floor Layout</Card.Title>
+                <Card.Title>{t('adminTable.floorLayout')}</Card.Title>
                 <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                  {selectedFloor != null ? `Showing Floor ${selectedFloor}` : 'No floor selected'} with {tablesOnSelectedFloor.length} table(s). Drag tables to update canvas coordinates.
+                  {selectedFloor != null ? t('adminTable.showingFloor', { floor: selectedFloor }) : t('adminTable.noFloor')} {t('adminTable.withTables', { count: tablesOnSelectedFloor.length })}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-                <Badge variant="info">{tables.length} total</Badge>
-                <Badge variant="neutral">{normalCount} normal</Badge>
-                <Badge variant="warning" style={vipBadgeStyle}>{vipCount} VIP</Badge>
+                <Badge variant="info">{tables.length} {t('adminTable.total')}</Badge>
+                <Badge variant="neutral">{normalCount} {t('adminTable.normal')}</Badge>
+                <Badge variant="warning" style={vipBadgeStyle}>{vipCount} {t('adminTable.vip')}</Badge>
               </div>
             </div>
           </Card.Header>
           <Card.Content style={{ padding: 0 }}>
             {loading ? (
-              <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>Loading floor layout...</div>
+              <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('adminTable.loading')}</div>
             ) : tablesOnSelectedFloor.length > 0 ? (
               <FloorPlanEditor
                 tables={tablesOnSelectedFloor}
@@ -198,7 +198,7 @@ export const AdminTableView = () => {
               />
             ) : (
               <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No tables match the current floor and type filters.
+                {t('adminTable.noMatchingTables')}
               </div>
             )}
           </Card.Content>
@@ -208,18 +208,18 @@ export const AdminTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Layers3 size={18} color="var(--orange-500)" />
-              Grouped Table List
+              {t('adminTable.groupedList')}
             </Card.Title>
           </Card.Header>
           <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
             {groupedTables.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)' }}>No tables available for the current type filter.</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t('adminTable.noGroupedTables')}</div>
             ) : (
               groupedTables.map((group) => (
                 <section key={group.floor} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--sp-2)' }}>
-                    <h3 style={{ margin: 0, fontSize: 16, color: 'var(--text-heading)' }}>Floor {group.floor}</h3>
-                    <Badge variant="info">{group.tables.length} table(s)</Badge>
+                    <h3 style={{ margin: 0, fontSize: 16, color: 'var(--text-heading)' }}>{t('adminTable.floor')} {group.floor}</h3>
+                    <Badge variant="info">{group.tables.length} {t('adminTable.tables')}</Badge>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
                     {group.tables.map((table) => (
@@ -252,21 +252,21 @@ export const AdminTableView = () => {
                           <div>
                             <div style={{ fontWeight: 800, color: 'var(--text-heading)' }}>{table.name}</div>
                             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                              {table.capacity} seats
+                              {table.capacity} {t('adminTable.seats')}
                               {table.zone ? ` | ${table.zone}` : ''}
                             </div>
                           </div>
                           {table.type === 'VIP' && (
                             <Badge variant="warning" size="small" style={vipBadgeStyle}>
                               <Crown size={12} />
-                              VIP
+                              {t('adminTable.vip')}
                             </Badge>
                           )}
                         </div>
 
                         <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap', marginBottom: 'var(--sp-3)' }}>
                           <Badge variant={STATUS_VARIANTS[table.status]} size="small">{table.status}</Badge>
-                          <Badge variant="info" size="small">Floor {table.floor ?? '-'}</Badge>
+                          <Badge variant="info" size="small">{t('adminTable.floor')} {table.floor ?? '-'}</Badge>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)' }}>
@@ -279,7 +279,7 @@ export const AdminTableView = () => {
                             }}
                           >
                             <Pencil size={14} />
-                            Edit
+                          {t('adminTable.edit')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -291,7 +291,7 @@ export const AdminTableView = () => {
                             }}
                           >
                             <Trash2 size={14} />
-                            Delete
+                            {t('adminTable.delete')}
                           </Button>
                         </div>
                       </div>
@@ -307,7 +307,7 @@ export const AdminTableView = () => {
       <div style={{ width: 360, display: 'flex', flexDirection: 'column' }}>
         <Card variant="elevated" style={{ height: '100%' }}>
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
-            <Card.Title>Table Details</Card.Title>
+            <Card.Title>{t('adminTable.details')}</Card.Title>
           </Card.Header>
           <Card.Content
             style={{
@@ -325,23 +325,23 @@ export const AdminTableView = () => {
                     <h3 style={{ margin: 0, fontSize: 22, color: 'var(--text-heading)' }}>{selectedTable.name}</h3>
                     <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 8, flexWrap: 'wrap' }}>
                       <Badge variant={STATUS_VARIANTS[selectedTable.status]}>{selectedTable.status}</Badge>
-                      <Badge variant="info">Floor {selectedTable.floor ?? '-'}</Badge>
+                      <Badge variant="info">{t('adminTable.floor')} {selectedTable.floor ?? '-'}</Badge>
                       {selectedTable.type === 'VIP' ? (
                         <Badge variant="warning" style={vipBadgeStyle}>
                           <Crown size={12} />
-                          VIP
+                          {t('adminTable.vip')}
                         </Badge>
                       ) : (
-                        <Badge variant="neutral">Normal</Badge>
+                        <Badge variant="neutral">{t('adminTable.normal')}</Badge>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <Input label="Capacity" value={String(selectedTable.capacity)} readOnly />
-                <Input label="Zone" value={selectedTable.zone ?? '-'} readOnly />
-                <Input label="Position X" value={selectedTableCanvasRect ? String(selectedTableCanvasRect.x) : '-'} readOnly />
-                <Input label="Position Y" value={selectedTableCanvasRect ? String(selectedTableCanvasRect.y) : '-'} readOnly />
+                <Input label={t('adminTable.capacity')} value={String(selectedTable.capacity)} readOnly />
+                <Input label={t('adminTable.zone')} value={selectedTable.zone ?? '-'} readOnly />
+                <Input label={t('adminTable.positionX')} value={selectedTableCanvasRect ? String(selectedTableCanvasRect.x) : '-'} readOnly />
+                <Input label={t('adminTable.positionY')} value={selectedTableCanvasRect ? String(selectedTableCanvasRect.y) : '-'} readOnly />
 
                 <div style={{ padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--gray-50)', border: '1px solid var(--border-main)' }}>
                 <div
@@ -363,7 +363,7 @@ export const AdminTableView = () => {
                     }}
                   >
                     <QrCode size={16} />
-                    Table QR Code
+                    {t('adminTable.qrCode')}
                   </div>
 
                   <img
@@ -381,17 +381,17 @@ export const AdminTableView = () => {
                 </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>
                     <MapPin size={16} color="var(--orange-500)" />
-                    Layout Coordinates
+                    {t('adminTable.layoutCoordinates')}
                   </div>
                   <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
-                    The editor uses canvas-space pixel coordinates with origin `(0, 0)` at the top-left, and keeps pan/zoom transforms separate from saved table positions.
+                    {t('adminTable.layoutHelp')}
                   </p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 'var(--sp-3)', marginTop: 'auto' }}>
                   <Button variant="primary" style={{ flex: 1 }} onClick={() => openEditModal(selectedTable.id)}>
                     <Pencil size={16} />
-                    Edit
+                    {t('adminTable.edit')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -399,14 +399,14 @@ export const AdminTableView = () => {
                     onClick={() => void handleDeleteTable(selectedTable)}
                   >
                     <Trash2 size={16} />
-                    Delete
+                    {t('adminTable.delete')}
                   </Button>
                 </div>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>
                 <SelectIndicator />
-                <p style={{ margin: 0 }}>Select a table to review details or edit it.</p>
+                <p style={{ margin: 0 }}>{t('adminTable.selectTableHint')}</p>
               </div>
             )}
           </Card.Content>
@@ -416,12 +416,12 @@ export const AdminTableView = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => !saving && closeModal()}
-        title={formState.id ? 'Edit Table' : 'Add Table'}
+        title={formState.id ? t('adminTable.editTitle') : t('adminTable.addTitle')}
         size="medium"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <Input
-            label="Table Name"
+            label={t('adminTable.tableName')}
             value={formState.name}
             onChange={(event) => updateForm({ name: event.target.value })}
             placeholder="F1-13"
@@ -430,14 +430,14 @@ export const AdminTableView = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
             <Input
               type="number"
-              label="Capacity"
+              label={t('adminTable.capacity')}
               value={formState.capacity}
               min="1"
               onChange={(event) => updateForm({ capacity: event.target.value })}
             />
             <Input
               type="number"
-              label="Floor"
+              label={t('adminTable.floor')}
               value={formState.floor}
               min="1"
               onChange={(event) => updateForm({ floor: event.target.value })}
@@ -445,14 +445,14 @@ export const AdminTableView = () => {
           </div>
 
           <Select
-            label="Type"
-            options={TYPE_OPTIONS}
+            label={t('adminTable.type')}
+            options={tableEditTypeOptions}
             value={formState.type}
             onChange={(value) => updateForm({ type: value as TableType })}
           />
 
           <Input
-            label="Zone"
+            label={t('adminTable.zone')}
             value={formState.zone}
             onChange={(event) => updateForm({ zone: event.target.value })}
             placeholder="Window / Center / Private"
@@ -461,14 +461,14 @@ export const AdminTableView = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
             <Input
               type="number"
-              label="Position X"
+              label={t('adminTable.positionX')}
               value={formState.positionX}
               step="1"
               onChange={(event) => updateForm({ positionX: event.target.value })}
             />
             <Input
               type="number"
-              label="Position Y"
+              label={t('adminTable.positionY')}
               value={formState.positionY}
               step="1"
               onChange={(event) => updateForm({ positionY: event.target.value })}
@@ -476,9 +476,9 @@ export const AdminTableView = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
-            <Button variant="ghost" onClick={closeModal} disabled={saving}>Cancel</Button>
+            <Button variant="ghost" onClick={closeModal} disabled={saving}>{t('common.cancel')}</Button>
             <Button variant="primary" onClick={() => void handleSaveTable()} disabled={saving}>
-              {saving ? 'Saving...' : formState.id ? 'Save Changes' : 'Create Table'}
+              {saving ? t('common.saving') : formState.id ? t('adminTable.saveChanges') : t('adminTable.create')}
             </Button>
           </div>
         </div>

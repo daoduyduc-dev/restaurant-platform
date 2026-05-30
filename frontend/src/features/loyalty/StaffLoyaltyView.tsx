@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Award, Star, TrendingUp, Users, Gift, Crown, ArrowUpRight } from 'lucide-react';
@@ -6,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Button, Card, Badge, Modal, Input } from '../../components/ui';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from '../../store/toastStore';
+import i18n from '../../i18n';
 
 interface LoyaltyMember {
   id: string;
@@ -26,7 +28,8 @@ const TIER_COLORS: Record<string, { bg:string; color:string; icon:LucideIcon }> 
   Platinum: { bg:'rgba(139,92,246,0.06)', color:'#8B5CF6', icon:Crown },
 };
 
-export const ManagerLoyaltyView = () => {
+export const StaffLoyaltyView = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [members, setMembers] = useState<LoyaltyMember[]>([]);
   const [issueRewardOpen, setIssueRewardOpen] = useState(false);
@@ -44,7 +47,7 @@ export const ManagerLoyaltyView = () => {
             points: loyalty.totalPointsEarned || loyalty.points || 0,
             tier: loyalty.tier || 'Bronze',
             visits: loyalty.visits || 0,
-            spent: loyalty.totalSpent ? `$${loyalty.totalSpent.toFixed(2)}` : '$0.00',
+            spent: new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(loyalty.totalSpent || 0),
           })));
         }
       })
@@ -63,10 +66,10 @@ export const ManagerLoyaltyView = () => {
     <div className="animate-in">
       <div className="page-header">
         <div>
-          <h1>Loyalty Program</h1>
-          <p>Reward your valued guests.</p>
+          <h1>{t('staffLoyalty.title')}</h1>
+          <p>{t('staffLoyalty.subtitle')}</p>
         </div>
-        <Button variant="primary" size="medium" onClick={() => setIssueRewardOpen(true)}><Gift size={16} /> Issue Reward</Button>
+        <Button variant="primary" size="medium" onClick={() => setIssueRewardOpen(true)}><Gift size={16} /> {t('staffLoyalty.issueReward')}</Button>
       </div>
 
       <div className="stats-grid" style={{ gridTemplateColumns:'repeat(3, 1fr)', marginBottom:'var(--sp-5)' }}>
@@ -79,7 +82,7 @@ export const ManagerLoyaltyView = () => {
                 </div>
               </div>
               <div style={{ fontSize:'var(--text-2xl)', fontWeight:800, marginBottom:'var(--sp-1)' }}>{totals.members}</div>
-              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>Active Members</div>
+              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>{t('staffLoyalty.activeMembers')}</div>
             </Card.Content>
           </Card>
         </motion.div>
@@ -93,7 +96,7 @@ export const ManagerLoyaltyView = () => {
                 </div>
               </div>
               <div style={{ fontSize:'var(--text-2xl)', fontWeight:800, marginBottom:'var(--sp-1)' }}>{totals.totalPoints.toLocaleString()}</div>
-              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>Total Points Issued</div>
+              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>{t('staffLoyalty.totalPointsIssued')}</div>
             </Card.Content>
           </Card>
         </motion.div>
@@ -107,7 +110,7 @@ export const ManagerLoyaltyView = () => {
                 </div>
               </div>
               <div style={{ fontSize:'var(--text-2xl)', fontWeight:800, marginBottom:'var(--sp-1)' }}>{totals.avgVisits}</div>
-              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>Avg. Visits / Member</div>
+              <div style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>{t('staffLoyalty.avgVisits')}</div>
             </Card.Content>
           </Card>
         </motion.div>
@@ -116,19 +119,19 @@ export const ManagerLoyaltyView = () => {
       <Card variant="elevated">
         <Card.Header>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Card.Title>Members</Card.Title>
-            <Button variant="ghost" size="small" onClick={() => navigate('/app/report')}>View All <ArrowUpRight size={14} /></Button>
+            <Card.Title>{t('staffLoyalty.members')}</Card.Title>
+            <Button variant="ghost" size="small" onClick={() => navigate('/app/report')}>{t('staffLoyalty.viewAll')} <ArrowUpRight size={14} /></Button>
           </div>
         </Card.Header>
         <Card.Content style={{ padding: 0 }}>
           <table className="data-table">
             <thead>
               <tr>
-                <th>Member</th>
-                <th>Tier</th>
-                <th style={{ textAlign:'right' }}>Points</th>
-                <th style={{ textAlign:'right' }}>Visits</th>
-                <th style={{ textAlign:'right' }}>Total Spent</th>
+                <th>{t('staffLoyalty.member')}</th>
+                <th>{t('staffLoyalty.tier')}</th>
+                <th style={{ textAlign:'right' }}>{t('staffLoyalty.points')}</th>
+                <th style={{ textAlign:'right' }}>{t('staffLoyalty.visits')}</th>
+                <th style={{ textAlign:'right' }}>{t('staffLoyalty.totalSpent')}</th>
               </tr>
             </thead>
             <tbody>
@@ -163,10 +166,10 @@ export const ManagerLoyaltyView = () => {
       </Card>
 
       {/* Issue Reward Modal */}
-      <Modal title="Issue Reward" isOpen={issueRewardOpen} onClose={() => setIssueRewardOpen(false)} size="medium">
+      <Modal title={t('staffLoyalty.issueRewardTitle')} isOpen={issueRewardOpen} onClose={() => setIssueRewardOpen(false)} size="medium">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <div>
-            <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>Member</label>
+            <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--sp-1)', color: 'var(--text-heading)' }}>{t('staffLoyalty.member')}</label>
             <select
               value={rewardForm.memberId}
               onChange={(e) => setRewardForm({ ...rewardForm, memberId: e.target.value })}
@@ -181,19 +184,19 @@ export const ManagerLoyaltyView = () => {
                 fontFamily: 'var(--font-sans)'
               }}
             >
-              <option value="">Select a member</option>
+              <option value="">{t('staffLoyalty.selectMember')}</option>
               {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
           <Input
-            label="Points to Issue"
+            label={t('staffLoyalty.pointsToIssue')}
             type="number"
             value={rewardForm.points}
             onChange={(e) => setRewardForm({ ...rewardForm, points: e.target.value })}
             placeholder="e.g. 100"
           />
-          <Button variant="primary" size="medium" onClick={() => { toast.info('Issue reward functionality coming soon'); setIssueRewardOpen(false); }} style={{ width: '100%' }}>
-            Issue Reward
+          <Button variant="primary" size="medium" onClick={() => { toast.info(t('staffLoyalty.comingSoon')); setIssueRewardOpen(false); }} style={{ width: '100%' }}>
+            {t('staffLoyalty.issueReward')}
           </Button>
         </div>
       </Modal>

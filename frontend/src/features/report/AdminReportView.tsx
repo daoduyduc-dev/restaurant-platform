@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import type { RevenueReportDTO, OrderDTO } from '../../services/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, DollarSign, Package, Users, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, Badge } from '../../components/ui';
+import { formatCurrencyByLanguage } from '../../utils/formatters';
 
-export const ManagerReportView = () => {
+export const AdminReportView = () => {
+  const { t, i18n } = useTranslation();
   const [report, setReport] = useState<RevenueReportDTO | null>(null);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +47,8 @@ export const ManagerReportView = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="page-header">
          <div>
-            <h1 style={{ color: 'var(--orange-600)' }}><Activity size={28} style={{ display:'inline', marginRight: 8, verticalAlign:'middle' }}/> Analytics & Reports</h1>
-            <p>Platform performance, revenue, and operation insights</p>
+            <h1 style={{ color: 'var(--orange-600)' }}><Activity size={28} style={{ display:'inline', marginRight: 8, verticalAlign:'middle' }}/> {t('report.title')}</h1>
+            <p>{t('report.subtitle')}</p>
          </div>
       </div>
 
@@ -54,8 +57,8 @@ export const ManagerReportView = () => {
             <Card.Content style={{ padding: 'var(--sp-5)' }}>
                <div className="stat-card">
                   <DollarSign size={24} color="var(--teal)" style={{ marginBottom: 8 }} />
-                  <div className="stat-card-value">${report?.totalRevenue?.toFixed(2) || '0.00'}</div>
-                  <div className="stat-card-label">Total Revenue</div>
+                  <div className="stat-card-value">{formatCurrencyByLanguage(report?.totalRevenue, i18n.language)}</div>
+                  <div className="stat-card-label">{t('report.totalRevenue')}</div>
                </div>
             </Card.Content>
          </Card>
@@ -64,7 +67,7 @@ export const ManagerReportView = () => {
                <div className="stat-card">
                   <Package size={24} color="var(--orange-500)" style={{ marginBottom: 8 }} />
                   <div className="stat-card-value">{report?.totalOrders || 0}</div>
-                  <div className="stat-card-label">Completed Orders</div>
+                  <div className="stat-card-label">{t('report.completedOrders')}</div>
                </div>
             </Card.Content>
          </Card>
@@ -72,8 +75,8 @@ export const ManagerReportView = () => {
             <Card.Content style={{ padding: 'var(--sp-5)' }}>
                <div className="stat-card">
                   <TrendingUp size={24} color="var(--blue)" style={{ marginBottom: 8 }} />
-                  <div className="stat-card-value">${((report?.totalRevenue || 0) / (report?.totalOrders || 1)).toFixed(2)}</div>
-                  <div className="stat-card-label">Avg Order Value</div>
+                  <div className="stat-card-value">{formatCurrencyByLanguage((report?.totalRevenue || 0) / (report?.totalOrders || 1), i18n.language)}</div>
+                  <div className="stat-card-label">{t('report.avgOrderValue')}</div>
                </div>
             </Card.Content>
          </Card>
@@ -82,7 +85,7 @@ export const ManagerReportView = () => {
                <div className="stat-card">
                   <Users size={24} color="var(--rose)" style={{ marginBottom: 8 }} />
                   <div className="stat-card-value">{orders.length}</div>
-                  <div className="stat-card-label">Total Traffic Placed</div>
+                  <div className="stat-card-label">{t('report.totalTraffic')}</div>
                </div>
             </Card.Content>
          </Card>
@@ -90,7 +93,7 @@ export const ManagerReportView = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-6)' }}>
          <Card variant="elevated">
-            <Card.Header><Card.Title>Today's Traffic</Card.Title></Card.Header>
+            <Card.Header><Card.Title>{t('report.todaysTraffic')}</Card.Title></Card.Header>
             <Card.Content style={{ height: 300, padding: 'var(--sp-4)' }}>
                <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={mockTraffic}>
@@ -104,18 +107,18 @@ export const ManagerReportView = () => {
          </Card>
 
          <Card variant="elevated">
-            <Card.Header><Card.Title>Top Menu Items</Card.Title></Card.Header>
+            <Card.Header><Card.Title>{t('report.topMenuItems')}</Card.Title></Card.Header>
             <Card.Content style={{ padding: 'var(--sp-4)' }}>
                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {topItems.length === 0 ? (
-                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 32 }}>No sales data yet</div>
+                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 32 }}>{t('report.noSales')}</div>
                   ) : topItems.map(([name, qty], index) => (
                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 28, height: 28, borderRadius: '50%', background: index < 3 ? 'var(--orange-100)' : 'var(--gray-100)', color: index < 3 ? 'var(--orange-600)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
                            {index + 1}
                         </div>
                         <div style={{ flex: 1, fontWeight: 600 }}>{name}</div>
-                        <Badge variant="neutral">{qty} sold</Badge>
+                        <Badge variant="neutral">{qty} {t('report.sold')}</Badge>
                      </div>
                   ))}
                </div>

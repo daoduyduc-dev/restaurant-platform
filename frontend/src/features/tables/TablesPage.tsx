@@ -1,16 +1,15 @@
 import { useRoleView } from '../../utils/useRoleView';
-import { WaiterTableView } from './WaiterTableView';
 import { CustomerTableView } from './CustomerTableView';
-import { ManagerTableView } from './ManagerTableView';
 import { AdminTableView } from './AdminTableView';
+import { StaffTableView } from './StaffTableView';
 
 export const TablesPage = () => {
   const { role } = useRoleView();
 
   switch (role) {
-    case 'STAFF':        return <WaiterTableView />;
+    case 'STAFF':        return <StaffTableView />;
     case 'CUSTOMER':     return <CustomerTableView />;
     case 'ADMIN':        return <AdminTableView />;
-    default:             return <WaiterTableView />;
+    default:             return <StaffTableView />;
   }
 };

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { Button, Card, Input, Modal, ImageUpload } from '../../components/ui';
 import { toast } from '../../store/toastStore';
+import { DEFAULT_AVATAR_IMAGE_URL } from '../../services/media';
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -114,7 +115,7 @@ export const ProfilePage = () => {
             <Card.Content style={{ padding: 'var(--sp-6)', textAlign: 'center' }}>
               <div style={{ marginBottom: 'var(--sp-4)' }}>
                 <ImageUpload
-                  currentImageUrl={profile.avatarUrl || undefined}
+                  currentImageUrl={profile.avatarUrl || DEFAULT_AVATAR_IMAGE_URL}
                   onImageUpload={(url) => {
                     // Refresh profile after upload
                     fetchProfile();
@@ -122,6 +123,7 @@ export const ProfilePage = () => {
                   uploadEndpoint="/profile/avatar"
                   shape="circle"
                   size="xl"
+                  fallbackUrl={DEFAULT_AVATAR_IMAGE_URL}
                 />
               </div>
 

@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -107,7 +107,24 @@ export const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const hoverTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current !== null) window.clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current !== null) window.clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = window.setTimeout(() => setSidebarExpanded(true), 150);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current !== null) window.clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = window.setTimeout(() => setSidebarExpanded(false), 200);
+  };
 
   const user = useAuthStore((state) => state.user);
   const refreshToken = useAuthStore((state) => state.refreshToken);
@@ -155,8 +172,8 @@ export const MainLayout = () => {
     <div className="app-shell">
       <motion.aside 
         className="sidebar"
-        onMouseEnter={() => setSidebarExpanded(true)}
-        onMouseLeave={() => setSidebarExpanded(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         animate={{ width: sidebarExpanded ? 'var(--sidebar-width)' : '80px' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         style={{ overflow: 'hidden' }}
@@ -212,7 +229,7 @@ export const MainLayout = () => {
         </nav>
 
         <div className="sidebar-footer">
-          <NavLink to="/" className="sidebar-link" style={{ marginBottom: 8 }} title={sidebarExpanded ? undefined : 'Home'}>
+          <NavLink to="/" className="sidebar-link" style={{ marginBottom: 8 }} title={sidebarExpanded ? undefined : t('nav.home')}>
             <Home size={18} />
             <motion.span
               animate={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
@@ -227,7 +244,7 @@ export const MainLayout = () => {
             to="/app/profile"
             className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             style={{ marginBottom: 8 }}
-            title={sidebarExpanded ? undefined : 'Profile'}
+            title={sidebarExpanded ? undefined : t('common.profile')}
           >
             {({ isActive }) => (
               <>
@@ -252,7 +269,7 @@ export const MainLayout = () => {
               gap: 12,
               padding: '10px 12px',
             }}
-            title={sidebarExpanded ? undefined : 'Logout'}
+            title={sidebarExpanded ? undefined : t('common.logout')}
           >
             <LogOut size={18} />
             <motion.span

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import type { OrderDTO } from '../../services/types';
 import { Shield, FileText, Timer, Search } from 'lucide-react';
@@ -14,6 +15,7 @@ const STATUS_COLORS: Record<string, 'success' | 'warning' | 'error' | 'info' | '
 };
 
 export const AdminOrderView = () => {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,19 +47,19 @@ export const AdminOrderView = () => {
         <div>
           <h1 style={{ color: 'var(--orange-600)' }}>
             <Shield size={28} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
-            Order Audit
+            {t('adminOrders.title')}
           </h1>
-          <p>Full order history with metadata for system verification</p>
+          <p>{t('adminOrders.subtitle')}</p>
         </div>
       </motion.div>
 
       {/* Stats */}
       <motion.div variants={item} className="stats-grid">
         {[
-          { label: 'Total Orders', value: orders.length, color: 'var(--orange-500)' },
-          { label: 'Active', value: orders.filter(o => !['PAID', 'CANCELED'].includes(o.status)).length, color: 'var(--teal)' },
-          { label: 'Completed', value: orders.filter(o => o.status === 'PAID').length, color: '#10B981' },
-          { label: 'Cancelled', value: orders.filter(o => o.status === 'CANCELED').length, color: 'var(--rose)' },
+          { label: t('adminOrders.totalOrders'), value: orders.length, color: 'var(--orange-500)' },
+          { label: t('adminOrders.active'), value: orders.filter(o => !['PAID', 'CANCELED'].includes(o.status)).length, color: 'var(--teal)' },
+          { label: t('adminOrders.completed'), value: orders.filter(o => o.status === 'PAID').length, color: '#10B981' },
+          { label: t('adminOrders.cancelled'), value: orders.filter(o => o.status === 'CANCELED').length, color: 'var(--rose)' },
         ].map((s, i) => (
           <Card key={i} variant="elevated">
             <Card.Content style={{ padding: 'var(--sp-5)' }}>
@@ -75,9 +77,9 @@ export const AdminOrderView = () => {
         <Card variant="elevated">
           <Card.Header>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <Card.Title><FileText size={18} style={{ display: 'inline', marginRight: 8 }} />Order Audit Log</Card.Title>
+              <Card.Title><FileText size={18} style={{ display: 'inline', marginRight: 8 }} />{t('adminOrders.logTitle')}</Card.Title>
               <div style={{ width: 300 }}>
-                <Input placeholder="Search by ID, table, status..." value={search} onChange={e => setSearch(e.target.value)} icon={<Search size={16} />} />
+                <Input placeholder={t('adminOrders.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} icon={<Search size={16} />} />
               </div>
             </div>
           </Card.Header>
@@ -85,7 +87,7 @@ export const AdminOrderView = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Order ID</th><th>Table</th><th>Status</th><th>Items</th><th>Total</th><th>Created</th><th>Assigned To</th><th>Reservation</th>
+                  <th>{t('adminOrders.orderId')}</th><th>{t('adminOrders.table')}</th><th>{t('adminOrders.status')}</th><th>{t('adminOrders.items')}</th><th>{t('adminOrders.total')}</th><th>{t('adminOrders.created')}</th><th>{t('adminOrders.assignedTo')}</th><th>{t('adminOrders.reservation')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -95,16 +97,16 @@ export const AdminOrderView = () => {
                     <td style={{ fontWeight: 600 }}>{order.tableName}</td>
                     <td><Badge variant={STATUS_COLORS[order.status] || 'neutral'} size="small">{order.status}</Badge></td>
                     <td>{order.items?.length || 0}</td>
-                    <td style={{ fontWeight: 600 }}>${(order.totalAmount || 0).toFixed(2)}</td>
+                    <td style={{ fontWeight: 600 }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(order.totalAmount || 0)}</td>
                     <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-                      {order.createdAt || order.createdDate ? new Date(order.createdAt || order.createdDate).toLocaleString() : '—'}
+                      {order.createdAt || order.createdDate ? new Date(order.createdAt || order.createdDate).toLocaleString(i18n.language) : '—'}
                     </td>
                     <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{order.assignedToName || '—'}</td>
                     <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{order.reservationId ? order.reservationId.substring(0, 8) : '—'}</td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>No orders found</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>{t('adminOrders.noOrders')}</td></tr>
                 )}
               </tbody>
             </table>
