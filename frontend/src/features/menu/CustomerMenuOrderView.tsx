@@ -223,7 +223,7 @@ export const CustomerMenuOrderView = () => {
 
             {reservations.length > 0 && activeReservations.length !== 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
-                {reservations.map((reservation) => {
+                {activeReservations.map((reservation) => {
                   const selectable = ['RESERVED', 'CHECKED_IN'].includes(reservation.status);
                   return (
                     <button

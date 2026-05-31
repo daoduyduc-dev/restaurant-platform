@@ -158,7 +158,7 @@ export const StaffOrderView = () => {
               <strong>{translateStatus(group.status)}</strong>
               <Badge variant="neutral" size="small">{group.orders.length}</Badge>
             </div>
-            <div className="kanban-col-body">
+            <div className="kanban-col-body" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)', paddingRight: 'var(--sp-2)' }}>
               {group.orders.length === 0 ? (
                 <div className="empty-state">Khong co order</div>
               ) : group.orders.map(order => (

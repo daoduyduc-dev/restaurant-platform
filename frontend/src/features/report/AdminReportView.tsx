@@ -12,18 +12,21 @@ export const AdminReportView = () => {
   const { t, i18n } = useTranslation();
   const [report, setReport] = useState<RevenueReportDTO | null>(null);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
+  const [traffic, setTraffic] = useState<Array<{ hour: string; visitors: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [rRes, oRes] = await Promise.all([
+        const [rRes, oRes, tRes] = await Promise.all([
           api.get('/reports/revenue?startDate=2024-01-01&endDate=2026-12-31'),
-          api.get('/orders')
+          api.get('/orders'),
+          api.get('/reports/traffic')
         ]);
         setReport(rRes.data.data || null);
         const items = oRes.data.data?.items || oRes.data.data || [];
         setOrders(Array.isArray(items) ? items : []);
+        setTraffic(Array.isArray(tRes.data.data) ? tRes.data.data : []);
       } catch { } finally { setLoading(false); }
     };
     fetchData();
@@ -38,9 +41,9 @@ export const AdminReportView = () => {
 
   const topItems = Object.entries(itemSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  const mockTraffic = [
-    { time: '10am', visitors: 12 }, { time: '12pm', visitors: 45 }, { time: '2pm', visitors: 30 },
-    { time: '4pm', visitors: 15 }, { time: '6pm', visitors: 60 }, { time: '8pm', visitors: 85 }
+  const chartData = traffic.length > 0 ? traffic : [
+    { hour: '10am', visitors: 0 }, { hour: '12pm', visitors: 0 }, { hour: '2pm', visitors: 0 },
+    { hour: '4pm', visitors: 0 }, { hour: '6pm', visitors: 0 }, { hour: '8pm', visitors: 0 }
   ];
 
   return (
@@ -96,8 +99,8 @@ export const AdminReportView = () => {
             <Card.Header><Card.Title>{t('report.todaysTraffic')}</Card.Title></Card.Header>
             <Card.Content style={{ height: 300, padding: 'var(--sp-4)' }}>
                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockTraffic}>
-                     <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <LineChart data={chartData}>
+                     <XAxis dataKey="hour" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                      <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                      <RechartsTooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: 'var(--shadow-md)' }} />
                      <Line type="monotone" dataKey="visitors" stroke="var(--orange-500)" strokeWidth={3} dot={{ r: 4, fill: 'var(--orange-500)' }} activeDot={{ r: 6 }} />

@@ -18,5 +18,7 @@ public interface LoyaltyService {
 
     void redeemPoints(UUID userId, BigDecimal points);
 
+    void updateTotalSpent(UUID userId, BigDecimal amount);
+
     java.util.List<com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse> getAllLoyalties();
 }

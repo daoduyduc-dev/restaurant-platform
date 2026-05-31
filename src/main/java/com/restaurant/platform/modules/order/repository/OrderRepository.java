@@ -89,6 +89,9 @@ AND MONTH(o.createdDate) = MONTH(CURRENT_DATE)
     @Query("SELECT o FROM Order o WHERE o.status = :status AND o.createdDate < :threshold")
     List<Order> findByStatusAndCreatedDateBefore(@Param("status") OrderStatus status, @Param("threshold") java.time.LocalDateTime threshold);
 
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.createdDate BETWEEN :start AND :end")
+    long countByCreatedAtBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
     @Modifying
     @Query(value = "DELETE FROM order_items", nativeQuery = true)
     void deleteAllOrderItemsNative();

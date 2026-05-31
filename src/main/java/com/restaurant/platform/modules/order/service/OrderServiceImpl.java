@@ -470,6 +470,10 @@ public class OrderServiceImpl implements OrderService {
                         reservation.getUser().getId(),
                         orderBillingService.getFinalAmount(order)
                 );
+                loyaltyService.updateTotalSpent(
+                        reservation.getUser().getId(),
+                        orderBillingService.getFinalAmount(order)
+                );
             }
 
             try {
