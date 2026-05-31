@@ -5,6 +5,7 @@ import com.restaurant.platform.modules.report.dto.NoShowReportResponse;
 import com.restaurant.platform.modules.report.dto.OccupancyReportResponse;
 import com.restaurant.platform.modules.report.dto.RevenueReportResponse;
 import com.restaurant.platform.modules.report.dto.TopSellingItemResponse;
+import com.restaurant.platform.modules.report.dto.HourlyTrafficResponse;
 import com.restaurant.platform.modules.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,5 +44,11 @@ public class ReportController {
     @GetMapping("/occupancy")
     public ApiResponse<OccupancyReportResponse> getOccupancy() {
         return ApiResponse.success(reportService.getOccupancy());
+    }
+
+    @GetMapping("/traffic")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<HourlyTrafficResponse>> getHourlyTraffic() {
+        return ApiResponse.success(reportService.getHourlyTraffic());
     }
 }

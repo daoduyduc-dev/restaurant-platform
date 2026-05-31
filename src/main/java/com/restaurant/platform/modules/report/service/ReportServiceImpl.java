@@ -1,7 +1,8 @@
 package com.restaurant.platform.modules.report.service;
 
-import com.restaurant.platform.modules.order.repository.OrderItemRepository;
+import com.restaurant.platform.modules.report.dto.HourlyTrafficResponse;
 import com.restaurant.platform.modules.order.repository.OrderRepository;
+import com.restaurant.platform.modules.order.repository.OrderItemRepository;
 import com.restaurant.platform.modules.report.dto.NoShowReportResponse;
 import com.restaurant.platform.modules.report.dto.OccupancyReportResponse;
 import com.restaurant.platform.modules.report.dto.RevenueReportResponse;
@@ -99,5 +100,23 @@ public class ReportServiceImpl implements ReportService {
                 .occupiedTables(occupied)
                 .occupancyRate(rate)
                 .build();
+    }
+
+    @Override
+    public List<HourlyTrafficResponse> getHourlyTraffic() {
+        LocalDate today = LocalDate.now();
+        
+        return java.util.stream.IntStream.range(0, 24).boxed().map(hour -> {
+            LocalDateTime startOfHour = today.atTime(hour, 0, 0);
+            LocalDateTime endOfHour = today.atTime(hour, 59, 59);
+            
+            long count = orderRepository.countByCreatedAtBetween(startOfHour, endOfHour);
+            
+            String hourLabel = String.format("%02d:00", hour);
+            return HourlyTrafficResponse.builder()
+                    .hour(hourLabel)
+                    .visitors(count)
+                    .build();
+        }).toList();
     }
 }

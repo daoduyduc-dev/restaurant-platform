@@ -43,5 +43,9 @@ public class LoyaltyAccount {
 
     @Column(nullable = false)
     @Builder.Default
+    private BigDecimal totalSpent = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime lastUpdated = LocalDateTime.now();
 }

@@ -52,7 +52,7 @@ public class LoyaltyServiceImpl implements LoyaltyService {
                 .points(acc.getPoints())
                 .tier(tier)
                 .visits((int) visitCount)
-                .spent(acc.getPoints().multiply(new BigDecimal("10")))
+                .spent(acc.getTotalSpent())
                 .build());
         }
         return result;
@@ -167,6 +167,24 @@ public class LoyaltyServiceImpl implements LoyaltyService {
                         .description("Redeem points")
                         .build()
         );
+    }
+
+    @Override
+    public void updateTotalSpent(UUID userId, BigDecimal amount) {
+       LoyaltyAccount acc = accountRepo.findById(userId)
+               .orElseThrow(() -> new ResourceNotFoundException(
+                       ErrorCode.USER_NOT_FOUND, "User not found"));
+
+       if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
+           return;
+       }
+
+       if (acc.getTotalSpent() == null) {
+           acc.setTotalSpent(BigDecimal.ZERO);
+       }
+       acc.setTotalSpent(acc.getTotalSpent().add(amount));
+       acc.setLastUpdated(LocalDateTime.now());
+       accountRepo.save(acc);
     }
 
     private LoyaltyResponse toResponseWithTierInfo(LoyaltyAccount acc) {
