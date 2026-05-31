@@ -73,7 +73,6 @@ export const StaffDashboard = () => {
   const counts = useMemo(() => {
     return {
       occupied: tables.filter(table => table.status === 'OCCUPIED').length,
-      dirty: tables.filter(table => table.status === 'DIRTY').length,
       ready: orders.filter(order => order.status === 'READY').length,
       unpaid: orders.filter(order => order.status === 'SERVED').length,
     };

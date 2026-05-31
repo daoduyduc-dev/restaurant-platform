@@ -18,7 +18,7 @@ import java.util.UUID;
 @jakarta.persistence.Table(
         name = "reservations",
         indexes = {
-                @Index(name = "idx_table_time", columnList = "table_id,reservation_time")
+                @Index(name = "idx_table_time", columnList = "table_id,reservation_time,end_time")
         }
 )
 @Getter
@@ -34,7 +34,11 @@ public class Reservation extends SoftDeleteEntity {
 
     private String phone;
 
-    private LocalDateTime reservationTime;
+    @Column(name = "reservation_time", nullable = false)
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
 
     private int numberOfGuests;
 

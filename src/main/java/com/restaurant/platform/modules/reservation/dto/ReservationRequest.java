@@ -1,6 +1,7 @@
 package com.restaurant.platform.modules.reservation.dto;
 
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,9 +18,8 @@ public class ReservationRequest {
     @Pattern(regexp = "^(0|\\+84)[0-9]{9}$", message = "Invalid phone number")
     private String phone;
 
-    @NotNull(message = "Reservation time is required")
-    @Future(message = "Reservation time must be in the future")
-    private LocalDateTime reservationTime;
+    @JsonAlias("reservationTime")
+    private LocalDateTime startTime;
 
     @NotNull(message = "Number of guests is required")
     @Min(value = 1, message = "At least 1 guest")

@@ -52,7 +52,7 @@ public class RestaurantSettings extends AuditableEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer defaultReservationDuration = 90;
+    private Integer defaultReservationDuration = 120;
 
     @Column(nullable = false)
     @Builder.Default

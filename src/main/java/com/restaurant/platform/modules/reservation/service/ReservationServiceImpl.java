@@ -5,8 +5,12 @@ import com.restaurant.platform.common.exception.BadRequestException;
 import com.restaurant.platform.common.exception.ResourceNotFoundException;
 import com.restaurant.platform.common.response.PageResponse;
 import com.restaurant.platform.modules.order.service.OrderService;
+import com.restaurant.platform.modules.order.entity.Order;
+import com.restaurant.platform.modules.order.enums.OrderStatus;
+import com.restaurant.platform.modules.order.repository.OrderRepository;
 import com.restaurant.platform.modules.reservation.dto.ReservationRequest;
 import com.restaurant.platform.modules.reservation.dto.ReservationResponse;
+import com.restaurant.platform.modules.reservation.dto.BookingWindowResponse;
 import com.restaurant.platform.modules.reservation.dto.TableAvailabilityResponse;
 import com.restaurant.platform.modules.reservation.dto.TimeSlotAvailabilityResponse;
 import com.restaurant.platform.modules.reservation.entity.Reservation;
@@ -14,6 +18,8 @@ import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.reservation.mapper.ReservationMapper;
 import com.restaurant.platform.modules.reservation.repository.ReservationRepository;
 import com.restaurant.platform.modules.reservation.service.ReservationService;
+import com.restaurant.platform.modules.settings.dto.SettingsDTO;
+import com.restaurant.platform.modules.settings.service.SettingsService;
 import com.restaurant.platform.modules.table.dto.TableResponse;
 import com.restaurant.platform.modules.table.entity.Table;
 import com.restaurant.platform.modules.table.enums.TableStatus;
@@ -31,11 +37,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static com.restaurant.platform.modules.reservation.enums.ReservationStatus.*;
+import static com.restaurant.platform.modules.order.enums.OrderStatus.*;
 
 @Service
 @Transactional
@@ -45,19 +58,239 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final TableRepository tableRepository;
+    private final OrderRepository orderRepository;
     private final ReservationMapper reservationMapper;
     private final OrderService orderService;
     private final SimpMessagingTemplate messagingTemplate;
     private final TableMapper tableMapper;
     private final UserRepository userRepository;
+    private final SettingsService settingsService;
+    private final Clock clock;
 
-    List<ReservationStatus> ACTIVE_STATUSES = List.of(
-            RESERVED,
-            CHECKED_IN
+    private static final int SLOT_INTERVAL_MINUTES = 30;
+    private static final int MAX_BOOKING_WINDOW_DAYS = 4;
+
+    // Keep interval overlaps blocked across all non-cancelled reservation states.
+    private static final List<ReservationStatus> BLOCKING_STATUSES = List.of(
+            com.restaurant.platform.modules.reservation.enums.ReservationStatus.PENDING,
+            ReservationStatus.RESERVED,
+            ReservationStatus.CHECKED_IN,
+            ReservationStatus.COMPLETED,
+            ReservationStatus.NO_SHOW
     );
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock);
+    }
+
+    private SettingsDTO settings() {
+        return settingsService.getSettings();
+    }
+
+    private int defaultReservationDurationMinutes() {
+        Integer configured = settings().getDefaultReservationDuration();
+        return configured != null && configured > 0 ? configured : 120;
+    }
+
+    private LocalTime openingTime() {
+        return LocalTime.parse(settings().getOpeningTime());
+    }
+
+    private LocalTime closingTime() {
+        return LocalTime.parse(settings().getClosingTime());
+    }
+
+    private LocalDateTime businessStart(LocalDate date) {
+        return date.atTime(openingTime());
+    }
+
+    private LocalDateTime businessEnd(LocalDate date) {
+        return date.atTime(closingTime());
+    }
+
+    private LocalDate maxBookingDate() {
+        return now().toLocalDate().plusDays(MAX_BOOKING_WINDOW_DAYS);
+    }
+
+    private List<LocalDateTime> buildBusinessHourSlots(LocalDate date) {
+        LocalDateTime start = businessStart(date);
+        LocalDateTime end = businessEnd(date);
+        List<LocalDateTime> slots = new ArrayList<>();
+        for (LocalDateTime slot = start; !slot.isAfter(end); slot = slot.plusMinutes(SLOT_INTERVAL_MINUTES)) {
+            slots.add(slot);
+        }
+        return slots;
+    }
+
+    private LocalDateTime roundUpToSlot(LocalDateTime time) {
+        LocalDateTime truncated = time.truncatedTo(ChronoUnit.MINUTES);
+        int minute = truncated.getMinute();
+        int remainder = minute % SLOT_INTERVAL_MINUTES;
+        if (remainder == 0 && time.getSecond() == 0 && time.getNano() == 0) {
+            return truncated;
+        }
+        return truncated.plusMinutes(SLOT_INTERVAL_MINUTES - remainder);
+    }
+
+    private List<LocalDateTime> buildTodaySlots() {
+        return buildSelectableSlots(now());
+    }
+
+    private List<LocalDateTime> buildSelectableSlots(LocalDateTime referenceNow) {
+        LocalDate currentDate = referenceNow.toLocalDate();
+        LocalDateTime start = roundUpToSlot(referenceNow);
+        if (start.isBefore(businessStart(currentDate))) {
+            start = businessStart(currentDate);
+        }
+        LocalDateTime end = businessEnd(currentDate);
+
+        if (start.isAfter(end)) {
+            return List.of();
+        }
+
+        List<LocalDateTime> slots = new ArrayList<>();
+        for (LocalDateTime slot = start; !slot.isAfter(end) && slot.toLocalDate().equals(currentDate); slot = slot.plusMinutes(SLOT_INTERVAL_MINUTES)) {
+            slots.add(slot);
+        }
+        return slots;
+    }
+
+    private LocalDateTime resolveStartTime(ReservationRequest request) {
+        if (request.getStartTime() == null) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
+        return request.getStartTime();
+    }
+
+    private LocalDateTime resolveEndTime(LocalDateTime startTime) {
+        LocalDateTime expectedEnd = startTime.plusMinutes(defaultReservationDurationMinutes());
+        LocalDateTime windowEnd = businessEnd(startTime.toLocalDate());
+        return expectedEnd.isAfter(windowEnd) ? windowEnd : expectedEnd;
+    }
+
+    private void validateBookingDateRange(LocalDateTime startTime, LocalDateTime endTime) {
+        LocalDate today = now().toLocalDate();
+        LocalDate maxDate = maxBookingDate();
+        LocalDate bookingDate = startTime.toLocalDate();
+
+        if (bookingDate.isBefore(today) || bookingDate.isAfter(maxDate)) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
+        if (startTime.isBefore(now())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
+        if (!startTime.toLocalDate().equals(endTime.toLocalDate())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+    }
+
+    private void validateBusinessHours(LocalDateTime startTime, LocalDateTime endTime) {
+        LocalDate bookingDate = startTime.toLocalDate();
+        LocalDateTime open = businessStart(bookingDate);
+        LocalDateTime close = businessEnd(bookingDate);
+
+        if (startTime.isBefore(open) || !startTime.isBefore(close) || endTime.isAfter(close)) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+    }
+
+    private void validateSlotAlignment(LocalDateTime startTime) {
+        if (startTime.getSecond() != 0
+                || startTime.getNano() != 0
+                || startTime.getMinute() % SLOT_INTERVAL_MINUTES != 0) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+    }
+
+    private void validateRequestedSlot(LocalDateTime startTime, LocalDateTime endTime) {
+        validateSlotAlignment(startTime);
+        validateBookingDateRange(startTime, endTime);
+        validateBusinessHours(startTime, endTime);
+    }
+
+    private boolean hasOverlap(Table table, LocalDateTime start, LocalDateTime end) {
+        return reservationRepository.existsByTableAndTimeOverlapAndStatusIn(
+                table,
+                start,
+                end,
+                BLOCKING_STATUSES
+        );
+    }
+
+    private List<TimeSlotAvailabilityResponse> buildSlotAvailabilityForTable(Table table, int numberOfGuests, LocalDate bookingDate) {
+        List<LocalDateTime> businessSlots = buildBusinessHourSlots(bookingDate);
+        LocalDateTime now = now();
+        LocalDateTime windowStart = bookingDate.equals(now.toLocalDate())
+                ? roundUpToSlot(now)
+                : businessStart(bookingDate);
+        if (windowStart.isBefore(businessStart(bookingDate))) {
+            windowStart = businessStart(bookingDate);
+        }
+        LocalDateTime windowEnd = businessEnd(bookingDate);
+        int durationMinutes = defaultReservationDurationMinutes();
+        final LocalDateTime effectiveWindowStart = windowStart;
+
+        return businessSlots.stream()
+                .map(slot -> {
+                    LocalDateTime expectedEnd = slot.plusMinutes(durationMinutes);
+                    LocalDateTime slotEnd = expectedEnd.isAfter(windowEnd) ? windowEnd : expectedEnd;
+                    boolean withinWindow = !slot.isBefore(effectiveWindowStart) && slot.isBefore(windowEnd);
+                    
+                    boolean enoughCapacity = table.getCapacity() >= numberOfGuests;
+                    boolean hasConflict = withinWindow
+                            && enoughCapacity
+                            && hasOverlap(table, slot, slotEnd);
+
+                    boolean available = withinWindow && enoughCapacity && !hasConflict;
+
+                    String reason;
+                    if (!enoughCapacity) {
+                        reason = "CAPACITY_EXCEEDED";
+                    } else if (!withinWindow) {
+                        reason = "OUTSIDE_BOOKING_WINDOW";
+                    } else if (hasConflict) {
+                        reason = "RESERVED";
+                    } else {
+                        reason = "AVAILABLE";
+                    }
+
+                    return TimeSlotAvailabilityResponse.builder()
+                            .startTime(slot)
+                            .endTime(slotEnd)
+                            .timeSlot(slot)
+                            .available(available)
+                            .reason(reason)
+                            .build();
+                })
+                .toList();
+    }
 
     @Override
     public ReservationResponse create(ReservationRequest request) {
+        LocalDateTime startTime = resolveStartTime(request);
+        LocalDateTime endTime = resolveEndTime(startTime);
+        validateRequestedSlot(startTime, endTime);
 
         // 1. Load table
         Table table = tableRepository.findById(request.getTableId())
@@ -66,10 +299,7 @@ public class ReservationServiceImpl implements ReservationService {
                         "Table not found id: " + request.getTableId()
                 ));
 
-        // 2. Tables are always bookable - no status check needed
-        // Status validation is done by time slot availability in frontend
-
-        // 3. Validate capacity
+        // 2. Validate capacity
         if (request.getNumberOfGuests() > table.getCapacity()) {
             throw  new BadRequestException(
                     ErrorCode.RESERVATION_INVALID_CAPACITY,
@@ -77,15 +307,7 @@ public class ReservationServiceImpl implements ReservationService {
             );
         }
 
-        // 4. Validate reservation time is in the future
-        if (request.getReservationTime().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException(
-                    ErrorCode.RESERVATION_INVALID_TIME,
-                    "Reservation time must be in the future"
-            );
-        }
-
-        // 5. Validate minimum guests
+        // 3. Validate minimum guests
         if (request.getNumberOfGuests() < 1) {
             throw new BadRequestException(
                     ErrorCode.RESERVATION_INVALID_CAPACITY,
@@ -93,35 +315,43 @@ public class ReservationServiceImpl implements ReservationService {
             );
         }
 
-        // 6. Check time conflict with pessimistic lock to prevent race condition
-        LocalDateTime start = request.getReservationTime().minusHours(2);
-        LocalDateTime end = request.getReservationTime().plusHours(2);
-
+        // 4. Check time conflict with pessimistic lock to prevent race condition
         boolean exists = reservationRepository
-                .existsByTableAndReservationTimeBetweenAndStatusInWithLock(
+                .existsByTableAndTimeOverlapAndStatusInWithLock(
                         table,
-                        start,
-                        end,
-                        ACTIVE_STATUSES
+                        startTime,
+                        endTime,
+                        BLOCKING_STATUSES
                 );
 
         if (exists) {
             throw new BadRequestException(
                     ErrorCode.RESERVATION_TIME_CONFLICT,
-                    "Table already reserved in this time slot"
+                    "Selected time slot is not available"
             );
         }
 
-        // 7. Map → entity
+        // 5. Map → entity
         Reservation reservation = reservationMapper.toEntity(request, table);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal())) {
             userRepository.findByEmail(authentication.getName()).ifPresent(reservation::setUser);
         }
 
-        // 8. Save
-        return reservationMapper.toResponse(reservationRepository.save(reservation));
+        // 6. Save
+        Reservation saved = reservationRepository.save(reservation);
+
+        try {
+            var resDto = reservationMapper.toResponse(saved);
+            messagingTemplate.convertAndSend("/topic/reservations", resDto);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message for reservation creation", e);
+        }
+
+        return reservationMapper.toResponse(saved);
     }
 
     @Override
@@ -188,76 +418,40 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional(readOnly = true)
     public List<TableResponse> getAvailableTables(LocalDateTime reservationTime, int numberOfGuests) {
-        // Get all tables with sufficient capacity (tables are always bookable)
+        LocalDateTime endTime = resolveEndTime(reservationTime);
+        validateRequestedSlot(reservationTime, endTime);
+
+        // Get all tables with sufficient capacity
         List<Table> allTables = tableRepository.findAll();
 
-        // Filter by capacity and check time conflicts
+        // Filter by capacity and time conflicts
         return allTables.stream()
                 .filter(table -> table.getCapacity() >= numberOfGuests)
-                .filter(table -> {
-                    // Check for time conflicts (4-hour window: ±2 hours)
-                    LocalDateTime start = reservationTime.minusHours(2);
-                    LocalDateTime end = reservationTime.plusHours(2);
-
-                    return !reservationRepository.existsByTableAndReservationTimeBetweenAndStatusIn(
-                            table, start, end, ACTIVE_STATUSES);
-                })
+                .filter(table -> !hasOverlap(table, reservationTime, endTime))
                 .map(tableMapper::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDateTime date, int numberOfGuests) {
+    public List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDate date, int numberOfGuests) {
+        LocalDate bookingDate = date;
+        if (bookingDate.isBefore(now().toLocalDate()) || bookingDate.isAfter(maxBookingDate())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
         // Get all tables with sufficient capacity
         List<Table> allTables = tableRepository.findAll().stream()
                 .filter(table -> table.getCapacity() >= numberOfGuests)
                 .toList();
 
-        // Generate time slots for the day (e.g., 10:00 AM to 10:00 PM, every hour)
-        List<LocalDateTime> timeSlots = new java.util.ArrayList<>();
-        LocalDateTime startTime = date.withHour(10).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime endTime = date.withHour(22).withMinute(0).withSecond(0).withNano(0);
-
-        LocalDateTime current = startTime;
-        while (!current.isAfter(endTime)) {
-            timeSlots.add(current);
-            current = current.plusHours(1);
-        }
-
         // For each table, check availability for each time slot
         return allTables.stream()
                 .map(table -> {
-                    List<TimeSlotAvailabilityResponse> slotAvailability = timeSlots.stream()
-                            .map(slot -> {
-                                // Check for time conflicts (4-hour window: ±2 hours)
-                                LocalDateTime start = slot.minusHours(2);
-                                LocalDateTime end = slot.plusHours(2);
-
-                                boolean hasConflict = reservationRepository.existsByTableAndReservationTimeBetweenAndStatusIn(
-                                        table, start, end, ACTIVE_STATUSES);
-
-                                String reason;
-                                if (!hasConflict) {
-                                    reason = "AVAILABLE";
-                                } else {
-                                    // Check if table is currently occupied or reserved
-                                    if (table.getStatus() == TableStatus.OCCUPIED) {
-                                        reason = "OCCUPIED";
-                                    } else if (table.getStatus() == TableStatus.RESERVED) {
-                                        reason = "RESERVED";
-                                    } else {
-                                        reason = "RESERVED"; // Has reservation conflict
-                                    }
-                                }
-
-                                return TimeSlotAvailabilityResponse.builder()
-                                        .timeSlot(slot)
-                                        .available(!hasConflict)
-                                        .reason(reason)
-                                        .build();
-                            })
-                            .toList();
+                    List<TimeSlotAvailabilityResponse> slotAvailability = buildSlotAvailabilityForTable(table, numberOfGuests, bookingDate);
 
                     return TableAvailabilityResponse.builder()
                             .table(tableMapper.toResponse(table))
@@ -265,6 +459,39 @@ public class ReservationServiceImpl implements ReservationService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingWindowResponse getBookingWindowForTable(UUID tableId, int numberOfGuests, LocalDate date) {
+        Table table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new BadRequestException(
+                        ErrorCode.TABLE_NOT_FOUND,
+                        "Table not found id: " + tableId
+                ));
+
+        LocalDate bookingDate = date != null ? date : now().toLocalDate();
+        if (bookingDate.isBefore(now().toLocalDate()) || bookingDate.isAfter(maxBookingDate())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
+        LocalDateTime referenceNow = now();
+        List<TimeSlotAvailabilityResponse> availableSlots = buildSlotAvailabilityForTable(table, numberOfGuests, bookingDate);
+
+        return BookingWindowResponse.builder()
+                .bookingDate(bookingDate)
+                .businessHoursStart(openingTime())
+                .businessHoursEnd(closingTime())
+                .bookingWindowStart(bookingDate.equals(referenceNow.toLocalDate())
+                        ? roundUpToSlot(referenceNow)
+                        : businessStart(bookingDate))
+                .bookingWindowEnd(businessEnd(bookingDate))
+                .defaultDurationMinutes(defaultReservationDurationMinutes())
+                .availableSlots(availableSlots)
+                .build();
     }
 
     @Override
@@ -316,6 +543,172 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public ReservationResponse updateStatus(UUID id, ReservationStatus status) {
+
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.RESERVATION_NOT_FOUND,
+                        "Reservation not found id: " + id
+                ));
+
+        if (status == null) {
+            throw new BadRequestException(
+                    ErrorCode.INVALID_INPUT,
+                    "Reservation status is required"
+            );
+        }
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_ALREADY_CANCELLED,
+                    "Reservation already cancelled"
+            );
+        }
+
+        if (reservation.getStatus() == ReservationStatus.COMPLETED) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_STATUS,
+                    "Reservation already completed"
+            );
+        }
+
+        if (status == ReservationStatus.CHECKED_IN) {
+            return checkIn(id);
+        }
+
+        if (status == ReservationStatus.COMPLETED) {
+            if (reservation.getStatus() != CHECKED_IN) {
+                throw new BadRequestException(
+                        ErrorCode.RESERVATION_INVALID_STATUS,
+                        "Only CHECKED_IN reservations can be completed"
+                );
+            }
+
+            List<Order> activeOrders = orderRepository.findActiveByReservationIdWithLock(
+                    reservation.getId(),
+                    List.of(OrderStatus.OPEN, OrderStatus.PENDING, OrderStatus.COOKING, OrderStatus.READY, OrderStatus.SERVED)
+            );
+
+            boolean hasBillableOrder = activeOrders.stream()
+                    .anyMatch(order -> order.getItems() != null
+                            && !order.getItems().isEmpty()
+                            && order.getTotalAmount() != null
+                            && order.getTotalAmount().compareTo(BigDecimal.ZERO) > 0);
+
+            if (hasBillableOrder) {
+                throw new BadRequestException(
+                        ErrorCode.INVALID_INPUT,
+                        "Complete payment before closing a reservation with items"
+                );
+            }
+
+            for (Order order : activeOrders) {
+                order.setStatus(CANCELED);
+                orderRepository.save(order);
+            }
+
+            reservation.setStatus(ReservationStatus.COMPLETED);
+
+            Table table = reservation.getTable();
+            if (table != null) {
+                table.setStatus(TableStatus.AVAILABLE);
+                tableRepository.save(table);
+
+                try {
+                    var tableDto = tableMapper.toResponse(table);
+                    messagingTemplate.convertAndSend("/topic/tables", tableDto);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket message for table update", e);
+                }
+            }
+
+            Reservation saved = reservationRepository.save(reservation);
+
+            try {
+                var resDto = reservationMapper.toResponse(saved);
+                messagingTemplate.convertAndSend("/topic/reservations", resDto);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket message for reservation update", e);
+            }
+
+            return reservationMapper.toResponse(saved);
+        }
+
+        if (status == ReservationStatus.CANCELLED) {
+            if (reservation.getStatus() == CHECKED_IN) {
+                throw new BadRequestException(
+                        ErrorCode.RESERVATION_INVALID_STATUS,
+                        "Cannot cancel after check-in"
+                );
+            }
+
+            reservation.setStatus(ReservationStatus.CANCELLED);
+            Table table = reservation.getTable();
+            if (table != null) {
+                table.setStatus(TableStatus.AVAILABLE);
+                tableRepository.save(table);
+
+                try {
+                    var tableDto = tableMapper.toResponse(table);
+                    messagingTemplate.convertAndSend("/topic/tables", tableDto);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket message for table update", e);
+                }
+            }
+
+            Reservation saved = reservationRepository.save(reservation);
+
+            try {
+                var resDto = reservationMapper.toResponse(saved);
+                messagingTemplate.convertAndSend("/topic/reservations", resDto);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket message for reservation update", e);
+            }
+
+            return reservationMapper.toResponse(saved);
+        }
+
+        if (status == ReservationStatus.NO_SHOW) {
+            if (reservation.getStatus() != RESERVED) {
+                throw new BadRequestException(
+                        ErrorCode.RESERVATION_INVALID_STATUS,
+                        "Only RESERVED reservations can be marked as no-show"
+                );
+            }
+
+            reservation.setStatus(ReservationStatus.NO_SHOW);
+            Table table = reservation.getTable();
+            if (table != null) {
+                table.setStatus(TableStatus.AVAILABLE);
+                tableRepository.save(table);
+
+                try {
+                    var tableDto = tableMapper.toResponse(table);
+                    messagingTemplate.convertAndSend("/topic/tables", tableDto);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket message for table update", e);
+                }
+            }
+
+            Reservation saved = reservationRepository.save(reservation);
+
+            try {
+                var resDto = reservationMapper.toResponse(saved);
+                messagingTemplate.convertAndSend("/topic/reservations", resDto);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket message for reservation update", e);
+            }
+
+            return reservationMapper.toResponse(saved);
+        }
+
+        throw new BadRequestException(
+                ErrorCode.INVALID_INPUT,
+                "Unsupported reservation status transition: " + status
+        );
+    }
+
+    @Override
     public ReservationResponse cancel(UUID id) {
 
         Reservation reservation = reservationRepository.findById(id)
@@ -340,24 +733,50 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
+        Table table = reservation.getTable();
+        if (table != null) {
+            table.setStatus(TableStatus.AVAILABLE);
+            tableRepository.save(table);
 
-        return reservationMapper.toResponse(reservationRepository.save(reservation));
+            try {
+                var tableDto = tableMapper.toResponse(table);
+                messagingTemplate.convertAndSend("/topic/tables", tableDto);
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket message for table update", e);
+            }
+        }
+
+        Reservation saved = reservationRepository.save(reservation);
+
+        try {
+            var resDto = reservationMapper.toResponse(saved);
+            messagingTemplate.convertAndSend("/topic/reservations", resDto);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message for reservation update", e);
+        }
+
+        return reservationMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<String> getBookedSlotsForTable(UUID tableId, java.time.LocalDate date) {
+        if (date.isBefore(now().toLocalDate()) || date.isAfter(maxBookingDate())) {
+            throw new BadRequestException(
+                    ErrorCode.RESERVATION_INVALID_TIME,
+                    "Selected time slot is not available"
+            );
+        }
+
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
         
-        List<Reservation> reservations = reservationRepository.findByTableIdAndReservationTimeBetween(tableId, startOfDay, endOfDay);
+        List<Reservation> reservations = reservationRepository.findByTableIdAndStartTimeBetween(tableId, startOfDay, endOfDay);
         
         return reservations.stream()
-                .filter(r -> r.getStatus() == ReservationStatus.PENDING 
-                          || r.getStatus() == ReservationStatus.RESERVED 
-                          || r.getStatus() == ReservationStatus.CHECKED_IN)
+                .filter(r -> BLOCKING_STATUSES.contains(r.getStatus()))
                 .map(r -> {
-                    java.time.LocalTime time = r.getReservationTime().toLocalTime();
+                    java.time.LocalTime time = r.getStartTime().toLocalTime();
                     return String.format("%02d:%02d", time.getHour(), time.getMinute());
                 })
                 .toList();

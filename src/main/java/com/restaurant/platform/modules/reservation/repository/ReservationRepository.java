@@ -23,17 +23,26 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
     FROM Reservation r
     WHERE r.table = :table
-    AND r.reservationTime BETWEEN :start AND :end
+    AND r.startTime < :end
+    AND r.endTime > :start
     AND r.status IN :statuses
     """)
-    boolean existsByTableAndReservationTimeBetweenAndStatusInWithLock(
+    boolean existsByTableAndTimeOverlapAndStatusInWithLock(
             @Param("table") Table table,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             @Param("statuses") List<ReservationStatus> statuses
     );
 
-    boolean existsByTableAndReservationTimeBetweenAndStatusIn(
+    @Query("""
+    SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+    FROM Reservation r
+    WHERE r.table = :table
+    AND r.startTime < :end
+    AND r.endTime > :start
+    AND r.status IN :statuses
+    """)
+    boolean existsByTableAndTimeOverlapAndStatusIn(
             Table table,
             LocalDateTime start,
             LocalDateTime end,
@@ -44,7 +53,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     Page<Reservation> findByPhoneContaining(String phone, Pageable pageable);
 
-    List<Reservation> findByTableIdAndReservationTimeBetween(UUID tableId, LocalDateTime start, LocalDateTime end);
+    List<Reservation> findByTableIdAndStartTimeBetween(UUID tableId, LocalDateTime start, LocalDateTime end);
 
     long count();
     Long countByStatus(ReservationStatus status);

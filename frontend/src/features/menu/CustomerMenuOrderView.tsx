@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, CheckCircle, MapPin, Minus, Plus, Search, ShoppingCart, Tag } from 'lucide-react';
+import { AlertCircle, CheckCircle, Minus, Plus, Search, ShoppingCart, Tag } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import api from '../../services/api';
 import { resolveMediaUrl } from '../../services/media';
-import type { MenuItemDTO, ReservationDTO } from '../../services/types';
+import type { MenuItemDTO } from '../../services/types';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from '../../store/toastStore';
-import { Badge, Button, Card, Input } from '../../components/ui';
+import { Button, Card, Input } from '../../components/ui';
 import { formatVndCurrency } from '../../utils/formatters';
 import { translateCategoryName } from '../../utils/menuCategories';
 import { DEFAULT_FALLBACK_IMAGE_URL } from '../../services/media';
@@ -28,8 +28,6 @@ export const CustomerMenuOrderView = () => {
   const queryTableName = searchParams.get('tableName') || t('menu.qrTable');
 
   const [items, setItems] = useState<MenuItemDTO[]>([]);
-  const [reservations, setReservations] = useState<ReservationDTO[]>([]);
-  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(queryReservationId);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -63,42 +61,10 @@ export const CustomerMenuOrderView = () => {
       });
   }, []);
 
-  useEffect(() => {
-    if (!user) {
-      setReservations([]);
-      return;
-    }
-
-    void api.get('/reservations/my?page=0&size=100')
-      .then((response) => {
-        const data = response.data.data?.items || response.data.data || [];
-        if (Array.isArray(data)) {
-          setReservations(data);
-        }
-      })
-      .catch(() => {
-        setReservations([]);
-      });
-  }, [user]);
-
-  const activeReservations = reservations.filter((reservation) => ['RESERVED', 'CHECKED_IN'].includes(reservation.status));
-  const selectedReservation = reservations.find((reservation) => reservation.id === selectedReservationId) || null;
-
-  useEffect(() => {
-    if (queryReservationId) {
-      setSelectedReservationId(queryReservationId);
-      return;
-    }
-
-    if (activeReservations.length === 1 && !selectedReservationId) {
-      setSelectedReservationId(activeReservations[0].id);
-    }
-  }, [activeReservations, queryReservationId, selectedReservationId]);
-
-  const canOrder = Boolean(selectedReservationId);
+  const canOrder = Boolean(queryTableId || queryReservationId);
   const tableLabel = useMemo(() => (
-    queryTableName || selectedReservation?.tableName || t('menu.qrTable')
-  ), [queryTableName, selectedReservation?.tableName]);
+    queryTableName || t('menu.qrTable')
+  ), [queryTableName]);
 
   const addToCart = (item: MenuItemDTO) => {
     if (!canOrder) {
@@ -139,8 +105,8 @@ export const CustomerMenuOrderView = () => {
 
     try {
       await api.post('/orders', {
-        tableId: queryTableId || selectedReservation?.tableId,
-        reservationId: selectedReservationId,
+        tableId: queryTableId,
+        reservationId: queryReservationId,
         items: cart.map((cartItem) => ({
           menuItemId: cartItem.id,
           quantity: cartItem.cartQuantity,
@@ -206,60 +172,26 @@ export const CustomerMenuOrderView = () => {
           </div>
         </div>
 
-        {!queryReservationId && (
-          <div style={{ display: 'grid', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
-            {!canOrder && (
-              <Card variant="elevated" style={{ borderLeft: '4px solid var(--amber)' }}>
-                <Card.Content style={{ padding: 'var(--sp-4)', display: 'flex', gap: 12, alignItems: 'center', color: 'var(--text-heading)' }}>
-                  <AlertCircle size={20} color="var(--amber)" />
-                  <span style={{ fontWeight: 700 }}>
-                    {user
+        <div style={{ display: 'grid', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
+          {!canOrder && (
+            <Card variant="elevated" style={{ borderLeft: '4px solid var(--amber)' }}>
+              <Card.Content style={{ padding: 'var(--sp-4)', display: 'flex', gap: 12, alignItems: 'center', color: 'var(--text-heading)' }}>
+                <AlertCircle size={20} color="var(--amber)" />
+                <span style={{ fontWeight: 700 }}>
+                  {user
                     ? t('menu.selectReservationHint')
                     : t('menu.walkInHint')}
-                  </span>
-                </Card.Content>
-              </Card>
-            )}
+                </span>
+              </Card.Content>
+            </Card>
+          )}
 
-            {reservations.length > 0 && activeReservations.length !== 1 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-3)' }}>
-                {reservations.map((reservation) => {
-                  const selectable = ['RESERVED', 'CHECKED_IN'].includes(reservation.status);
-                  return (
-                    <button
-                      key={reservation.id}
-                      onClick={() => selectable && setSelectedReservationId(reservation.id)}
-                      disabled={!selectable}
-                      style={{
-                        textAlign: 'left',
-                        padding: '14px 16px',
-                        borderRadius: 'var(--r-md)',
-                        border: selectedReservationId === reservation.id ? '2px solid var(--orange-500)' : '1px solid var(--border-main)',
-                        background: 'var(--bg-card)',
-                        opacity: selectable ? 1 : 0.42,
-                        cursor: selectable ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-                        <strong style={{ color: 'var(--text-heading)' }}>{reservation.tableName}</strong>
-                        <Badge variant={selectable ? 'success' : 'neutral'} size="small">{reservation.status}</Badge>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 13 }}>
-                        <MapPin size={14} /> {new Date(reservation.reservationTime).toLocaleString(i18n.language)}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {canOrder && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--teal)', fontWeight: 700 }}>
+          {canOrder && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--teal)', fontWeight: 700 }}>
               <CheckCircle size={18} /> {t('menu.orderingFor', { tableLabel })}
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         {categories.length > 0 && (
           <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-6)', flexWrap: 'wrap', alignItems: 'center' }}>

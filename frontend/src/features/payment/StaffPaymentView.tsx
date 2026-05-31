@@ -9,14 +9,7 @@ import type { OrderDTO, ReservationDTO } from '../../services/types';
 import { Card, Button, Badge, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 import { translateStatus } from '../../utils/translations';
-
-const money = (value: number | undefined) =>
-  new Intl.NumberFormat(i18n.language, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value || 0);
+import { formatVndCurrency } from '../../utils/formatters';
 
 export const StaffPaymentView = () => {
   const { t } = useTranslation();
@@ -53,7 +46,9 @@ export const StaffPaymentView = () => {
   const activeReservations = reservations.filter((reservation) => reservation.status === 'CHECKED_IN');
   
   // Get unpaid orders (both from reservations and direct staff orders)
-  const unpaidOrders = orders.filter((order) => !['PAID', 'CANCELED'].includes(order.status));
+  const unpaidOrders = orders.filter((order) =>
+    !['PAID', 'CANCELED'].includes(order.status) && (order.items?.length || 0) > 0
+  );
   
   const filteredOrders = unpaidOrders.filter((order) =>
     order.tableName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -140,7 +135,7 @@ export const StaffPaymentView = () => {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: 700, color: 'var(--orange-600)' }}>
-                          {money(order?.finalAmount ?? order?.totalAmount)}
+                          {formatVndCurrency(order?.finalAmount ?? order?.totalAmount, i18n.language)}
                         </div>
                         <Badge variant="warning" size="small">{translateStatus(order.status)}</Badge>
                       </div>
@@ -209,7 +204,7 @@ export const StaffPaymentView = () => {
                       <InfoCell label={t('payment.guests')} value={String(selectedReservation.numberOfGuests)} />
                       <InfoCell
                         label={t('payment.checkInTime')}
-                        value={new Date(selectedReservation.reservationTime).toLocaleString(i18n.language)}
+                        value={new Date(selectedReservation.startTime || selectedReservation.reservationTime).toLocaleString(i18n.language)}
                       />
                       <InfoCell label={t('payment.paymentTime')} value={new Date().toLocaleString(i18n.language)} />
                     </div>
@@ -233,8 +228,8 @@ export const StaffPaymentView = () => {
                             <tr key={item.id} style={{ borderBottom: '1px solid var(--border-main)' }}>
                               <td style={{ padding: 'var(--sp-2)' }}>{item.menuItemName}</td>
                               <td style={{ padding: 'var(--sp-2)', textAlign: 'center' }}>{item.quantity}</td>
-                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right' }}>{money(item.price)}</td>
-                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right', fontWeight: 600 }}>{money(item.total)}</td>
+                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right' }}>{formatVndCurrency(item.price, i18n.language)}</td>
+                              <td style={{ padding: 'var(--sp-2)', textAlign: 'right', fontWeight: 600 }}>{formatVndCurrency(item.total, i18n.language)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -247,13 +242,13 @@ export const StaffPaymentView = () => {
                       borderRadius: 'var(--r-md)',
                       marginBottom: 'var(--sp-4)',
                     }}>
-                      <SummaryRow label={t('payment.subtotal')} value={money(selectedOrder.totalAmount)} />
+                      <SummaryRow label={t('payment.subtotal')} value={formatVndCurrency(selectedOrder.totalAmount, i18n.language)} />
                       {(selectedOrder.vipSurchargeAmount || 0) > 0 && (
-                        <SummaryRow label={t('payment.vipSurcharge')} value={money(selectedOrder.vipSurchargeAmount)} />
+                        <SummaryRow label={t('payment.vipSurcharge')} value={formatVndCurrency(selectedOrder.vipSurchargeAmount, i18n.language)} />
                       )}
                       <SummaryRow
                         label={t('payment.grandTotal')}
-                        value={money(selectedOrder.finalAmount ?? selectedOrder.totalAmount)}
+                        value={formatVndCurrency(selectedOrder.finalAmount ?? selectedOrder.totalAmount, i18n.language)}
                         strong
                       />
                     </div>

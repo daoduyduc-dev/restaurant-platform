@@ -25,6 +25,9 @@ public interface ReservationMapper {
 
     // entity → response
     @Mapping(target = "createdAt", source = "createdDate")
+    @Mapping(target = "startTime", source = "startTime")
+    @Mapping(target = "endTime", source = "endTime")
+    @Mapping(target = "reservationTime", source = "startTime")
     @Mapping(target = "tableId", source = "table.id")
     @Mapping(target = "tableName", source = "table.name")
     @Mapping(target = "tableCapacity", source = "table.capacity")

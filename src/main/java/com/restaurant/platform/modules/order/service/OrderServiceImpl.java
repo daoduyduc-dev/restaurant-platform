@@ -38,14 +38,28 @@ import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.loyalty.service.LoyaltyService;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+
+    private static final List<OrderStatus> ACTIVE_ORDER_STATUSES = List.of(
+            OrderStatus.OPEN,
+            OrderStatus.PENDING,
+            OrderStatus.COOKING,
+            OrderStatus.READY,
+            OrderStatus.SERVED
+    );
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -85,6 +99,12 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found"));
 
+            if (!reservation.getTable().getId().equals(table.getId())) {
+                throw new BadRequestException(
+                        ErrorCode.INVALID_INPUT,
+                        "Reservation does not belong to the selected table");
+            }
+
             if (reservation.getStatus() != ReservationStatus.RESERVED
                     && reservation.getStatus() != ReservationStatus.CHECKED_IN) {
                 throw new BadRequestException(
@@ -113,24 +133,25 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
 
-            // Check if this reservation already has an OPEN, COOKING, or SERVED order
-            Order existing = orderRepository.findByReservationId(request.getReservationId()).orElse(null);
-            if (existing != null && !existing.getStatus().equals(OrderStatus.PAID) && !existing.getStatus().equals(OrderStatus.CANCELED)) {
-                // For checked-in reservations, create a separate add-on order
-                // so existing served/ready items are not moved back to cooking.
-                if (reservation.getStatus() == ReservationStatus.CHECKED_IN) {
-                    return createAddOnOrder(table, reservation, request.getItems());
+            Order existing = resolveActiveOrderForWrite(table, reservation);
+            if (existing != null) {
+                if (existing.getReservation() == null) {
+                    existing.setReservation(reservation);
                 }
-
+                if (reservation.getStatus() == ReservationStatus.CHECKED_IN
+                        && existing.getStatus() != OrderStatus.COOKING) {
+                    existing.setStatus(OrderStatus.COOKING);
+                }
                 addItems(existing, request.getItems());
                 return mapToResponse(orderRepository.save(existing));
             }
+        } else if (table.getStatus() == TableStatus.RESERVED) {
+            throw new BadRequestException(
+                    ErrorCode.TABLE_NOT_AVAILABLE,
+                    "Reserved tables require a matching reservation");
         } else {
-            // For walk-in customers, check if table has an active order and add to it
-            Order existing = orderRepository.findByTableAndStatus(table, OrderStatus.OPEN).orElse(null);
-            if (existing == null) {
-                existing = orderRepository.findByTableAndStatus(table, OrderStatus.COOKING).orElse(null);
-            }
+            // For walk-in customers, reuse the single active order for this table if one exists
+            Order existing = resolveActiveOrderForWrite(table, null);
             if (existing != null) {
                 addItems(existing, request.getItems());
                 return mapToResponse(orderRepository.save(existing));
@@ -232,6 +253,24 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllByStatus(List<OrderStatus> statuses) {
         return orderRepository.findByStatusIn(statuses).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getActiveOrders() {
+        Map<UUID, Order> activeByTable = new LinkedHashMap<>();
+
+        orderRepository.findByStatusIn(ACTIVE_ORDER_STATUSES).stream()
+                .filter(order -> order.getTable() != null && order.getTable().getId() != null)
+                .forEach(order -> activeByTable.merge(
+                        order.getTable().getId(),
+                        order,
+                        this::preferOrderForDisplay
+                ));
+
+        return activeByTable.values().stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -563,39 +602,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    private OrderResponse createAddOnOrder(Table table, Reservation reservation, List<AddOrderItemRequest> items) {
-        Order addOnOrder = Order.builder()
-                .table(table)
-                .reservation(reservation)
-                .status(OrderStatus.COOKING)
-                .totalAmount(BigDecimal.ZERO)
-                .build();
-
-        addOnOrder = orderRepository.save(addOnOrder);
-        addItems(addOnOrder, items);
-        addOnOrder = orderRepository.save(addOnOrder);
-
-        notifyKitchenForAddOn(addOnOrder);
-
-        return mapToResponse(addOnOrder);
-    }
-
-    private void notifyKitchenForAddOn(Order order) {
-        try {
-            var payload = java.util.Map.of(
-                    "type", "ORDER_ITEM_ADDED_TO_COOKING",
-                    "orderId", order.getId().toString(),
-                    "tableName", order.getTable().getName() + " - add",
-                    "message", "New add-on item for kitchen",
-                    "timestamp", java.time.Instant.now().toString()
-            );
-            messagingTemplate.convertAndSend("/topic/orders", mapToResponse(order));
-            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
-        } catch (Exception e) {
-            log.error("Failed to send WebSocket notification for add-on order", e);
-        }
-    }
-
     private OrderResponse mapToResponse(Order order) {
 
         OrderResponse response = orderMapper.toResponse(order);
@@ -615,11 +621,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse createFromReservation(Reservation reservation) {
 
-        // Check if reservation already has an order (customer ordered before check-in)
-        Order existingOrder = orderRepository.findByReservationId(reservation.getId()).orElse(null);
+        Order existingOrder = resolveActiveOrderForWrite(reservation.getTable(), reservation);
 
         if (existingOrder != null) {
-            // Update existing order status from OPEN to COOKING
+            if (existingOrder.getReservation() == null) {
+                existingOrder.setReservation(reservation);
+            }
             existingOrder.setStatus(OrderStatus.COOKING);
             Order saved = orderRepository.save(existingOrder);
 
@@ -632,6 +639,7 @@ public class OrderServiceImpl implements OrderService {
                         "timestamp", java.time.Instant.now().toString()
                 );
                 messagingTemplate.convertAndSend("/topic/orders", mapToResponse(saved));
+                messagingTemplate.convertAndSend("/topic/orders/role/STAFF", mapToResponse(saved));
                 messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
             } catch (Exception e) {
                 log.error("Failed to send WebSocket notification for order status change", e);
@@ -648,7 +656,24 @@ public class OrderServiceImpl implements OrderService {
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
-        return orderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+
+        try {
+            var payload = java.util.Map.of(
+                    "type", "ORDER_CREATED",
+                    "orderId", saved.getId().toString(),
+                    "tableId", saved.getTable().getId().toString(),
+                    "message", "Order created from check-in",
+                    "timestamp", java.time.Instant.now().toString()
+            );
+            messagingTemplate.convertAndSend("/topic/orders", mapToResponse(saved));
+            messagingTemplate.convertAndSend("/topic/orders/role/STAFF", mapToResponse(saved));
+            messagingTemplate.convertAndSend("/topic/notifications/role/STAFF", payload);
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification for order creation from reservation", e);
+        }
+
+        return mapToResponse(saved);
     }
 
     @Override
@@ -677,5 +702,113 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return mapToResponse(saved);
+    }
+
+    private Order resolveActiveOrderForWrite(Table table, Reservation reservation) {
+        List<Order> activeOrders = orderRepository.findActiveByTableWithLock(table, ACTIVE_ORDER_STATUSES);
+        if (activeOrders.isEmpty()) {
+            return null;
+        }
+
+        Order canonical = chooseCanonicalOrderForWrite(activeOrders, reservation);
+        if (canonical == null) {
+            return null;
+        }
+
+        if (activeOrders.size() > 1) {
+            mergeActiveOrders(canonical, activeOrders);
+        }
+
+        return canonical;
+    }
+
+    private Order chooseCanonicalOrderForWrite(List<Order> activeOrders, Reservation reservation) {
+        if (reservation != null) {
+            Optional<Order> matchingReservationOrder = activeOrders.stream()
+                    .filter(order -> order.getReservation() != null
+                            && reservation.getId().equals(order.getReservation().getId()))
+                    .findFirst();
+            if (matchingReservationOrder.isPresent()) {
+                return matchingReservationOrder.get();
+            }
+        }
+
+        return activeOrders.stream()
+                .filter(order -> order.getItems() == null || order.getItems().isEmpty())
+                .min(orderCreatedComparator())
+                .orElseGet(() -> activeOrders.stream()
+                        .min(orderCreatedComparator())
+                        .orElse(activeOrders.get(0)));
+    }
+
+    private Comparator<Order> orderCreatedComparator() {
+        return Comparator.comparing(
+                Order::getCreatedDate,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        ).thenComparing(Order::getId, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private Order preferOrderForDisplay(Order first, Order second) {
+        int firstItems = itemCount(first);
+        int secondItems = itemCount(second);
+        if (firstItems != secondItems) {
+            return firstItems >= secondItems ? first : second;
+        }
+
+        LocalDateTime firstDate = first.getCreatedDate();
+        LocalDateTime secondDate = second.getCreatedDate();
+        if (firstDate == null && secondDate == null) {
+            return first;
+        }
+        if (firstDate == null) {
+            return second;
+        }
+        if (secondDate == null) {
+            return first;
+        }
+        return firstDate.isAfter(secondDate) ? first : second;
+    }
+
+    private int itemCount(Order order) {
+        return order.getItems() == null ? 0 : order.getItems().size();
+    }
+
+    private void mergeActiveOrders(Order canonical, List<Order> activeOrders) {
+        if (canonical.getItems() == null) {
+            canonical.setItems(new ArrayList<>());
+        }
+
+        for (Order candidate : activeOrders) {
+            if (candidate.getId() == null || candidate.getId().equals(canonical.getId())) {
+                continue;
+            }
+
+            if (canonical.getReservation() == null && candidate.getReservation() != null) {
+                canonical.setReservation(candidate.getReservation());
+            }
+
+            if (candidate.getItems() != null) {
+                for (OrderItem candidateItem : new ArrayList<>(candidate.getItems())) {
+                    candidate.getItems().remove(candidateItem);
+
+                    OrderItem existing = canonical.getItems().stream()
+                            .filter(item -> item.getMenuItem().getId().equals(candidateItem.getMenuItem().getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (existing != null) {
+                        existing.setQuantity(existing.getQuantity() + candidateItem.getQuantity());
+                    } else {
+                        canonical.addItem(candidateItem);
+                    }
+                }
+            }
+
+            candidate.setTotalAmount(BigDecimal.ZERO);
+            candidate.setStatus(OrderStatus.CANCELED);
+            orderRepository.save(candidate);
+        }
+
+        recalculate(canonical);
     }
 }

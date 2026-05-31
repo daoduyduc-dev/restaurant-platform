@@ -27,7 +27,7 @@ const DEFAULT_SETTINGS: SettingsDTO = {
   openingTime: '10:00',
   closingTime: '22:00',
   noShowGracePeriod: 20,
-  defaultReservationDuration: 90,
+  defaultReservationDuration: 120,
   loyaltyPointsPerDollar: 1,
   vipTableFee: 25,
   autoAssignWaiter: true,

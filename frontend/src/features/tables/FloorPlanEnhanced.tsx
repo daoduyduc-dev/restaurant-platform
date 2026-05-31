@@ -6,21 +6,7 @@ import {
   getTableRenderSize,
   resolveCollisions,
 } from './positioning';
-
-const FIXED_TABLE_STYLES = {
-  NORMAL: {
-    fill: '#EEF6FF',
-    border: '#2563EB',
-    text: '#1D4ED8',
-    gradient: 'linear-gradient(135deg, #EEF6FF, #DBEAFE)'
-  },
-  VIP: {
-    fill: '#FFF7D6',
-    border: '#D4AF37',
-    text: '#7C5A00',
-    gradient: 'linear-gradient(135deg, #FFF7D6, #FDE68A)'
-  },
-} as const;
+import { getTableStatusStyle } from './editor/layout';
 
 interface FloorPlanProps {
   tables: TableDTO[];
@@ -189,7 +175,7 @@ export const FloorPlan = ({
         {/* Tables */}
         {resolvedTables.map((table, i) => {
           const pos = getDefaultTableFallbackPosition(i);
-        const colors = table.type === 'VIP' ? FIXED_TABLE_STYLES.VIP : FIXED_TABLE_STYLES.NORMAL;
+        const colors = getTableStatusStyle(table);
         const isSelected = selectedId === table.id;
         const isDimmed = dimUnavailable && table.status !== 'AVAILABLE';
         const isHighlighted = highlightStatuses?.includes(table.status);
@@ -210,7 +196,7 @@ export const FloorPlan = ({
               marginTop: `${-size / 2}px`,
               opacity: isDimmed ? 0.4 : 1,
               cursor: onTableClick ? 'pointer' : 'default',
-              filter: isHighlighted ? `drop-shadow(0 0 8px ${colors.border})` : undefined,
+              filter: isHighlighted ? `drop-shadow(0 0 8px ${colors.stroke})` : undefined,
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
@@ -220,13 +206,11 @@ export const FloorPlan = ({
                 width: size,
                 height: size,
                 borderRadius: isVip ? '16px' : '50%',
-                border: `3px solid ${isSelected ? 'var(--orange-500)' : isVip ? '#D4AF37' : colors.border}`,
-                background: isSelected ? 'var(--orange-100)' : colors.gradient,
+                border: `3px solid ${colors.stroke}`,
+                background: isSelected ? 'var(--orange-100)' : colors.fill,
                 boxShadow: isSelected 
-                  ? '0 0 20px rgba(212, 175, 55, 0.6), 0 4px 12px rgba(0,0,0,0.1)' 
-                  : isVip
-                    ? '0 0 0 3px rgba(212, 175, 55, 0.15), 0 2px 8px rgba(0,0,0,0.1)'
-                    : '0 2px 8px rgba(0,0,0,0.1)',
+                  ? `0 0 0 3px ${colors.stroke}33, 0 4px 12px rgba(0,0,0,0.1)`
+                  : '0 2px 8px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -246,12 +230,12 @@ export const FloorPlan = ({
                   gap: 4,
                   padding: '4px 8px',
                   borderRadius: 999,
-                  background: 'linear-gradient(135deg, #FDE68A, #D4AF37)',
-                  border: '1px solid rgba(180, 140, 40, 0.8)',
-                  color: '#6B4F00',
+                  background: '#D4AF37',
+                  border: '1px solid rgba(255,255,255,0.5)',
+                  color: '#fff8dc',
                   fontSize: 10,
                   fontWeight: 800,
-                  boxShadow: '0 4px 10px rgba(180, 140, 40, 0.25)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
                 }}>
                   <Crown size={10} />
                   VIP
@@ -260,7 +244,7 @@ export const FloorPlan = ({
               <div style={{ 
                 fontWeight: 800, 
                 fontSize: 'var(--text-base)', 
-                color: isSelected ? 'var(--orange-600)' : colors.text 
+                color: colors.text 
               }}>
                 {table.name}
               </div>
@@ -285,14 +269,16 @@ export const FloorPlan = ({
 
       <div className="floor-plan-legend" style={{ backdropFilter: 'blur(10px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ 
-            width: 12, 
-            height: 12, 
-            borderRadius: '50%', 
-            background: FIXED_TABLE_STYLES.NORMAL.border,
-            boxShadow: `0 0 8px ${FIXED_TABLE_STYLES.NORMAL.border}40`,
-          }} />
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Standard</span>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10B981' }} />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Available</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#D97706' }} />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Reserved</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#EF4444' }} />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Occupied</span>
         </div>
         {vipTables.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

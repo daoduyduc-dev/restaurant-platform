@@ -6,11 +6,7 @@ import {
   getTableRenderSize,
   resolveCollisions,
 } from './positioning';
-
-const FIXED_TABLE_STYLES = {
-  NORMAL: { fill: '#EEF6FF', border: '#2563EB', text: '#1D4ED8' },
-  VIP: { fill: '#FFF7D6', border: '#D4AF37', text: '#7C5A00' },
-} as const;
+import { getTableStatusStyle } from './editor/layout';
 
 interface FloorPlanProps {
   tables: TableDTO[];
@@ -36,7 +32,7 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
           const size = getTableRenderSize(table.capacity);
           const x = getBoundedTablePosition(table.positionX, pos.x, 'x', size);
           const y = getBoundedTablePosition(table.positionY, pos.y, 'y', size);
-        const colors = table.type === 'VIP' ? FIXED_TABLE_STYLES.VIP : FIXED_TABLE_STYLES.NORMAL;
+        const colors = getTableStatusStyle(table);
         const isSelected = selectedId === table.id;
         const isDimmed = dimUnavailable && table.status !== 'AVAILABLE';
         const isHighlighted = highlightStatuses?.includes(table.status);
@@ -54,7 +50,7 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
               marginTop: `${-size / 2}px`,
               opacity: isDimmed ? 0.4 : 1,
               cursor: onTableClick ? 'pointer' : 'default',
-              filter: isHighlighted ? 'drop-shadow(0 0 8px ' + colors.border + ')' : undefined,
+              filter: isHighlighted ? 'drop-shadow(0 0 8px ' + colors.stroke + ')' : undefined,
             }}
           >
             <div
@@ -63,39 +59,37 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
                 width: size,
                 height: size,
                 borderRadius: isVip ? '16px' : '50%',
-                border: `3px solid ${isSelected ? 'var(--orange-500)' : isVip ? '#D4AF37' : colors.border}`,
+                border: `3px solid ${colors.stroke}`,
                 background: isSelected ? 'var(--orange-100)' : colors.fill,
                 boxShadow: isSelected
-                  ? 'var(--shadow-glow-orange)'
-                  : isVip
-                    ? '0 0 0 3px rgba(212, 175, 55, 0.15), var(--shadow-sm)'
-                    : 'var(--shadow-sm)',
+                  ? `0 0 0 3px ${colors.stroke}33, 0 4px 12px rgba(0,0,0,0.1)`
+                  : 'var(--shadow-sm)',
                 transition: 'all 0.3s ease',
                 position: 'relative',
               }}
             >
               {isVip && (
-                <div style={{
-                  position: 'absolute',
-                  top: -10,
-                  right: -10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 8px',
-                  borderRadius: 999,
-                  background: 'linear-gradient(135deg, #FDE68A, #D4AF37)',
-                  border: '1px solid rgba(180, 140, 40, 0.8)',
-                  color: '#6B4F00',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  boxShadow: '0 4px 10px rgba(180, 140, 40, 0.25)',
+              <div style={{
+                position: 'absolute',
+                top: -10,
+                right: -10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 8px',
+                borderRadius: 999,
+                background: '#D4AF37',
+                border: '1px solid rgba(255,255,255,0.5)',
+                color: '#fff8dc',
+                fontSize: 10,
+                fontWeight: 800,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
                 }}>
                   <Crown size={10} />
                   VIP
                 </div>
               )}
-              <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: isSelected ? 'var(--orange-600)' : colors.text }}>
+              <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: colors.text }}>
                 {table.name}
               </div>
               {showCapacity && (
@@ -112,8 +106,16 @@ export const FloorPlan = ({ tables, onTableClick, selectedId, renderExtra, dimUn
 
       <div className="floor-plan-legend">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: FIXED_TABLE_STYLES.NORMAL.border }} />
-          <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>Standard</span>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
+          <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>Available</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#D97706' }} />
+          <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>Reserved</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
+          <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>Occupied</span>
         </div>
         {hasVipTables && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

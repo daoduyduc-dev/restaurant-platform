@@ -13,6 +13,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TimeSlotAvailabilityResponse {
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private LocalDateTime timeSlot;
     private boolean available;
     private String reason; // "OCCUPIED", "RESERVED", "AVAILABLE"
