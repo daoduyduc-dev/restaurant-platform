@@ -261,6 +261,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedMenuItems() {
+        // Clear old items first
+        menuItemRepo.deleteAll();
+        
         // Get or create Menu Categories
         Category appetizer = categoryRepo.findByName("Appetizer")
             .orElseGet(() -> categoryRepo.save(Category.builder().name("Appetizer").description("Starters and small plates").build()));

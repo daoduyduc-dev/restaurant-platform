@@ -36,6 +36,10 @@ function unpack<T>(payload: unknown): T[] {
   return [];
 }
 
+function isPendingReservation(reservation: ReservationDTO) {
+  return reservation.status === 'PENDING' || reservation.status === 'RESERVED';
+}
+
 export const StaffDashboard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -47,14 +51,33 @@ export const StaffDashboard = () => {
   const refresh = async () => {
     setLoading(true);
     try {
-      const [tableRes, orderRes, reservationRes] = await Promise.all([
+      const [tableRes, orderRes, reservationRes] = await Promise.allSettled([
         api.get('/tables'),
-        api.get('/orders'),
-        api.get('/reservations?status=PENDING,RESERVED'),
+        api.get('/orders/active'),
+        api.get('/reservations?size=100'),
       ]);
-      setTables(unpack<TableDTO>(tableRes));
-      setOrders(unpack<OrderDTO>(orderRes).filter(order => !['PAID', 'CANCELED'].includes(order.status)));
-      setReservations(unpack<ReservationDTO>(reservationRes));
+
+      if (tableRes.status === 'fulfilled') {
+        setTables(unpack<TableDTO>(tableRes.value));
+      } else {
+        setTables([]);
+      }
+
+      if (orderRes.status === 'fulfilled') {
+        setOrders(unpack<OrderDTO>(orderRes.value).filter(order => !['PAID', 'CANCELED'].includes(order.status)));
+      } else {
+        setOrders([]);
+      }
+
+      if (reservationRes.status === 'fulfilled') {
+        setReservations(unpack<ReservationDTO>(reservationRes.value).filter(isPendingReservation));
+      } else {
+        setReservations([]);
+      }
+
+      if (tableRes.status === 'rejected' && orderRes.status === 'rejected' && reservationRes.status === 'rejected') {
+        toast.error(t('staffDashboard.loadError'));
+      }
     } catch {
       toast.error(t('staffDashboard.loadError'));
     } finally {

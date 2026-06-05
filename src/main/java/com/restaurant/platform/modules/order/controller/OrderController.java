@@ -129,7 +129,7 @@ public class OrderController {
 
     // ================= PAY =================
     @PostMapping("/{id}/pay")
-    @PreAuthorize("hasRole('STAFF') and hasAuthority('ORDER_PAY')")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN') and hasAuthority('ORDER_PAY')")
     public ApiResponse<OrderResponse> pay(@PathVariable UUID id) {
         OrderResponse order = orderService.pay(id);
         notifyKitchen(order);

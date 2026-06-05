@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,24 +37,28 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Override
     @Transactional(readOnly = true)
     public java.util.List<com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse> getAllLoyalties() {
-        java.util.List<LoyaltyAccount> accounts = accountRepo.findAll();
         java.util.List<com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse> result = new java.util.ArrayList<>();
-        for (LoyaltyAccount acc : accounts) {
-            com.restaurant.platform.modules.auth.entity.User user = userRepository.findById(acc.getUserId()).orElse(null);
+        List<com.restaurant.platform.modules.auth.entity.User> customers = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().stream()
+                        .anyMatch(role -> role.getName() == com.restaurant.platform.modules.auth.entity.RoleName.CUSTOMER))
+                .toList();
 
-            String tier = acc.getTier().name();
-
-            long visitCount = transactionRepo.countByUserIdAndType(acc.getUserId(), TransactionType.EARN);
+        for (com.restaurant.platform.modules.auth.entity.User user : customers) {
+            LoyaltyAccount acc = accountRepo.findById(user.getId()).orElse(null);
+            BigDecimal points = acc != null && acc.getPoints() != null ? acc.getPoints() : BigDecimal.ZERO;
+            String tier = acc != null && acc.getTier() != null ? acc.getTier().name() : LoyaltyTier.SILVER.name();
+            BigDecimal spent = acc != null && acc.getTotalSpent() != null ? acc.getTotalSpent() : BigDecimal.ZERO;
+            long visitCount = transactionRepo.countByUserIdAndType(user.getId(), TransactionType.EARN);
 
             result.add(com.restaurant.platform.modules.loyalty.dto.LoyaltyAdminResponse.builder()
-                .id(acc.getUserId())
-                .name(user != null ? user.getName() : "Unknown")
-                .email(user != null ? user.getEmail() : "")
-                .points(acc.getPoints())
-                .tier(tier)
-                .visits((int) visitCount)
-                .spent(acc.getTotalSpent())
-                .build());
+                    .id(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .points(points)
+                    .tier(tier)
+                    .visits((int) visitCount)
+                    .spent(spent)
+                    .build());
         }
         return result;
     }
