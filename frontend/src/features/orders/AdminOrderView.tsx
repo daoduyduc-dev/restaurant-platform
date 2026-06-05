@@ -6,6 +6,7 @@ import { Shield, FileText, Timer, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { Card, Badge, Input } from '../../components/ui';
+import { formatVndCurrency } from '../../utils/formatters';
 
 const container: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } } };
@@ -94,10 +95,10 @@ export const AdminOrderView = () => {
                 {filtered.map(order => (
                   <tr key={order.id}>
                     <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{order.id.substring(0, 12)}...</td>
-                    <td style={{ fontWeight: 600 }}>{order.tableName}</td>
+                    <td style={{ fontWeight: 600 }}>{order.displayLabel || order.tableName}</td>
                     <td><Badge variant={STATUS_COLORS[order.status] || 'neutral'} size="small">{order.status}</Badge></td>
                     <td>{order.items?.length || 0}</td>
-                    <td style={{ fontWeight: 600 }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(order.totalAmount || 0)}</td>
+                    <td style={{ fontWeight: 600 }}>{formatVndCurrency(order.totalAmount, i18n.language)}</td>
                     <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
                       {order.createdAt || order.createdDate ? new Date(order.createdAt || order.createdDate).toLocaleString(i18n.language) : '—'}
                     </td>

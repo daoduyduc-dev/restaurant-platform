@@ -1,15 +1,15 @@
 export const getCurrencyCodeForLanguage = (language: string) => (language === 'vi' ? 'VND' : 'USD');
 
-export const formatCurrencyByLanguage = (value: number | undefined, language: string) =>
-  new Intl.NumberFormat(language, {
-    style: 'currency',
-    currency: getCurrencyCodeForLanguage(language),
-    maximumFractionDigits: language === 'vi' ? 0 : 2,
+export const formatCurrencyByLanguage = (value: number | undefined, language: string) => {
+  const formatted = new Intl.NumberFormat(language, {
+    maximumFractionDigits: 0,
   }).format(value || 0);
+  return `${formatted} VNĐ`;
+};
 
-export const formatVndCurrency = (value: number | undefined, language: string) =>
-  new Intl.NumberFormat(language, {
-    style: 'currency',
-    currency: getCurrencyCodeForLanguage(language),
-    maximumFractionDigits: language === 'vi' ? 0 : 2,
+export const formatVndCurrency = (value: number | undefined, language: string) => {
+  const formatted = new Intl.NumberFormat(language, {
+    maximumFractionDigits: 0,
   }).format(value || 0);
+  return `${formatted} VNĐ`;
+};

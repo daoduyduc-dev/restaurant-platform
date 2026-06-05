@@ -1,22 +1,81 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 
 import api from '../../services/api';
-import type { OrderDTO } from '../../services/types';
+import type { OrderDTO, OrderItemDTO } from '../../services/types';
 import { Card, Button, Badge } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 import { translateStatus } from '../../utils/translations';
 
-const money = (value: number | undefined) =>
-  new Intl.NumberFormat(i18n.language, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+interface CustomerPaymentGroup {
+  groupKey: string;
+  displayLabel: string;
+  orders: OrderDTO[];
+  items: OrderItemDTO[];
+  subtotal: number;
+  vipSurchargeAmount: number;
+  finalAmount: number;
+  status: string;
+}
+
+const money = (value: number | undefined) => {
+  const formatted = new Intl.NumberFormat(i18n.language, {
+    maximumFractionDigits: 0,
   }).format(value || 0);
+  return `${formatted} VNĐ`;
+};
+
+function aggregateItems(orders: OrderDTO[]): OrderItemDTO[] {
+  const byItem = new Map<string, OrderItemDTO>();
+
+  orders.forEach((order) => {
+    (order.items || []).forEach((item) => {
+      const key = `${item.menuItemId}:${item.price}`;
+      const existing = byItem.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+        existing.total += item.total;
+      } else {
+        byItem.set(key, { ...item });
+      }
+    });
+  });
+
+  return Array.from(byItem.values());
+}
+
+function buildGroups(orders: OrderDTO[]): CustomerPaymentGroup[] {
+  const groups = new Map<string, CustomerPaymentGroup>();
+
+  orders.forEach((order) => {
+    const groupKey = order.reservationId ?? `table:${order.tableId}`;
+    const existing = groups.get(groupKey);
+    if (existing) {
+      existing.orders.push(order);
+      existing.items = aggregateItems(existing.orders);
+      existing.subtotal = order.groupSubtotalAmount ?? existing.subtotal + (order.totalAmount || 0);
+      existing.vipSurchargeAmount = Math.max(existing.vipSurchargeAmount, order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0);
+      existing.finalAmount = Math.max(existing.finalAmount, order.groupFinalAmount ?? order.finalAmount ?? 0);
+      return;
+    }
+
+    groups.set(groupKey, {
+      groupKey,
+      displayLabel: order.displayLabel || order.tableName,
+      orders: [order],
+      items: aggregateItems([order]),
+      subtotal: order.groupSubtotalAmount ?? order.totalAmount ?? 0,
+      vipSurchargeAmount: order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0,
+      finalAmount: order.groupFinalAmount ?? order.finalAmount ?? 0,
+      status: order.status,
+    });
+  });
+
+  return Array.from(groups.values());
+}
 
 export const CustomerPaymentView = () => {
   const { t } = useTranslation();
@@ -25,7 +84,7 @@ export const CustomerPaymentView = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get('/orders');
+      const response = await api.get('/orders/my');
       const items = response.data.data?.items || response.data.data || [];
       setOrders(Array.isArray(items) ? items : []);
     } catch {
@@ -39,7 +98,9 @@ export const CustomerPaymentView = () => {
     void fetchOrders();
   }, []);
 
-  const unpaidOrders = orders.filter((order) => !['PAID', 'CANCELED'].includes(order.status));
+  const unpaidGroups = useMemo(() => (
+    buildGroups(orders.filter((order) => !['PAID', 'CANCELED'].includes(order.status)))
+  ), [orders]);
 
   const handleCustomerAcknowledge = () => {
     toast.info(t('payment.customerWaiting'));
@@ -59,7 +120,6 @@ export const CustomerPaymentView = () => {
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
-        {/* Bank Account Info */}
         <Card variant="elevated" style={{ background: 'linear-gradient(135deg, var(--orange-100) 0%, #FFFDF5 100%)', borderLeft: '4px solid var(--orange-500)' }}>
           <Card.Content style={{ padding: 'var(--sp-5)' }}>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
@@ -78,29 +138,29 @@ export const CustomerPaymentView = () => {
           </Card.Content>
         </Card>
 
-        {unpaidOrders.length === 0 ? (
+        {unpaidGroups.length === 0 ? (
           <Card variant="elevated" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <CheckCircle size={48} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
             <h3>{t('payment.noActiveGuests')}</h3>
             <p style={{ color: 'var(--text-muted)' }}>{t('payment.thankYou')}</p>
           </Card>
         ) : (
-          unpaidOrders.map((order) => (
-            <Card key={order.id} variant="elevated" style={{ borderTop: '4px solid var(--orange-500)' }}>
+          unpaidGroups.map((group) => (
+            <Card key={group.groupKey} variant="elevated" style={{ borderTop: '4px solid var(--orange-500)' }}>
               <Card.Header>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <Card.Title>{t('payment.table')}: {order.tableName}</Card.Title>
-                    <Card.Description>{t('payment.orderLabel')} #{order.id.substring(0, 8)}</Card.Description>
+                    <Card.Title>{t('payment.table')}: {group.displayLabel}</Card.Title>
+                    <Card.Description>{group.orders.length} order{group.orders.length > 1 ? 's' : ''}</Card.Description>
                   </div>
-                  <Badge variant="warning">{translateStatus(order.status)}</Badge>
+                  <Badge variant="warning">{translateStatus(group.status)}</Badge>
                 </div>
               </Card.Header>
 
               <Card.Content>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                  {(order.items || []).map((item) => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px dashed var(--gray-200)' }}>
+                  {group.items.map((item) => (
+                    <div key={`${item.menuItemId}:${item.price}`} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px dashed var(--gray-200)' }}>
                       <div>
                         <div style={{ fontWeight: 600 }}>{item.quantity}x {item.menuItemName}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{money(item.price)} / {t('payment.itemUnit')}</div>
@@ -111,11 +171,11 @@ export const CustomerPaymentView = () => {
                 </div>
 
                 <div style={{ background: 'var(--gray-50)', padding: 16, borderRadius: 'var(--r-md)', marginTop: 16 }}>
-                  <SummaryRow label={t('payment.subtotal')} value={money(order.totalAmount)} />
-                  {(order.vipSurchargeAmount || 0) > 0 && (
-                    <SummaryRow label={t('payment.vipSurcharge')} value={money(order.vipSurchargeAmount)} />
+                  <SummaryRow label={t('payment.subtotal')} value={money(group.subtotal)} />
+                  {group.vipSurchargeAmount > 0 && (
+                    <SummaryRow label={t('payment.vipSurcharge')} value={money(group.vipSurchargeAmount)} />
                   )}
-                  <SummaryRow label={t('payment.grandTotal')} value={money(order.finalAmount ?? order.totalAmount)} strong />
+                  <SummaryRow label={t('payment.grandTotal')} value={money(group.finalAmount || group.subtotal)} strong />
                 </div>
 
                 <div style={{ marginTop: 16, fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>

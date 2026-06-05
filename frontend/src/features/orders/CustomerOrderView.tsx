@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { Button, Card, Badge } from '../../components/ui';
 import { translateStatus } from '../../utils/translations';
+import { formatVndCurrency } from '../../utils/formatters';
 
 const container: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } } };
@@ -67,8 +68,8 @@ export const CustomerOrderView = () => {
                   <div key={order.id} style={{ marginBottom: 'var(--sp-6)', paddingBottom: 'var(--sp-6)', borderBottom: '1px solid var(--border-main)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-4)' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: 'var(--text-heading)' }}>{order.tableName}</div>
-                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{order.items?.length || 0} {t('orders.items')} · {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(order.totalAmount || 0)}</div>
+                        <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: 'var(--text-heading)' }}>{order.displayLabel || order.tableName}</div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{order.items?.length || 0} {t('orders.items')} · {formatVndCurrency(order.totalAmount, i18n.language)}</div>
                       </div>
                       <Badge variant={order.status === 'READY' ? 'success' : 'warning'} size="medium">{info.label}</Badge>
                     </div>
@@ -92,7 +93,7 @@ export const CustomerOrderView = () => {
                       {(order.items || []).map(itm => (
                         <div key={itm.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--sp-2) 0', borderBottom: '1px solid var(--gray-100)' }}>
                           <span style={{ color: 'var(--text-heading)' }}>{itm.menuItemName} ×{itm.quantity}</span>
-                          <span style={{ fontWeight: 600, color: 'var(--orange-500)' }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(itm.total || 0)}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--orange-500)' }}>{formatVndCurrency(itm.total, i18n.language)}</span>
                         </div>
                       ))}
                     </div>
@@ -119,11 +120,11 @@ export const CustomerOrderView = () => {
                 {pastOrders.slice(0, 10).map(o => (
                   <div key={o.id} style={{ padding: 'var(--sp-3) var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--gray-50)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{o.tableName}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{o.displayLabel || o.tableName}</span>
                       <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginLeft: 'var(--sp-2)' }}>{o.items?.length || 0} {t('orders.items')}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--orange-500)' }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(o.totalAmount || 0)}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--orange-500)' }}>{formatVndCurrency(o.totalAmount, i18n.language)}</span>
                       <Badge variant={o.status === 'PAID' ? 'success' : 'error'} size="small">{translateStatus(o.status)}</Badge>
                     </div>
                   </div>

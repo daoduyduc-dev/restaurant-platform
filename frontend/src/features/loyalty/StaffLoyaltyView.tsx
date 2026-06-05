@@ -47,7 +47,7 @@ export const StaffLoyaltyView = () => {
             points: loyalty.totalPointsEarned || loyalty.points || 0,
             tier: loyalty.tier || 'Bronze',
             visits: loyalty.visits || 0,
-            spent: new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(loyalty.totalSpent || 0),
+            spent: new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(loyalty.spent || 0),
           })));
         }
       })

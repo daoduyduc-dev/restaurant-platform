@@ -9,6 +9,7 @@ import { FloorPlanEditor } from './FloorPlanEditor';
 import { useWebSocket } from '../../services/useWebSocket';
 import { translateStatus } from '../../utils/translations';
 import i18n from '../../i18n';
+import { formatVndCurrency } from '../../utils/formatters';
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
@@ -207,7 +208,7 @@ export const StaffTableView = () => {
                         <Badge variant="info">{translateStatus(selectedOrder.status)}</Badge>
                       </div>
                       <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
-                        {selectedOrder.items?.length || 0} {t('staffTables.items')} | {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(selectedOrder.totalAmount || 0)}
+                        {selectedOrder.items?.length || 0} {t('staffTables.items')} | {formatVndCurrency(selectedOrder.totalAmount, i18n.language)}
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -246,7 +247,7 @@ export const StaffTableView = () => {
                             }}
                           >
                             <span>{item.quantity}x {item.menuItemName}</span>
-                            <span style={{ fontWeight: 600 }}>{new Intl.NumberFormat(i18n.language, { style: 'currency', currency: i18n.language === 'vi' ? 'VND' : 'USD', maximumFractionDigits: i18n.language === 'vi' ? 0 : 2 }).format(item.total || 0)}</span>
+                            <span style={{ fontWeight: 600 }}>{formatVndCurrency(item.total, i18n.language)}</span>
                           </div>
                         ))}
                       </div>

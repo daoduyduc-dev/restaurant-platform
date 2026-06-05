@@ -139,7 +139,7 @@ export const CustomerLoyaltyView = () => {
             max={loyalty?.points || 0}
             step={100}
           />
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>* 100 points = $10 discount</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>* 100 points = 10.000 VNĐ discount</p>
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
             <Button variant="ghost" onClick={() => setIsRedeemModalOpen(false)}>Cancel</Button>

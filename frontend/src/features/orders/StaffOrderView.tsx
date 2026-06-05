@@ -38,31 +38,6 @@ function unpackOrders(payload: unknown): OrderDTO[] {
   return [];
 }
 
-function getOrderItemCount(order: OrderDTO) {
-  return order.items?.length || 0;
-}
-
-function getOrderUpdatedAt(order: OrderDTO) {
-  const rawDate = order.createdAt || order.createdDate;
-  return rawDate ? new Date(rawDate).getTime() : 0;
-}
-
-function preferVisibleOrder(candidate: OrderDTO, current: OrderDTO) {
-  const candidateItems = getOrderItemCount(candidate);
-  const currentItems = getOrderItemCount(current);
-  if (candidateItems !== currentItems) {
-    return candidateItems > currentItems;
-  }
-
-  const candidateUpdatedAt = getOrderUpdatedAt(candidate);
-  const currentUpdatedAt = getOrderUpdatedAt(current);
-  if (candidateUpdatedAt !== currentUpdatedAt) {
-    return candidateUpdatedAt > currentUpdatedAt;
-  }
-
-  return candidate.id > current.id;
-}
-
 function timeSince(date?: string) {
   if (!date) return '';
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60000));
@@ -101,21 +76,11 @@ export const StaffOrderView = () => {
     }
   });
 
-  const visibleOrders = useMemo(() => {
-    const byTable = new Map<string, OrderDTO>();
-
+  const visibleOrders = useMemo(() => (
     orders
       .filter((order) => !['PAID', 'CANCELED'].includes(order.status))
-      .forEach((order) => {
-        const tableKey = order.tableId || order.id;
-        const current = byTable.get(tableKey);
-        if (!current || preferVisibleOrder(order, current)) {
-          byTable.set(tableKey, order);
-        }
-      });
-
-    return Array.from(byTable.values());
-  }, [orders]);
+      .sort((a, b) => new Date(a.createdAt || a.createdDate).getTime() - new Date(b.createdAt || b.createdDate).getTime())
+  ), [orders]);
 
   useEffect(() => {
     const activeCookingOrderIds = new Set(
@@ -206,7 +171,7 @@ export const StaffOrderView = () => {
                 <Card key={order.id} hover>
                   <Card.Content style={{ padding: 'var(--sp-4)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <strong>{addOnTableLabels[order.id] || order.tableName || 'Order'}</strong>
+                      <strong>{addOnTableLabels[order.id] || order.displayLabel || order.tableName || 'Order'}</strong>
                       <Badge variant={group.tone} size="small">{translateStatus(order.status)}</Badge>
                     </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginTop: 8 }}>

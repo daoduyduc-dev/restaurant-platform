@@ -83,12 +83,17 @@ export interface OrderDTO {
   id: string;
   tableId: string;
   tableName: string;
+  displayLabel?: string;
   tableType?: TableType;
   status: OrderStatus;
+  supplemental?: boolean;
   totalAmount: number;
   vipSurchargeAmount?: number;
   finalAmount?: number;
   loyaltyEligible?: boolean;
+  groupSubtotalAmount?: number;
+  groupVipSurchargeAmount?: number;
+  groupFinalAmount?: number;
   items: OrderItemDTO[];
   createdDate: string;
   createdAt: string;

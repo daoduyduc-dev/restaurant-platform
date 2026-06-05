@@ -1,15 +1,98 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, CreditCard, DollarSign, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 
 import api from '../../services/api';
-import type { OrderDTO, ReservationDTO } from '../../services/types';
+import type { OrderDTO, OrderItemDTO, ReservationDTO } from '../../services/types';
 import { Card, Button, Badge, Input } from '../../components/ui';
 import { toast } from '../../store/toastStore';
 import { translateStatus } from '../../utils/translations';
 import { formatVndCurrency } from '../../utils/formatters';
+
+interface PaymentGroup {
+  groupKey: string;
+  primaryOrderId: string;
+  tableId: string;
+  tableName: string;
+  displayLabel: string;
+  reservationId: string | null;
+  reservation: ReservationDTO | null;
+  orders: OrderDTO[];
+  items: OrderItemDTO[];
+  status: string;
+  subtotal: number;
+  vipSurchargeAmount: number;
+  finalAmount: number;
+  loyaltyEligible: boolean;
+}
+
+function aggregateItems(orders: OrderDTO[]): OrderItemDTO[] {
+  const byItem = new Map<string, OrderItemDTO>();
+
+  orders.forEach((order) => {
+    (order.items || []).forEach((item) => {
+      const key = `${item.menuItemId}:${item.price}`;
+      const existing = byItem.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+        existing.total += item.total;
+      } else {
+        byItem.set(key, { ...item });
+      }
+    });
+  });
+
+  return Array.from(byItem.values());
+}
+
+function buildPaymentGroups(orders: OrderDTO[], reservations: ReservationDTO[]): PaymentGroup[] {
+  const groups = new Map<string, PaymentGroup>();
+
+  orders.forEach((order) => {
+    const groupKey = order.reservationId ?? `table:${order.tableId}`;
+    const reservation = order.reservationId
+      ? reservations.find((item) => item.id === order.reservationId) || null
+      : reservations.find((item) => item.tableId === order.tableId && item.status === 'CHECKED_IN') || null;
+
+    const existing = groups.get(groupKey);
+    if (existing) {
+      existing.orders.push(order);
+      existing.subtotal += order.totalAmount || 0;
+      existing.vipSurchargeAmount = Math.max(existing.vipSurchargeAmount, order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0);
+      existing.finalAmount = Math.max(existing.finalAmount, order.groupFinalAmount ?? order.finalAmount ?? 0);
+      existing.loyaltyEligible = existing.loyaltyEligible || Boolean(order.loyaltyEligible);
+      if (new Date(order.createdAt || order.createdDate).getTime() < new Date(existing.orders[0].createdAt || existing.orders[0].createdDate).getTime()) {
+        existing.primaryOrderId = order.id;
+      }
+      existing.items = aggregateItems(existing.orders);
+      return;
+    }
+
+    groups.set(groupKey, {
+      groupKey,
+      primaryOrderId: order.id,
+      tableId: order.tableId,
+      tableName: order.tableName,
+      displayLabel: reservation?.tableName || order.tableName,
+      reservationId: order.reservationId,
+      reservation,
+      orders: [order],
+      items: aggregateItems([order]),
+      status: order.status,
+      subtotal: order.groupSubtotalAmount ?? order.totalAmount ?? 0,
+      vipSurchargeAmount: order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0,
+      finalAmount: order.groupFinalAmount ?? order.finalAmount ?? 0,
+      loyaltyEligible: Boolean(order.loyaltyEligible),
+    });
+  });
+
+  return Array.from(groups.values()).sort(
+    (a, b) => new Date(a.orders[0].createdAt || a.orders[0].createdDate).getTime()
+      - new Date(b.orders[0].createdAt || b.orders[0].createdDate).getTime()
+  );
+}
 
 export const StaffPaymentView = () => {
   const { t } = useTranslation();
@@ -17,8 +100,7 @@ export const StaffPaymentView = () => {
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedReservation, setSelectedReservation] = useState<ReservationDTO | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<OrderDTO | null>(null);
+  const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -55,50 +137,39 @@ export const StaffPaymentView = () => {
     void fetchData();
   }, []);
 
-  const unpaidOrders = orders.filter((order) =>
-    !['PAID', 'CANCELED'].includes(order.status) && (order.items?.length || 0) > 0
-  );
+  const unpaidOrders = useMemo(() => (
+    orders.filter((order) => !['PAID', 'CANCELED'].includes(order.status) && (order.items?.length || 0) > 0)
+  ), [orders]);
 
-  const filteredOrders = unpaidOrders.filter((order) =>
-    order.tableName?.toLowerCase().includes(search.toLowerCase()) ||
-    order.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const paymentGroups = useMemo(() => buildPaymentGroups(unpaidOrders, reservations), [unpaidOrders, reservations]);
 
-  const handleSelectOrder = (order: OrderDTO) => {
-    const reservation = reservations.find((r) =>
-      (order.reservationId && r.id === order.reservationId) ||
-      (!order.reservationId && r.tableId === order.tableId && r.status === 'CHECKED_IN')
-    );
+  const filteredGroups = useMemo(() => (
+    paymentGroups.filter((group) =>
+      group.displayLabel.toLowerCase().includes(search.toLowerCase())
+      || group.primaryOrderId.toLowerCase().includes(search.toLowerCase())
+      || group.orders.some((order) => order.id.toLowerCase().includes(search.toLowerCase()))
+    )
+  ), [paymentGroups, search]);
 
-    setSelectedOrder(order);
-    setSelectedReservation(reservation || null);
-  };
+  const selectedGroup = filteredGroups.find((group) => group.groupKey === selectedGroupKey)
+    || paymentGroups.find((group) => group.groupKey === selectedGroupKey)
+    || null;
 
   const handlePayment = async () => {
-    if (!selectedOrder) {
+    if (!selectedGroup) {
       toast.error(t('payment.missingOrder'));
       return;
     }
 
     try {
-      await api.post(`/orders/${selectedOrder.id}/pay`);
+      await api.post(`/orders/${selectedGroup.primaryOrderId}/pay`);
       toast.success(t('payment.paymentSuccess'));
-      setSelectedReservation(null);
-      setSelectedOrder(null);
+      setSelectedGroupKey(null);
       await fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('payment.paymentError'));
     }
   };
-
-  const selectedTableName = selectedReservation?.tableName || selectedOrder?.tableName || '-';
-  const selectedCustomerName = selectedReservation?.customerName || 'Walk-in customer';
-  const selectedPhone = selectedReservation?.phone || '-';
-  const selectedGuestCount = selectedReservation?.numberOfGuests != null
-    ? String(selectedReservation.numberOfGuests)
-    : '-';
-  const selectedStatus = selectedReservation?.status || selectedOrder?.status || 'SERVED';
-  const selectedCheckInTime = selectedReservation?.startTime || selectedReservation?.reservationTime || selectedOrder?.createdAt;
 
   if (loading) {
     return <div className="spinner" style={{ margin: 'auto' }} />;
@@ -128,40 +199,42 @@ export const StaffPaymentView = () => {
           </Card.Header>
 
           <Card.Content style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-2)' }}>
-            {filteredOrders.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)' }}>
                 {t('payment.noActiveGuests')}
               </div>
             ) : (
-              filteredOrders.map((order) => (
+              filteredGroups.map((group) => (
                 <div
-                  key={order.id}
-                  onClick={() => handleSelectOrder(order)}
+                  key={group.groupKey}
+                  onClick={() => setSelectedGroupKey(group.groupKey)}
                   style={{
                     padding: 'var(--sp-3)',
                     margin: 'var(--sp-2)',
                     borderRadius: 'var(--r-md)',
-                    background: selectedOrder?.id === order.id ? 'var(--orange-50)' : 'var(--white)',
-                    border: `2px solid ${selectedOrder?.id === order.id ? 'var(--orange-500)' : 'var(--gray-200)'}`,
+                    background: selectedGroup?.groupKey === group.groupKey ? 'var(--orange-50)' : 'var(--white)',
+                    border: `2px solid ${selectedGroup?.groupKey === group.groupKey ? 'var(--orange-500)' : 'var(--gray-200)'}`,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 16 }}>{order.tableName}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Order #{order.id.substring(0, 8)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{group.displayLabel}</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                        {group.orders.length} order{group.orders.length > 1 ? 's' : ''} · Bill #{group.primaryOrderId.substring(0, 8)}
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontWeight: 700, color: 'var(--orange-600)' }}>
-                        {formatVndCurrency(order.finalAmount ?? order.totalAmount, i18n.language)}
+                        {formatVndCurrency(group.finalAmount, i18n.language)}
                       </div>
-                      <Badge variant="warning" size="small">{translateStatus(order.status)}</Badge>
+                      <Badge variant="warning" size="small">{translateStatus(group.status)}</Badge>
                     </div>
                   </div>
 
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {order.items?.length || 0} {t('payment.items')} - {new Date(order.createdAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
+                    {group.items.reduce((sum, item) => sum + item.quantity, 0)} {t('payment.items')} - {new Date(group.orders[0].createdAt || group.orders[0].createdDate).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               ))
@@ -170,7 +243,7 @@ export const StaffPaymentView = () => {
         </Card>
 
         <Card variant="elevated" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {!selectedOrder ? (
+          {!selectedGroup ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                 <CreditCard size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
@@ -182,12 +255,13 @@ export const StaffPaymentView = () => {
               <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <Card.Title>{selectedTableName} - {selectedCustomerName}</Card.Title>
+                    <Card.Title>{selectedGroup.displayLabel} - {selectedGroup.reservation?.customerName || 'Walk-in customer'}</Card.Title>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                      {selectedPhone} - {selectedGuestCount} {t('payment.guests')}
+                      {(selectedGroup.reservation?.phone || '-')}{' '}
+                      - {(selectedGroup.reservation?.numberOfGuests ?? '-')} {t('payment.guests')}
                     </div>
                   </div>
-                  <Badge variant="success">{translateStatus(selectedStatus)}</Badge>
+                  <Badge variant="success">{translateStatus(selectedGroup.status)}</Badge>
                 </div>
               </Card.Header>
 
@@ -210,13 +284,15 @@ export const StaffPaymentView = () => {
                   background: 'var(--gray-50)',
                   borderRadius: 'var(--r-md)',
                 }}>
-                  <InfoCell label={t('payment.customer')} value={selectedCustomerName} />
-                  <InfoCell label={t('payment.phone')} value={selectedPhone} />
-                  <InfoCell label={t('payment.table')} value={`${selectedTableName}${selectedOrder.tableType === 'VIP' ? ' (VIP)' : ''}`} />
-                  <InfoCell label={t('payment.guests')} value={selectedGuestCount} />
+                  <InfoCell label={t('payment.customer')} value={selectedGroup.reservation?.customerName || 'Walk-in customer'} />
+                  <InfoCell label={t('payment.phone')} value={selectedGroup.reservation?.phone || '-'} />
+                  <InfoCell label={t('payment.table')} value={`${selectedGroup.tableName}${selectedGroup.orders[0].tableType === 'VIP' ? ' (VIP)' : ''}`} />
+                  <InfoCell label={t('payment.guests')} value={String(selectedGroup.reservation?.numberOfGuests ?? '-')} />
                   <InfoCell
                     label={t('payment.checkInTime')}
-                    value={selectedCheckInTime ? new Date(selectedCheckInTime).toLocaleString(i18n.language) : '-'}
+                    value={selectedGroup.reservation?.startTime
+                      ? new Date(selectedGroup.reservation.startTime || selectedGroup.reservation.reservationTime).toLocaleString(i18n.language)
+                      : '-'}
                   />
                   <InfoCell label={t('payment.paymentTime')} value={new Date().toLocaleString(i18n.language)} />
                 </div>
@@ -236,8 +312,8 @@ export const StaffPaymentView = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrder.items?.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid var(--border-main)' }}>
+                      {selectedGroup.items.map((item) => (
+                        <tr key={`${item.menuItemId}:${item.price}`} style={{ borderBottom: '1px solid var(--border-main)' }}>
                           <td style={{ padding: 'var(--sp-2)' }}>{item.menuItemName}</td>
                           <td style={{ padding: 'var(--sp-2)', textAlign: 'center' }}>{item.quantity}</td>
                           <td style={{ padding: 'var(--sp-2)', textAlign: 'right' }}>{formatVndCurrency(item.price, i18n.language)}</td>
@@ -254,18 +330,18 @@ export const StaffPaymentView = () => {
                   borderRadius: 'var(--r-md)',
                   marginBottom: 'var(--sp-4)',
                 }}>
-                  <SummaryRow label={t('payment.subtotal')} value={formatVndCurrency(selectedOrder.totalAmount, i18n.language)} />
-                  {(selectedOrder.vipSurchargeAmount || 0) > 0 && (
-                    <SummaryRow label={t('payment.vipSurcharge')} value={formatVndCurrency(selectedOrder.vipSurchargeAmount, i18n.language)} />
+                  <SummaryRow label={t('payment.subtotal')} value={formatVndCurrency(selectedGroup.subtotal, i18n.language)} />
+                  {selectedGroup.vipSurchargeAmount > 0 && (
+                    <SummaryRow label={t('payment.vipSurcharge')} value={formatVndCurrency(selectedGroup.vipSurchargeAmount, i18n.language)} />
                   )}
                   <SummaryRow
                     label={t('payment.grandTotal')}
-                    value={formatVndCurrency(selectedOrder.finalAmount ?? selectedOrder.totalAmount, i18n.language)}
+                    value={formatVndCurrency(selectedGroup.finalAmount, i18n.language)}
                     strong
                   />
                 </div>
 
-                {selectedOrder.loyaltyEligible && (
+                {selectedGroup.loyaltyEligible && (
                   <div style={{ marginBottom: 'var(--sp-4)', color: 'var(--orange-700)', fontSize: 'var(--text-sm)' }}>
                     {t('payment.loyaltyNotice')}
                   </div>

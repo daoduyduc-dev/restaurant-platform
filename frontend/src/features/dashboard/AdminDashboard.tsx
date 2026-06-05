@@ -98,11 +98,12 @@ export const AdminDashboard = () => {
     }
   };
 
-  const formatCurrency = (amount: number = 0) => new Intl.NumberFormat(i18n.language, {
-    style: 'currency',
-    currency: i18n.language === 'vi' ? 'VND' : 'USD',
-    maximumFractionDigits: i18n.language === 'vi' ? 0 : 2,
-  }).format(amount);
+  const formatCurrency = (amount: number = 0) => {
+    const formatted = new Intl.NumberFormat(i18n.language, {
+      maximumFractionDigits: 0,
+    }).format(amount);
+    return `${formatted} VNĐ`;
+  };
 
   return (
     <motion.div variants={containerAnim} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>

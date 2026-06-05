@@ -165,7 +165,7 @@ export const StaffDashboard = () => {
               ) : group.orders.map(order => (
                 <article className="kanban-ticket" key={order.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                    <strong>{order.tableName || 'Mang di'}</strong>
+                    <strong>{order.displayLabel || order.tableName || 'Mang di'}</strong>
                     <Badge variant={order.status === 'READY' ? 'success' : 'warning'} size="small">
                       {translateStatus(order.status)}
                     </Badge>
