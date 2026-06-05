@@ -186,7 +186,7 @@ class OrderServiceImplTest {
                 .table(table)
                 .customerName("Customer")
                 .phone("0900000000")
-                .reservationTime(LocalDateTime.now().plusHours(1))
+                .startTime(LocalDateTime.now().plusHours(1))
                 .numberOfGuests(2)
                 .status(status)
                 .build();
