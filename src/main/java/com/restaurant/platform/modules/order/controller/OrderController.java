@@ -67,6 +67,12 @@ public class OrderController {
         return ApiResponse.success(orderService.getAll(pageable));
     }
 
+    @GetMapping("/active")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<OrderResponse>> getActiveOrders() {
+        return ApiResponse.success(orderService.getActiveOrders());
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<PageResponse<OrderResponse>> getMyOrders(Authentication authentication, Pageable pageable) {

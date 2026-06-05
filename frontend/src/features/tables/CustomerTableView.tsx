@@ -1,37 +1,44 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
-import type { TableDTO } from '../../services/types';
+import type { BookingWindowDTO, TableDTO, TimeSlotAvailabilityDTO } from '../../services/types';
 import { FloorPlanEditor } from './FloorPlanEditor';
 import { useWebSocket } from '../../services/useWebSocket';
 import { Button, Card, Input, Badge } from '../../components/ui';
 import { Building2, Calendar, CheckCircle, Clock, Layers3, Users } from 'lucide-react';
 import { toast } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { addDaysToLocalDateString, combineLocalDateAndTime, getLocalDateString } from '../../utils/dates';
 
 const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
   AVAILABLE: 'success',
   RESERVED: 'warning',
   OCCUPIED: 'error',
-  DIRTY: 'neutral',
 };
 
+const slotValue = (slot: TimeSlotAvailabilityDTO) => slot.startTime.slice(11, 16);
+
 export const CustomerTableView = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [tables, setTables] = useState<TableDTO[]>([]);
   const [selectedTable, setSelectedTable] = useState<TableDTO | null>(null);
   const [availableTables, setAvailableTables] = useState<Set<string>>(new Set());
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
-
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState('19:00');
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+  const [selectedTime, setSelectedTime] = useState('');
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlotAvailabilityDTO[]>([]);
+  const [bookingWindow, setBookingWindow] = useState<BookingWindowDTO | null>(null);
+  const [timeSlotsLoading, setTimeSlotsLoading] = useState(false);
   const [guests, setGuests] = useState(2);
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState('');
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [bookedTimeSlots, setBookedTimeSlots] = useState<Set<string>>(new Set());
+
+  const maxBookingDate = useMemo(() => addDaysToLocalDateString(getLocalDateString(), 4), []);
 
   const fetchTables = async () => {
     try {
@@ -68,9 +75,7 @@ export const CustomerTableView = () => {
 
   useEffect(() => {
     if (availableFloors.length === 0) {
-      if (selectedFloor != null) {
-        setSelectedFloor(null);
-      }
+      setSelectedFloor(null);
       return;
     }
 
@@ -80,15 +85,66 @@ export const CustomerTableView = () => {
   }, [availableFloors, selectedFloor]);
 
   useEffect(() => {
+    if (selectedFloor == null || !selectedTable || selectedTable.floor === selectedFloor) {
+      return;
+    }
+
+    setSelectedTable(null);
+  }, [selectedFloor, selectedTable]);
+
+  useEffect(() => {
+    if (!selectedTable) {
+      setAvailableTimeSlots([]);
+      setBookingWindow(null);
+      setSelectedTime('');
+      return;
+    }
+
+    const loadTimeSlots = async () => {
+      setTimeSlotsLoading(true);
+
+      try {
+        const response = await api.get(`/reservations/table/${selectedTable.id}/booking-window`, {
+          params: {
+            date: selectedDate,
+            numberOfGuests: guests,
+          },
+        });
+
+        const windowData = response.data.data as BookingWindowDTO;
+        const slots = windowData?.availableSlots || [];
+
+        setBookingWindow(windowData);
+        setAvailableTimeSlots(slots);
+        setSelectedTime((current) => (
+          slots.some((slot) => slot.available && slotValue(slot) === current)
+            ? current
+            : slots.find((slot) => slot.available)?.startTime.slice(11, 16) || ''
+        ));
+      } catch (error) {
+        console.error('Failed to load time slots:', error);
+        setBookingWindow(null);
+        setAvailableTimeSlots([]);
+        setSelectedTime('');
+      } finally {
+        setTimeSlotsLoading(false);
+      }
+    };
+
+    void loadTimeSlots();
+  }, [guests, selectedDate, selectedTable]);
+
+  useEffect(() => {
     const checkAvailability = async () => {
-      if (!date || !time) {
+      if (!selectedTime) {
+        setAvailableTables(new Set());
         return;
       }
 
       setCheckingAvailability(true);
 
       try {
-        const reservationTime = `${date}T${time}:00`;
+        const reservationTime = combineLocalDateAndTime(selectedDate, selectedTime);
         const response = await api.get('/reservations/available-tables', {
           params: {
             reservationTime,
@@ -107,38 +163,7 @@ export const CustomerTableView = () => {
     };
 
     void checkAvailability();
-  }, [date, guests, time]);
-
-  useEffect(() => {
-    if (!date || !selectedTable) {
-      setBookedTimeSlots(new Set());
-      return;
-    }
-
-    const checkBookedSlots = async () => {
-      try {
-        const response = await api.get(`/reservations/table/${selectedTable.id}/booked-slots`, {
-          params: { date },
-        });
-
-        const bookedTimes: string[] = response.data.data || [];
-        setBookedTimeSlots(new Set(bookedTimes));
-      } catch (error) {
-        console.error('Failed to check booked slots:', error);
-        setBookedTimeSlots(new Set());
-      }
-    };
-
-    void checkBookedSlots();
-  }, [date, selectedTable]);
-
-  useEffect(() => {
-    if (selectedFloor == null || !selectedTable || selectedTable.floor === selectedFloor) {
-      return;
-    }
-
-    setSelectedTable(null);
-  }, [selectedFloor, selectedTable]);
+  }, [guests, selectedDate, selectedTime]);
 
   const tablesOnSelectedFloor = selectedFloor == null
     ? tables
@@ -152,56 +177,43 @@ export const CustomerTableView = () => {
       return;
     }
 
-    if (table.status === 'DIRTY') {
-      toast.error('Bàn này đang được dọn dẹp.');
+    if (!checkingAvailability && selectedTime && availableTables.size > 0 && !availableTables.has(table.id)) {
+      toast.error('This table is not available for the selected time slot.');
       return;
     }
 
-    const sourceTable = tables.find((item) => item.id === table.id) ?? table;
-    setSelectedTable(sourceTable);
+    setSelectedTable(tables.find((item) => item.id === table.id) ?? table);
   };
 
   const submitBooking = async () => {
-    if (!selectedTable || !name || !phone) {
-      toast.error('Vui lòng điền đầy đủ thông tin.');
+    if (!selectedTable || !name || !phone || !selectedTime) {
+      toast.error('Please complete all booking details.');
       return;
     }
 
-    const reservationDateTime = new Date(`${date}T${time}:00`);
-    const now = new Date();
+    const selectedSlot = availableTimeSlots.find((slot) => slotValue(slot) === selectedTime);
+    if (!selectedSlot?.available) {
+      toast.error('This table is not available for the selected time slot.');
+      return;
+    }
 
-    if (reservationDateTime < now) {
-      toast.error('Không thể đặt bàn trong quá khứ.');
+    const reservationDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    if (reservationDateTime < new Date()) {
+      toast.error('Cannot book in the past.');
       return;
     }
 
     try {
-      const availabilityResponse = await api.get('/reservations/available-tables', {
-        params: {
-          reservationTime: `${date}T${time}:00`,
-          numberOfGuests: guests,
-        },
-      });
-
-      const availableIds = new Set<string>(
-        (availabilityResponse.data.data || []).map((table: TableDTO) => table.id)
-      );
-
-      if (!availableIds.has(selectedTable.id)) {
-        toast.error('Bàn này không còn trống trong khung giờ đã chọn.');
-        return;
-      }
-
       const response = await api.post('/reservations', {
         tableId: selectedTable.id,
         customerName: name,
         phone,
-        reservationTime: `${date}T${time}:00`,
+        startTime: combineLocalDateAndTime(selectedDate, selectedTime),
         numberOfGuests: guests,
       });
 
       const reservation = response.data.data;
-      toast.success('Đặt bàn thành công. Mời bạn chọn món tiếp theo.');
+      toast.success('Booking created successfully.');
       setSelectedTable(null);
       await fetchTables();
 
@@ -209,7 +221,7 @@ export const CustomerTableView = () => {
       navigate(`${destination}?reservationId=${reservation.id}&tableId=${reservation.tableId}&tableName=${encodeURIComponent(reservation.tableName || selectedTable.name)}`);
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message;
-      toast.error(errorMessage || 'Không thể đặt bàn. Vui lòng thử lại.');
+      toast.error(errorMessage || 'Could not create booking. Please try again.');
     }
   };
 
@@ -220,10 +232,7 @@ export const CustomerTableView = () => {
       transition={{ duration: 0.4 }}
       style={{
         display: 'grid',
-        gridTemplateColumns:
-          window.innerWidth < 1024
-            ? '1fr'
-            : 'minmax(0, 1fr) 420px',
+        gridTemplateColumns: window.innerWidth < 1024 ? '1fr' : 'minmax(0, 1fr) 420px',
         gap: 'var(--sp-6)',
         alignItems: 'start',
         width: '100%',
@@ -232,15 +241,15 @@ export const CustomerTableView = () => {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Đặt bàn</h1>
+            <h1 style={{ color: 'var(--orange-600)', margin: 0 }}>Book a table</h1>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)' }}>
-              Chọn tầng, chọn bàn, sau đó chuyển sang màn hình chọn món để hoàn tất trải nghiệm.
+              Pick a floor, choose a table, then choose an available date and time slot.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-            <Badge variant="success">{availableCountOnFloor} bàn trống</Badge>
-            <Badge variant="info">{guests} khách</Badge>
+            <Badge variant="success">{availableCountOnFloor} available</Badge>
+            <Badge variant="info">{guests} guests</Badge>
           </div>
         </div>
 
@@ -248,7 +257,7 @@ export const CustomerTableView = () => {
           <Card.Content style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginRight: 'var(--sp-2)' }}>
               <Building2 size={18} color="var(--text-muted)" />
-              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Chọn tầng</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Choose floor</span>
             </div>
             {availableFloors.map((floor) => (
               <Button
@@ -257,7 +266,7 @@ export const CustomerTableView = () => {
                 size="small"
                 onClick={() => setSelectedFloor(floor)}
               >
-                Tầng {floor}
+                Floor {floor}
               </Button>
             ))}
           </Card.Content>
@@ -267,14 +276,14 @@ export const CustomerTableView = () => {
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-3)', alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
-                <Card.Title>Sơ đồ bàn</Card.Title>
+                <Card.Title>Table map</Card.Title>
                 <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                  {selectedFloor != null ? `Đang xem tầng ${selectedFloor}` : 'Chưa chọn tầng'} với {tablesOnSelectedFloor.length} bàn. Màu bàn là cố định, trạng thái nằm ở phần thông tin và khả năng chọn bàn.
+                  {selectedFloor != null ? `Viewing floor ${selectedFloor}` : 'No floor selected'} with {tablesOnSelectedFloor.length} tables.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-                <Badge variant="info">{tablesOnSelectedFloor.length} tổng số bàn</Badge>
-                <Badge variant="success">{availableCountOnFloor} chọn được</Badge>
+                <Badge variant="info">{tablesOnSelectedFloor.length} total</Badge>
+                <Badge variant="success">{availableCountOnFloor} selectable</Badge>
               </div>
             </div>
           </Card.Header>
@@ -290,7 +299,7 @@ export const CustomerTableView = () => {
               />
             ) : (
               <div style={{ padding: 'var(--sp-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                Không có bàn ở tầng này.
+                No tables on this floor.
               </div>
             )}
           </Card.Content>
@@ -310,7 +319,7 @@ export const CustomerTableView = () => {
             }}>
               <div className="spinner" />
               <p style={{ margin: 'var(--sp-2) 0 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-                Đang kiểm tra bàn trống...
+                Checking table availability...
               </p>
             </div>
           ) : null}
@@ -329,19 +338,19 @@ export const CustomerTableView = () => {
           maxHeight: 'calc(100vh - 120px)',
         }}
       >
-        <Card variant="elevated" style={{ height: '100%' }}>
+        <Card variant="elevated" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <Card.Header style={{ borderBottom: '1px solid var(--border-main)' }}>
             <Card.Title style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Layers3 size={18} color="var(--orange-500)" />
-              Thông tin đặt bàn
+              Booking details
             </Card.Title>
           </Card.Header>
-          <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
+          <Card.Content style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', flex: 1, overflowY: 'auto' }}>
             {selectedTable ? (
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }} 
-                animate={{ opacity: 1, x: 0 }} 
-                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', minHeight: '100%' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--sp-2)', alignItems: 'flex-start' }}>
                   <div>
@@ -350,59 +359,73 @@ export const CustomerTableView = () => {
                       <Badge variant={STATUS_VARIANTS[selectedTable.status]}>
                         {selectedTable.status}
                       </Badge>
-                      <Badge variant="info">Tầng {selectedTable.floor ?? '-'}</Badge>
+                      <Badge variant="info">Floor {selectedTable.floor ?? '-'}</Badge>
                       {selectedTable.type === 'VIP' ? <Badge variant="warning">VIP</Badge> : null}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Tối đa {selectedTable.capacity} khách</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Max {selectedTable.capacity} guests</div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                  <div>
-                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Ngày</label>
-                    <div className="input-container">
-                      <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                      <input
-                        type="date"
-                        className="input-field"
-                        style={{ paddingLeft: 34 }}
-                        value={date}
-                        onChange={(event) => setDate(event.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--sp-3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 13, fontWeight: 600 }}>
+                    <Calendar size={16} />
+                    <span>Date window: today to +4 days</span>
                   </div>
 
+                  <Input
+                    type="date"
+                    label="Booking date"
+                    value={selectedDate}
+                    min={getLocalDateString()}
+                    max={maxBookingDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                  />
+
+                  {bookingWindow ? (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Business hours {bookingWindow.businessHoursStart.slice(0, 5)} - {bookingWindow.businessHoursEnd.slice(0, 5)}.
+                      Default duration {bookingWindow.defaultDurationMinutes} minutes.
+                    </div>
+                  ) : null}
+
                   <div>
-                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Giờ</label>
+                    <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Time</label>
                     <div className="input-container">
                       <Clock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
-                      <select
-                        className="input-field"
-                        style={{ paddingLeft: 34 }}
-                        value={time}
-                        onChange={(event) => setTime(event.target.value)}
-                      >
-                        {Array.from({ length: 24 }, (_, hourIndex) => {
-                          const hour = hourIndex.toString().padStart(2, '0');
-                          return ['00', '30'].map((minute) => {
-                            const slot = `${hour}:${minute}`;
-                            const isBooked = bookedTimeSlots.has(slot);
-
-                            return (
-                              <option key={slot} value={slot} disabled={isBooked}>
-                                {slot} {isBooked ? '(Đã kín)' : ''}
-                              </option>
-                            );
-                          });
-                        }).flat()}
-                      </select>
+                      {timeSlotsLoading ? (
+                        <div style={{ padding: '12px 14px 12px 34px', color: 'var(--text-muted)', fontSize: 14 }}>
+                          Loading time slots...
+                        </div>
+                      ) : availableTimeSlots.length > 0 ? (
+                        <select
+                          className="input-field"
+                          style={{ paddingLeft: 34 }}
+                          value={selectedTime}
+                          onChange={(event) => setSelectedTime(event.target.value)}
+                        >
+                          <option value="">Select a time</option>
+                          {availableTimeSlots.map((slot) => (
+                          <option key={slot.startTime} value={slotValue(slot)} disabled={!slot.available}>
+                              {slotValue(slot)} - {slot.endTime.slice(11, 16)} {!slot.available ? `(${slot.reason})` : ''}
+                          </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div style={{ padding: '12px 14px 12px 34px', color: 'var(--text-muted)', fontSize: 14 }}>
+                          No available booking time for this day.
+                        </div>
+                      )}
                     </div>
+                    {availableTimeSlots.length > 0 && !availableTimeSlots.some((slot) => slot.available) ? (
+                      <div style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13 }}>
+                        No available booking time for this day.
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
                 <div>
-                  <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Số khách</label>
+                  <label className="input-label" style={{ marginBottom: 4, display: 'block' }}>Guests</label>
                   <div className="input-container">
                     <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 10 }} />
                     <input
@@ -417,29 +440,29 @@ export const CustomerTableView = () => {
                   </div>
                 </div>
 
-                <Input label="Tên người đặt" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nguyễn Văn A" />
-                <Input label="Số điện thoại" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0901234567" />
+                <Input label="Name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nguyen Van A" />
+                <Input label="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0901234567" />
 
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
                   {!user && (
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                      Bạn vẫn có thể đặt bàn và xem menu khi chưa đăng nhập. Đăng nhập sẽ giúp lưu lịch sử, quản lý đơn và tích điểm đổi thưởng.
+                      You can book a table without signing in. Logging in helps save history and manage orders.
                     </div>
                   )}
                   <Button variant="primary" size="large" style={{ width: '100%', justifyContent: 'center' }} onClick={() => void submitBooking()}>
                     <CheckCircle size={18} />
-                    Xác nhận đặt bàn và chọn món
+                    Confirm booking
                   </Button>
                 </div>
               </motion.div>
             ) : (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 style={{ textAlign: 'center', padding: 'var(--sp-8)', color: 'var(--text-muted)', margin: 'auto 0' }}
               >
                 <SelectIndicator />
-                <p style={{ margin: 0 }}>Chọn một bàn đang trống để tiếp tục đặt bàn và sang màn hình chọn món.</p>
+                <p style={{ margin: 0 }}>Choose a table to continue with booking.</p>
               </motion.div>
             )}
           </Card.Content>

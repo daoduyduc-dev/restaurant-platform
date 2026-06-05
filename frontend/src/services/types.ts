@@ -51,7 +51,7 @@ export interface MenuItemDTO {
 
 // ═══ Table ═══
 
-export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'DIRTY';
+export type TableStatus = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED';
 export type TableType = 'VIP' | 'NORMAL';
 
 export interface TableDTO {
@@ -105,6 +105,8 @@ export interface ReservationDTO {
   id: string;
   customerName: string;
   phone: string;
+  startTime: string;
+  endTime: string;
   reservationTime: string;
   numberOfGuests: number;
   tableId: string;
@@ -115,9 +117,21 @@ export interface ReservationDTO {
 }
 
 export interface TimeSlotAvailabilityDTO {
-  timeSlot: string;
+  startTime: string;
+  endTime: string;
+  timeSlot?: string;
   available: boolean;
   reason: string; // "AVAILABLE", "OCCUPIED", "RESERVED"
+}
+
+export interface BookingWindowDTO {
+  bookingDate: string;
+  businessHoursStart: string;
+  businessHoursEnd: string;
+  bookingWindowStart: string;
+  bookingWindowEnd: string;
+  defaultDurationMinutes: number;
+  availableSlots: TimeSlotAvailabilityDTO[];
 }
 
 export interface TableAvailabilityDTO {

@@ -26,8 +26,6 @@ interface TableNodeProps {
   onTablePositionCommit?: (tableId: string, position: CanvasPoint) => void;
 }
 
-const EDITOR_ACCENT_COLOR = '#D4AF37';
-
 const TableNode = memo(({
   table,
   index,
@@ -40,8 +38,8 @@ const TableNode = memo(({
 }: TableNodeProps) => {
   const rect = getTableCanvasRect(table, index);
   const colors = getTableStatusStyle(table);
-  const badgeFill = table.type === 'VIP' ? '#D4AF37' : colors.stroke;
-  const fill = table.type === 'VIP' ? '#FFF7D6' : colors.fill;
+  const statusAccent = colors.stroke;
+  const fill = colors.fill;
 
   const updateCursor = (event: Konva.KonvaEventObject<MouseEvent>, cursor: string) => {
     const container = event.target.getStage()?.container();
@@ -89,9 +87,9 @@ const TableNode = memo(({
         height={rect.height}
         cornerRadius={table.type === 'VIP' ? 24 : 18}
         fill={fill}
-        stroke={selected ? EDITOR_ACCENT_COLOR : badgeFill}
+        stroke={statusAccent}
         strokeWidth={selected ? 4 : 2}
-        shadowColor={selected ? 'rgba(212, 175, 55, 0.35)' : 'rgba(15, 23, 42, 0.12)'}
+        shadowColor={selected ? `${statusAccent}66` : 'rgba(15, 23, 42, 0.12)'}
         shadowBlur={selected ? 18 : 10}
         shadowOffsetY={selected ? 8 : 4}
         shadowOpacity={1}
@@ -104,14 +102,14 @@ const TableNode = memo(({
         width={rect.width}
         height={10}
         cornerRadius={[18, 18, 0, 0]}
-        fill={badgeFill}
+        fill={statusAccent}
         opacity={0.95}
         perfectDrawEnabled={false}
       />
 
       {table.type === 'VIP' ? (
         <Label x={rect.width - 58} y={-16}>
-          <Tag fill="#7C5A00" cornerRadius={999} />
+          <Tag fill="#D4AF37" cornerRadius={999} />
           <Text
             text="VIP"
             fontSize={12}

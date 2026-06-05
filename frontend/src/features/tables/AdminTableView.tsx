@@ -13,7 +13,6 @@ const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error
   AVAILABLE: 'success',
   RESERVED: 'warning',
   OCCUPIED: 'error',
-  DIRTY: 'neutral',
 };
 
 const vipBadgeStyle = {

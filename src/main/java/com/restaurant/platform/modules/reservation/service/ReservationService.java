@@ -3,6 +3,7 @@ package com.restaurant.platform.modules.reservation.service;
 import com.restaurant.platform.common.response.PageResponse;
 import com.restaurant.platform.modules.reservation.dto.ReservationRequest;
 import com.restaurant.platform.modules.reservation.dto.ReservationResponse;
+import com.restaurant.platform.modules.reservation.dto.BookingWindowResponse;
 import com.restaurant.platform.modules.reservation.dto.TableAvailabilityResponse;
 import com.restaurant.platform.modules.reservation.enums.ReservationStatus;
 import com.restaurant.platform.modules.table.dto.TableResponse;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,11 +33,15 @@ public interface ReservationService {
 
     List<TableResponse> getAvailableTables(LocalDateTime reservationTime, int numberOfGuests);
 
-    List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDateTime date, int numberOfGuests);
+    List<TableAvailabilityResponse> getTableAvailabilityByTimeSlots(LocalDate date, int numberOfGuests);
 
     List<String> getBookedSlotsForTable(UUID tableId, java.time.LocalDate date);
 
+    BookingWindowResponse getBookingWindowForTable(UUID tableId, int numberOfGuests, LocalDate date);
+
     ReservationResponse checkIn(UUID id);
+
+    ReservationResponse updateStatus(UUID id, ReservationStatus status);
 
     ReservationResponse cancel(UUID id);
 }

@@ -17,6 +17,10 @@ public class ReservationResponse {
 
     private String phone;
 
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
     private LocalDateTime reservationTime;
 
     private int numberOfGuests;

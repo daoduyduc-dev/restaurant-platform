@@ -25,6 +25,8 @@ public interface OrderService {
     
     List<OrderResponse> getAllByStatus(List<OrderStatus> statuses);
 
+    List<OrderResponse> getActiveOrders();
+
     OrderResponse addItem(UUID orderId, AddOrderItemRequest request);
 
     OrderResponse updateItem(UUID orderId, UUID orderItemId, Integer quantity);

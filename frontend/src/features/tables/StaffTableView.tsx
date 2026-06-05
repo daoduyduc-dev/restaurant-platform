@@ -14,7 +14,6 @@ const STATUS_VARIANTS: Record<TableDTO['status'], 'success' | 'warning' | 'error
   AVAILABLE: 'success',
   RESERVED: 'warning',
   OCCUPIED: 'error',
-  DIRTY: 'neutral',
 };
 
 export const StaffTableView = () => {
@@ -29,7 +28,7 @@ export const StaffTableView = () => {
     try {
       const [tablesResponse, ordersResponse] = await Promise.all([
         api.get('/tables'),
-        api.get('/orders'),
+        api.get('/orders/active'),
       ]);
 
       const nextTables = tablesResponse.data.data || [];
@@ -95,7 +94,7 @@ export const StaffTableView = () => {
     : tables.filter((table) => table.floor === selectedFloor);
 
   const activeOrdersOnFloor = tablesOnSelectedFloor.filter((table) => activeOrders[table.id]).length;
-  const dirtyTablesOnFloor = tablesOnSelectedFloor.filter((table) => table.status === 'DIRTY').length;
+  const availableTablesOnFloor = tablesOnSelectedFloor.filter((table) => table.status === 'AVAILABLE').length;
   const readyOrdersCount = Object.values(activeOrders).filter((order) => order.status === 'READY').length;
   const cookingOrdersCount = Object.values(activeOrders).filter((order) => order.status === 'COOKING').length;
   const selectedOrder = selectedTable ? activeOrders[selectedTable.id] : undefined;
@@ -147,7 +146,7 @@ export const StaffTableView = () => {
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
                 <Badge variant="info">{activeOrdersOnFloor} {t('staffTables.activeOrders')}</Badge>
-                <Badge variant="neutral">{dirtyTablesOnFloor} {t('staffTables.dirty')}</Badge>
+                <Badge variant="success">{availableTablesOnFloor} {t('status.AVAILABLE')}</Badge>
               </div>
             </div>
           </Card.Header>
@@ -200,13 +199,7 @@ export const StaffTableView = () => {
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedTable.capacity} seats</div>
                 </div>
 
-                {selectedTable.status === 'DIRTY' ? (
-                  <div style={{ textAlign: 'center', padding: 'var(--sp-8) var(--sp-4)' }}>
-                    <div style={{ fontSize: 40, marginBottom: 16 }}>{t('staffTables.cleanUp')}</div>
-                    <h3 style={{ marginBottom: 8 }}>{t('staffTables.needsCleaning')}</h3>
-                    <Button variant="outline" style={{ width: '100%' }}>{t('staffTables.markCleaned')}</Button>
-                  </div>
-                ) : selectedOrder ? (
+                {selectedOrder ? (
                   <>
                     <div style={{ background: 'var(--gray-50)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', border: '1px solid var(--border-main)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, gap: 'var(--sp-2)' }}>
@@ -265,11 +258,6 @@ export const StaffTableView = () => {
                       <PlusCircle size={18} />
                       {t('staffTables.newOrder')}
                     </Button>
-                    {selectedTable.status !== 'OCCUPIED' ? (
-                      <Button variant="secondary" size="large" style={{ justifyContent: 'center' }}>
-                        {t('staffTables.markOccupied')}
-                      </Button>
-                    ) : null}
                   </div>
                 )}
 

@@ -3,9 +3,10 @@ import { getDefaultTableFallbackPosition } from '../positioning';
 import { EDITOR_LAYOUT_SIZE } from './config';
 import type { CanvasPoint, TableCanvasRect } from './types';
 
-const FIXED_TABLE_STYLES = {
-  NORMAL: { fill: '#EEF6FF', stroke: '#2563EB', text: '#1D4ED8' },
-  VIP: { fill: '#FFF7D6', stroke: '#D4AF37', text: '#7C5A00' },
+const STATUS_STYLES = {
+  AVAILABLE: { fill: '#ECFDF3', stroke: '#10B981', text: '#047857' },
+  RESERVED: { fill: '#FFFBEB', stroke: '#D97706', text: '#92400E' },
+  OCCUPIED: { fill: '#FEF2F2', stroke: '#EF4444', text: '#B91C1C' },
 } as const;
 
 const roundCanvasCoordinate = (value: number) => Math.round(value);
@@ -76,8 +77,12 @@ export const getTableCanvasRect = (table: TableDTO, index: number): TableCanvasR
   };
 };
 
-export const getTableStatusStyle = (table: TableDTO) => {
-  return table.type === 'VIP' ? FIXED_TABLE_STYLES.VIP : FIXED_TABLE_STYLES.NORMAL;
+export const getTableStatusStyle = (table: Pick<TableDTO, 'status' | 'type'>) => {
+  const statusStyle = STATUS_STYLES[table.status] ?? STATUS_STYLES.AVAILABLE;
+
+  return {
+    ...statusStyle,
+  };
 };
 
 export const toRoundedCanvasPoint = (point: CanvasPoint): CanvasPoint => {

@@ -24,6 +24,31 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     // 🔥 1. Lấy order đang mở của 1 bàn (QUAN TRỌNG NHẤT)
     Optional<Order> findByTableAndStatus(Table table, OrderStatus status);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE o.table = :table
+    AND o.status IN :statuses
+    ORDER BY o.createdDate ASC
+    """)
+    List<Order> findActiveByTableWithLock(
+            @Param("table") Table table,
+            @Param("statuses") List<OrderStatus> statuses
+    );
+
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE o.table = :table
+    AND o.status IN :statuses
+    ORDER BY o.createdDate ASC
+    """)
+    List<Order> findActiveByTable(
+            @Param("table") Table table,
+            @Param("statuses") List<OrderStatus> statuses
+    );
+
     // 🔥 2. Check bàn đã có order OPEN chưa - with pessimistic lock
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Order o WHERE o.table = :table AND o.status = :status")
@@ -39,6 +64,31 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     // 🔥 4. Lấy order theo reservation
     Optional<Order> findByReservationId(UUID reservationId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE o.reservation.id = :reservationId
+    AND o.status IN :statuses
+    ORDER BY o.createdDate ASC
+    """)
+    List<Order> findActiveByReservationIdWithLock(
+            @Param("reservationId") UUID reservationId,
+            @Param("statuses") List<OrderStatus> statuses
+    );
+
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE o.reservation.id = :reservationId
+    AND o.status IN :statuses
+    ORDER BY o.createdDate ASC
+    """)
+    List<Order> findActiveByReservationId(
+            @Param("reservationId") UUID reservationId,
+            @Param("statuses") List<OrderStatus> statuses
+    );
 
     Page<Order> findByReservationUserId(UUID userId, Pageable pageable);
 

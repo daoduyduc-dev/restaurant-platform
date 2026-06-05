@@ -38,6 +38,31 @@ function unpackOrders(payload: unknown): OrderDTO[] {
   return [];
 }
 
+function getOrderItemCount(order: OrderDTO) {
+  return order.items?.length || 0;
+}
+
+function getOrderUpdatedAt(order: OrderDTO) {
+  const rawDate = order.createdAt || order.createdDate;
+  return rawDate ? new Date(rawDate).getTime() : 0;
+}
+
+function preferVisibleOrder(candidate: OrderDTO, current: OrderDTO) {
+  const candidateItems = getOrderItemCount(candidate);
+  const currentItems = getOrderItemCount(current);
+  if (candidateItems !== currentItems) {
+    return candidateItems > currentItems;
+  }
+
+  const candidateUpdatedAt = getOrderUpdatedAt(candidate);
+  const currentUpdatedAt = getOrderUpdatedAt(current);
+  if (candidateUpdatedAt !== currentUpdatedAt) {
+    return candidateUpdatedAt > currentUpdatedAt;
+  }
+
+  return candidate.id > current.id;
+}
+
 function timeSince(date?: string) {
   if (!date) return '';
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60000));
@@ -55,7 +80,7 @@ export const StaffOrderView = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/orders');
+      const res = await api.get('/orders/active');
       setOrders(unpackOrders(res).filter(order => !['PAID', 'CANCELED'].includes(order.status)));
     } catch {
       toast.error('Khong tai duoc danh sach order');
@@ -76,9 +101,25 @@ export const StaffOrderView = () => {
     }
   });
 
+  const visibleOrders = useMemo(() => {
+    const byTable = new Map<string, OrderDTO>();
+
+    orders
+      .filter((order) => !['PAID', 'CANCELED'].includes(order.status))
+      .forEach((order) => {
+        const tableKey = order.tableId || order.id;
+        const current = byTable.get(tableKey);
+        if (!current || preferVisibleOrder(order, current)) {
+          byTable.set(tableKey, order);
+        }
+      });
+
+    return Array.from(byTable.values());
+  }, [orders]);
+
   useEffect(() => {
     const activeCookingOrderIds = new Set(
-      orders.filter((order) => order.status === 'COOKING').map((order) => order.id),
+      visibleOrders.filter((order) => order.status === 'COOKING').map((order) => order.id),
     );
 
     setAddOnTableLabels((prev) => {
@@ -90,12 +131,12 @@ export const StaffOrderView = () => {
       });
       return next;
     });
-  }, [orders]);
+  }, [visibleOrders]);
 
   const grouped = useMemo(() => columns.map(col => ({
     ...col,
-    orders: orders.filter(order => order.status === col.status),
-  })), [orders]);
+    orders: visibleOrders.filter(order => order.status === col.status),
+  })), [visibleOrders]);
 
   const moveOrder = async (order: OrderDTO) => {
     const status = nextStatus[order.status];
