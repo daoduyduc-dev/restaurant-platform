@@ -49,7 +49,8 @@ public class DataInitializer implements CommandLineRunner {
 
         if (adminExists && staffExists && customerExists) {
             if (tablesExist) {
-                log.info("Users and table data already exist. Preserving current tables.");
+                log.info("Users and table data already exist. Seeding menu items...");
+                seedMenuItems();
                 return;
             }
 
@@ -65,7 +66,6 @@ public class DataInitializer implements CommandLineRunner {
             // Clean slate if partial data exists
             try {
                 menuItemRepo.deleteAll();
-                categoryRepo.deleteAll();
             } catch (Exception e) {
                 log.warn("Cleanup warning: {}", e.getMessage());
             }
@@ -129,7 +129,9 @@ public class DataInitializer implements CommandLineRunner {
             } else {
                 log.info("Existing table data detected. Skipping default table seed.");
             }
-            log.info("========== MISSING USERS CREATED ==========");
+            log.info("Seeding menu items...");
+            seedMenuItems();
+            log.info("========== MISSING USERS AND DATA CREATED ==========");
         }
     }
 
@@ -259,25 +261,73 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedMenuItems() {
-        // Create Menu Categories
-        Category appetizer = Category.builder().name("Appetizer").description("Starters and small plates").build();
-        Category mainCourse = Category.builder().name("Main Course").description("Signature entrees").build();
-        Category dessert = Category.builder().name("Dessert").description("Sweet finishes").build();
-        Category beverage = Category.builder().name("Beverage").description("Wines, cocktails, and more").build();
-        categoryRepo.saveAll(List.of(appetizer, mainCourse, dessert, beverage));
+        // Get or create Menu Categories
+        Category appetizer = categoryRepo.findByName("Appetizer")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Appetizer").description("Starters and small plates").build()));
+        Category mainCourse = categoryRepo.findByName("Main Course")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Main Course").description("Signature entrees").build()));
+        Category dessert = categoryRepo.findByName("Dessert")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Dessert").description("Sweet finishes").build()));
+        Category beverage = categoryRepo.findByName("Beverage")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Beverage").description("Wines, cocktails, and more").build()));
+        Category soup = categoryRepo.findByName("Soup")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Soup").description("Hot and cold soups").build()));
+        Category salad = categoryRepo.findByName("Salad")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Salad").description("Fresh salads and greens").build()));
+        Category seafood = categoryRepo.findByName("Seafood")
+            .orElseGet(() -> categoryRepo.save(Category.builder().name("Seafood").description("Fresh seafood dishes").build()));
 
         // 5. Create Menu Items
         menuItemRepo.saveAll(List.of(
+            // Main Course
             MenuItem.builder().name("Truffle Ribeye Steak").description("Prime ribeye with black truffle butter").price(new BigDecimal("85.00")).imageUrl("https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=300&fit=crop").preparationTime(25).category(mainCourse).available(true).build(),
             MenuItem.builder().name("Lobster Ravioli").description("Handmade pasta with Maine lobster filling").price(new BigDecimal("42.00")).imageUrl("https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop").preparationTime(20).category(mainCourse).available(true).build(),
-            MenuItem.builder().name("Oysters Rockefeller").description("Fresh oysters with spinach and Pernod").price(new BigDecimal("28.00")).imageUrl("https://images.unsplash.com/photo-1615141982883-c7da0e69cb47?w=400&h=300&fit=crop").preparationTime(15).category(appetizer).available(false).build(),
+            MenuItem.builder().name("Pan-Seared Duck Breast").description("With cherry gastrique and seasonal vegetables").price(new BigDecimal("62.00")).imageUrl("https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop").preparationTime(22).category(mainCourse).available(true).build(),
+            MenuItem.builder().name("Lamb Chops Provençale").description("Herb-crusted lamb with rosemary jus").price(new BigDecimal("68.00")).imageUrl("https://images.unsplash.com/photo-1586190203519-e21cc028cb29?w=400&h=300&fit=crop").preparationTime(24).category(mainCourse).available(true).build(),
+            MenuItem.builder().name("Salmon en Croûte").description("Wild salmon wrapped in puff pastry").price(new BigDecimal("58.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(20).category(mainCourse).available(true).build(),
+            MenuItem.builder().name("Beef Wellington").description("Tenderloin with mushroom duxelles and pastry").price(new BigDecimal("95.00")).imageUrl("https://images.unsplash.com/photo-1599599810694-b5ac4dd64e66?w=400&h=300&fit=crop").preparationTime(30).category(mainCourse).available(true).build(),
+            MenuItem.builder().name("Ossobuco alla Milanese").description("Braised veal shank with saffron risotto").price(new BigDecimal("72.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(28).category(mainCourse).available(true).build(),
+
+            // Seafood
+            MenuItem.builder().name("Oysters Rockefeller").description("Fresh oysters with spinach and Pernod").price(new BigDecimal("28.00")).imageUrl("https://images.unsplash.com/photo-1615141982883-c7da0e69cb47?w=400&h=300&fit=crop").preparationTime(15).category(seafood).available(false).build(),
+            MenuItem.builder().name("Grilled King Crab Legs").description("Alaskan king crab with lemon butter").price(new BigDecimal("78.00")).imageUrl("https://images.unsplash.com/photo-1599599810694-b5ac4dd64e66?w=400&h=300&fit=crop").preparationTime(18).category(seafood).available(true).build(),
+            MenuItem.builder().name("Scallops à la Plancha").description("Seared scallops with herb emulsion").price(new BigDecimal("54.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(16).category(seafood).available(true).build(),
+            MenuItem.builder().name("Lobster Thermidor").description("Classic lobster with brandy sauce").price(new BigDecimal("88.00")).imageUrl("https://images.unsplash.com/photo-1599599810694-b5ac4dd64e66?w=400&h=300&fit=crop").preparationTime(22).category(seafood).available(true).build(),
+
+            // Appetizers
             MenuItem.builder().name("Wagyu Beef Tartare").description("A5 Wagyu with quail egg yolk").price(new BigDecimal("36.00")).imageUrl("https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop").preparationTime(12).category(appetizer).available(true).build(),
-            MenuItem.builder().name("Chocolate Soufflé").description("Dark chocolate with crème anglaise").price(new BigDecimal("24.00")).imageUrl("https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop").preparationTime(18).category(dessert).available(true).build(),
-            MenuItem.builder().name("Dom Pérignon 2015").description("Prestigious vintage champagne").price(new BigDecimal("450.00")).imageUrl("https://images.unsplash.com/photo-1590485503023-e1757820a4b8?w=400&h=300&fit=crop").preparationTime(2).category(beverage).available(true).build(),
             MenuItem.builder().name("Pan-Seared Foie Gras").description("With fig compote and brioche toast").price(new BigDecimal("52.00")).imageUrl("https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=400&h=300&fit=crop").preparationTime(15).category(appetizer).available(true).build(),
-            MenuItem.builder().name("Crème Brûlée").description("Classic vanilla bean custard").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=400&h=300&fit=crop").preparationTime(10).category(dessert).available(true).build()
+            MenuItem.builder().name("Burrata Salad").description("Fresh burrata with heirloom tomatoes").price(new BigDecimal("22.00")).imageUrl("https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop").preparationTime(8).category(appetizer).available(true).build(),
+            MenuItem.builder().name("Escargot Bourguignon").description("Snails in garlic and parsley butter").price(new BigDecimal("26.00")).imageUrl("https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop").preparationTime(14).category(appetizer).available(true).build(),
+            MenuItem.builder().name("Shrimp Tempura").description("Japanese-style battered shrimp").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(10).category(appetizer).available(true).build(),
+
+            // Soups
+            MenuItem.builder().name("French Onion Soup").description("Caramelized onions with Gruyère").price(new BigDecimal("14.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(12).category(soup).available(true).build(),
+            MenuItem.builder().name("Lobster Bisque").description("Rich and creamy lobster soup").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(14).category(soup).available(true).build(),
+            MenuItem.builder().name("Truffle Mushroom Soup").description("Creamy mushroom with truffle oil").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(13).category(soup).available(true).build(),
+
+            // Salads
+            MenuItem.builder().name("Caesar Salad Classique").description("Romaine with house-made dressing").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop").preparationTime(8).category(salad).available(true).build(),
+            MenuItem.builder().name("Niçoise Salad").description("Tuna, eggs, olives, and anchovy dressing").price(new BigDecimal("22.00")).imageUrl("https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop").preparationTime(10).category(salad).available(true).build(),
+            MenuItem.builder().name("Arugula Salad").description("Peppery arugula with Parmigiano and balsamic").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop").preparationTime(7).category(salad).available(true).build(),
+
+            // Desserts
+            MenuItem.builder().name("Chocolate Soufflé").description("Dark chocolate with crème anglaise").price(new BigDecimal("24.00")).imageUrl("https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop").preparationTime(18).category(dessert).available(true).build(),
+            MenuItem.builder().name("Crème Brûlée").description("Classic vanilla bean custard").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=400&h=300&fit=crop").preparationTime(10).category(dessert).available(true).build(),
+            MenuItem.builder().name("Strawberry Pavlova").description("Meringue with fresh berries and cream").price(new BigDecimal("20.00")).imageUrl("https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop").preparationTime(12).category(dessert).available(true).build(),
+            MenuItem.builder().name("Lemon Tart").description("Tangy lemon curd in pastry shell").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=400&h=300&fit=crop").preparationTime(8).category(dessert).available(true).build(),
+            MenuItem.builder().name("Tiramisu").description("Classic Italian dessert with mascarpone").price(new BigDecimal("14.00")).imageUrl("https://images.unsplash.com/photo-1624492411802-894101cc2956?w=400&h=300&fit=crop").preparationTime(5).category(dessert).available(true).build(),
+            MenuItem.builder().name("Panna Cotta").description("Silky Italian cream dessert").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=400&h=300&fit=crop").preparationTime(6).category(dessert).available(true).build(),
+
+            // Beverages
+            MenuItem.builder().name("Dom Pérignon 2015").description("Prestigious vintage champagne").price(new BigDecimal("450.00")).imageUrl("https://images.unsplash.com/photo-1590485503023-e1757820a4b8?w=400&h=300&fit=crop").preparationTime(2).category(beverage).available(true).build(),
+            MenuItem.builder().name("Château Lafite Rothschild 2019").description("Premium Bordeaux wine").price(new BigDecimal("380.00")).imageUrl("https://images.unsplash.com/photo-1590485503023-e1757820a4b8?w=400&h=300&fit=crop").preparationTime(2).category(beverage).available(true).build(),
+            MenuItem.builder().name("Espresso Martini").description("Vodka, coffee liqueur, fresh espresso").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1551632986-6f80e8dd9985?w=400&h=300&fit=crop").preparationTime(5).category(beverage).available(true).build(),
+            MenuItem.builder().name("Mojito").description("Rum, mint, lime, soda").price(new BigDecimal("14.00")).imageUrl("https://images.unsplash.com/photo-1551632986-6f80e8dd9985?w=400&h=300&fit=crop").preparationTime(5).category(beverage).available(true).build(),
+            MenuItem.builder().name("Single Malt Scotch").description("Premium Scottish whisky").price(new BigDecimal("28.00")).imageUrl("https://images.unsplash.com/photo-1590485503023-e1757820a4b8?w=400&h=300&fit=crop").preparationTime(2).category(beverage).available(true).build(),
+            MenuItem.builder().name("Cappuccino").description("Espresso with steamed milk").price(new BigDecimal("6.00")).imageUrl("https://images.unsplash.com/photo-1578432556433-bc8b3d8214c1?w=400&h=300&fit=crop").preparationTime(4).category(beverage).available(true).build()
         ));
-        log.info("Created 4 categories and 8 menu items");
+        log.info("Created/Updated 7 categories and 32 menu items");
     }
 
     private void seedTables() {
