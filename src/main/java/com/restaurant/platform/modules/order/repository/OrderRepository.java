@@ -62,6 +62,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     // 🔥 3b. Lấy orders theo danh sách statuses
     List<Order> findByStatusIn(List<OrderStatus> statuses);
 
+    List<Order> findByTableIdAndStatusInOrderByCreatedDateAsc(UUID tableId, List<OrderStatus> statuses);
+
+    List<Order> findByReservationIdAndStatusInOrderByCreatedDateAsc(UUID reservationId, List<OrderStatus> statuses);
+
     // 🔥 4. Lấy order theo reservation
     Optional<Order> findByReservationId(UUID reservationId);
 

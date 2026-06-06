@@ -18,6 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -112,9 +113,14 @@ public class ReservationController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<PageResponse<ReservationResponse>> getMyReservations(
             Authentication authentication,
-            @PageableDefault(sort = "reservationTime") Pageable pageable
+            @PageableDefault(
+                    sort = "startTime",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
     ) {
-        return ApiResponse.success(reservationService.getMyReservations(authentication.getName(), pageable));
+        return ApiResponse.success(
+                reservationService.getMyReservations(authentication.getName(), pageable)
+        );
     }
     
     // ================= GET AVAILABLE TABLES =================

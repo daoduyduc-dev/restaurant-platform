@@ -2,17 +2,12 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, CalendarCheck, Eye, EyeOff, Gift, Lock, Mail, ReceiptText, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { ArrowRight, CalendarCheck, Eye, EyeOff, Gift, Lock, Mail, ReceiptText, UtensilsCrossed } from 'lucide-react';
 
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 import type { AuthResponseData } from '../../services/types';
 
-const QUICK_LOGIN_USERS = [
-  { email: 'admin@servegenius.com', password: 'admin123', role: 'Admin' },
-  { email: 'staff@servegenius.com', password: 'staff123', role: 'Staff' },
-  { email: 'customer@servegenius.com', password: 'customer123', role: 'Customer' },
-];
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -51,27 +46,6 @@ export const LoginPage = () => {
     }
   };
 
-  const handleQuickLogin = async (user: typeof QUICK_LOGIN_USERS[number]) => {
-    setEmail(user.email);
-    setPassword(user.password);
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await api.post('/auth/login', {
-        email: user.email,
-        password: user.password,
-      });
-      onLoginSuccess(response.data.data);
-    } catch (err: unknown) {
-      const message = err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-        : undefined;
-
-      setError(message || 'Không thể kết nối máy chủ. Vui lòng kiểm tra backend đang chạy.');
-      setLoading(false);
-    }
-  };
 
   return (
     <motion.div
@@ -306,35 +280,6 @@ export const LoginPage = () => {
             Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </div>
 
-          <div style={{ marginTop: 'var(--sp-8)' }}>
-            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-heading)', marginBottom: 'var(--sp-3)' }}>
-              Tài khoản mẫu
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-2)' }}>
-              {QUICK_LOGIN_USERS.map((user) => (
-                <button
-                  key={user.email}
-                  onClick={() => handleQuickLogin(user)}
-                  disabled={loading}
-                  style={{
-                    padding: 'var(--sp-2)',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-main)',
-                    borderRadius: 'var(--r-md)',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 'var(--text-xs)',
-                  }}
-                >
-                  <Sparkles size={16} />
-                  <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{user.role}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </motion.div>
       </div>
     </motion.div>

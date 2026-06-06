@@ -24,7 +24,7 @@ interface CustomerPaymentGroup {
 const money = (value: number | undefined) => {
   const formatted = new Intl.NumberFormat(i18n.language, {
     maximumFractionDigits: 0,
-  }).format(value || 0);
+  }).format((value || 0) * 1000);
   return `${formatted} VNĐ`;
 };
 

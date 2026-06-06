@@ -14,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
@@ -76,6 +77,8 @@ WHERE r.status = 'NO_SHOW'
     Page<Reservation> findByUserId(UUID userId, Pageable pageable);
 
     List<Reservation> findByUserId(UUID userId);
+
+    Optional<Reservation> findFirstByTableIdAndStatusOrderByStartTimeDesc(UUID tableId, ReservationStatus status);
 
     @Modifying
     @Query(value = "DELETE FROM reservations", nativeQuery = true)

@@ -45,6 +45,10 @@ public class Order extends SoftDeleteEntity {
         @Builder.Default
         private OrderStatus status = OrderStatus.OPEN;
 
+        @Column(nullable = false)
+        @Builder.Default
+        private boolean supplemental = false;
+
         private BigDecimal totalAmount;
 
         @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

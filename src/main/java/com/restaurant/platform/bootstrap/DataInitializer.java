@@ -295,7 +295,7 @@ public class DataInitializer implements CommandLineRunner {
             MenuItem.builder().name("Oysters Rockefeller").description("Fresh oysters with spinach and Pernod").price(new BigDecimal("28.00")).imageUrl("https://images.unsplash.com/photo-1615141982883-c7da0e69cb47?w=400&h=300&fit=crop").preparationTime(15).category(seafood).available(false).build(),
             MenuItem.builder().name("Grilled King Crab Legs").description("Alaskan king crab with lemon butter").price(new BigDecimal("78.00")).imageUrl("https://images.unsplash.com/photo-1599599810694-b5ac4dd64e66?w=400&h=300&fit=crop").preparationTime(18).category(seafood).available(true).build(),
             MenuItem.builder().name("Scallops à la Plancha").description("Seared scallops with herb emulsion").price(new BigDecimal("54.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(16).category(seafood).available(true).build(),
-            MenuItem.builder().name("Lobster Thermidor").description("Classic lobster with brandy sauce").price(new BigDecimal("88.00")).imageUrl("https://images.unsplash.com/photo-1599599810694-b5ac4dd64e66?w=400&h=300&fit=crop").preparationTime(22).category(seafood).available(true).build(),
+            MenuItem.builder().name("Lobster Thermidor").description("Classic lobster with brandy sauce").price(new BigDecimal("88.00")).imageUrl("https://images.unsplash.com/photo-1625953383172-7b7bfbf0a1fb?w=400&h=300&fit=crop").preparationTime(22).category(seafood).available(true).build(),
 
             // Appetizers
             MenuItem.builder().name("Wagyu Beef Tartare").description("A5 Wagyu with quail egg yolk").price(new BigDecimal("36.00")).imageUrl("https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop").preparationTime(12).category(appetizer).available(true).build(),
@@ -305,9 +305,9 @@ public class DataInitializer implements CommandLineRunner {
             MenuItem.builder().name("Shrimp Tempura").description("Japanese-style battered shrimp").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(10).category(appetizer).available(true).build(),
 
             // Soups
-            MenuItem.builder().name("French Onion Soup").description("Caramelized onions with Gruyère").price(new BigDecimal("14.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(12).category(soup).available(true).build(),
-            MenuItem.builder().name("Lobster Bisque").description("Rich and creamy lobster soup").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(14).category(soup).available(true).build(),
-            MenuItem.builder().name("Truffle Mushroom Soup").description("Creamy mushroom with truffle oil").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1547592166-7aae4d755744?w=400&h=300&fit=crop").preparationTime(13).category(soup).available(true).build(),
+            MenuItem.builder().name("French Onion Soup").description("Caramelized onions with Gruyère").price(new BigDecimal("14.00")).imageUrl("https://images.unsplash.com/photo-1515521396207-6211e08a38e2?w=400&h=300&fit=crop").preparationTime(12).category(soup).available(true).build(),
+            MenuItem.builder().name("Lobster Bisque").description("Rich and creamy lobster soup").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1608270861620-7476fda00593?w=400&h=300&fit=crop").preparationTime(14).category(soup).available(true).build(),
+            MenuItem.builder().name("Truffle Mushroom Soup").description("Creamy mushroom with truffle oil").price(new BigDecimal("18.00")).imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop").preparationTime(13).category(soup).available(true).build(),
 
             // Salads
             MenuItem.builder().name("Caesar Salad Classique").description("Romaine with house-made dressing").price(new BigDecimal("16.00")).imageUrl("https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop").preparationTime(8).category(salad).available(true).build(),

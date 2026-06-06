@@ -101,7 +101,7 @@ export const AdminDashboard = () => {
   const formatCurrency = (amount: number = 0) => {
     const formatted = new Intl.NumberFormat(i18n.language, {
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount * 1000);
     return `${formatted} VNĐ`;
   };
 

@@ -82,23 +82,23 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.TABLE_NOT_FOUND, "Table not found"));
 
-        Reservation reservation = null;
+        Reservation reservation = request.getReservationId() != null
+                ? reservationRepository.findById(request.getReservationId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found"))
+                : resolveCheckedInReservationForTable(table.getId()).orElse(null);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean authenticatedUser = authentication != null
                 && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal());
 
-        if (!authenticatedUser && request.getReservationId() == null) {
+        if (!authenticatedUser && request.getReservationId() == null && reservation == null) {
             throw new BadRequestException(
                     ErrorCode.INVALID_INPUT,
                     "Guest orders must be linked to an existing reservation");
         }
 
-        if (request.getReservationId() != null) {
-            reservation = reservationRepository.findById(request.getReservationId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found"));
-
+        if (reservation != null) {
             if (!reservation.getTable().getId().equals(table.getId())) {
                 throw new BadRequestException(
                         ErrorCode.INVALID_INPUT,
@@ -132,30 +132,26 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
             }
-
-            Order existing = resolveActiveOrderForWrite(table, reservation);
-            if (existing != null) {
-                if (existing.getReservation() == null) {
-                    existing.setReservation(reservation);
-                }
-                if (reservation.getStatus() == ReservationStatus.CHECKED_IN
-                        && existing.getStatus() != OrderStatus.COOKING) {
-                    existing.setStatus(OrderStatus.COOKING);
-                }
-                addItems(existing, request.getItems());
-                return mapToResponse(orderRepository.save(existing));
-            }
         } else if (table.getStatus() == TableStatus.RESERVED) {
             throw new BadRequestException(
                     ErrorCode.TABLE_NOT_AVAILABLE,
                     "Reserved tables require a matching reservation");
-        } else {
-            // For walk-in customers, reuse the single active order for this table if one exists
-            Order existing = resolveActiveOrderForWrite(table, null);
-            if (existing != null) {
-                addItems(existing, request.getItems());
-                return mapToResponse(orderRepository.save(existing));
+        }
+
+        List<Order> activeOrders = orderRepository.findActiveByTableWithLock(table, ACTIVE_ORDER_STATUSES);
+        Order reusableOrder = findReusableOrderForCreate(activeOrders, reservation, table);
+
+        if (reusableOrder != null) {
+            if (reusableOrder.getReservation() == null && reservation != null) {
+                reusableOrder.setReservation(reservation);
             }
+            if (reservation != null
+                    && reservation.getStatus() == ReservationStatus.CHECKED_IN
+                    && reusableOrder.getStatus() != OrderStatus.COOKING) {
+                reusableOrder.setStatus(OrderStatus.COOKING);
+            }
+            addItems(reusableOrder, request.getItems());
+            return mapToResponse(orderRepository.save(reusableOrder));
         }
 
         // Determine order status:
@@ -173,10 +169,12 @@ public class OrderServiceImpl implements OrderService {
             initialStatus = OrderStatus.OPEN;
         }
 
+        boolean supplementalOrder = shouldCreateSupplementalOrder(activeOrders, reservation);
         Order order = Order.builder()
                 .table(table)
                 .reservation(reservation)
                 .status(initialStatus)
+                .supplemental(supplementalOrder)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -260,17 +258,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponse> getActiveOrders() {
-        Map<UUID, Order> activeByTable = new LinkedHashMap<>();
-
-        orderRepository.findByStatusIn(ACTIVE_ORDER_STATUSES).stream()
-                .filter(order -> order.getTable() != null && order.getTable().getId() != null)
-                .forEach(order -> activeByTable.merge(
-                        order.getTable().getId(),
-                        order,
-                        this::preferOrderForDisplay
-                ));
-
-        return activeByTable.values().stream()
+        return orderRepository.findByStatusIn(ACTIVE_ORDER_STATUSES).stream()
+                .sorted(orderCreatedComparator())
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -414,7 +403,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse pay(UUID orderId) {
         Order order = getOrderOrThrow(orderId);
-        Order savedOrder = finalizePayment(order);
+        Order savedOrder = finalizePaymentGroup(resolvePaymentGroup(order));
         return mapToResponse(savedOrder);
     }
 
@@ -422,7 +411,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse updateStatus(UUID orderId, OrderStatus status) {
         Order order = getOrderOrThrow(orderId);
         if (status == OrderStatus.PAID) {
-            Order savedOrder = finalizePayment(order);
+            Order savedOrder = finalizePaymentGroup(resolvePaymentGroup(order));
             return mapToResponse(savedOrder);
         }
 
@@ -480,38 +469,49 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(total);
     }
 
-    private Order finalizePayment(Order order) {
-        if (order.getStatus() == OrderStatus.PAID) {
-            return order;
+    private Order finalizePaymentGroup(List<Order> ordersToPay) {
+        if (ordersToPay == null || ordersToPay.isEmpty()) {
+            throw new BadRequestException(
+                    ErrorCode.ORDER_NOT_FOUND,
+                    "Order not found"
+            );
         }
 
-        if (order.getItems().isEmpty()) {
+        Order referenceOrder = ordersToPay.get(0);
+        if (ordersToPay.stream().allMatch(order -> order.getStatus() == OrderStatus.PAID)) {
+            return referenceOrder;
+        }
+
+        if (ordersToPay.stream().allMatch(order -> order.getItems() == null || order.getItems().isEmpty())) {
             throw new BadRequestException(
                     ErrorCode.INVALID_INPUT,
                     "Cannot pay order without items");
         }
 
-        order.setStatus(OrderStatus.PAID);
+        for (Order order : ordersToPay) {
+            order.setStatus(OrderStatus.PAID);
+        }
 
-        Table table = order.getTable();
+        Table table = referenceOrder.getTable();
         if (table != null) {
             table.setStatus(TableStatus.AVAILABLE);
             tableRepository.save(table);
         }
 
-        Reservation reservation = order.getReservation();
+        Reservation reservation = referenceOrder.getReservation();
         if (reservation != null) {
             reservation.setStatus(ReservationStatus.COMPLETED);
             reservationRepository.save(reservation);
 
             if (reservation.getUser() != null && reservation.getUser().getId() != null) {
+                BigDecimal finalAmount = orderBillingService.getGroupFinalAmount(ordersToPay);
                 loyaltyService.earnPoints(
                         reservation.getUser().getId(),
-                        orderBillingService.getFinalAmount(order)
+                        finalAmount
                 );
                 loyaltyService.updateTotalSpent(
                         reservation.getUser().getId(),
-                        orderBillingService.getFinalAmount(order)
+                        finalAmount
                 );
             }
 
@@ -528,7 +528,10 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder = referenceOrder;
+        for (Order order : ordersToPay) {
+            savedOrder = orderRepository.save(order);
+        }
 
         try {
             var payload = java.util.Map.of(
@@ -614,10 +617,17 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderItemMapper::toResponse)
                 .toList();
 
+        List<Order> paymentGroupOrders = resolvePaymentGroup(order);
+
         response.setItems(items);
+        response.setSupplemental(order.isSupplemental());
+        response.setDisplayLabel(composeDisplayLabel(order));
         response.setVipSurchargeAmount(orderBillingService.getVipSurcharge(order));
         response.setFinalAmount(orderBillingService.getFinalAmount(order));
         response.setLoyaltyEligible(order.getReservation() != null && order.getReservation().getUser() != null);
+        response.setGroupSubtotalAmount(orderBillingService.getGroupSubtotal(paymentGroupOrders));
+        response.setGroupVipSurchargeAmount(orderBillingService.getGroupVipSurcharge(paymentGroupOrders));
+        response.setGroupFinalAmount(orderBillingService.getGroupFinalAmount(paymentGroupOrders));
 
         return response;
     }
@@ -657,6 +667,7 @@ public class OrderServiceImpl implements OrderService {
                 .table(reservation.getTable())
                 .reservation(reservation)
                 .status(OrderStatus.COOKING)
+                .supplemental(false)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -724,6 +735,85 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return canonical;
+    }
+
+    private Optional<Reservation> resolveCheckedInReservationForTable(UUID tableId) {
+        return reservationRepository.findFirstByTableIdAndStatusOrderByStartTimeDesc(
+                tableId,
+                ReservationStatus.CHECKED_IN
+        );
+    }
+
+    private Order findReusableOrderForCreate(List<Order> activeOrders, Reservation reservation, Table table) {
+        if (activeOrders == null || activeOrders.isEmpty()) {
+            return null;
+        }
+
+        if (reservation != null && reservation.getStatus() != ReservationStatus.CHECKED_IN) {
+            return chooseCanonicalOrderForWrite(activeOrders, reservation);
+        }
+
+        return activeOrders.stream()
+                .filter(order -> sameReservation(order, reservation))
+                .filter(order -> order.getItems() == null || order.getItems().isEmpty())
+                .min(orderCreatedComparator())
+                .orElseGet(() -> activeOrders.stream()
+                        .filter(order -> order.getItems() == null || order.getItems().isEmpty())
+                        .min(orderCreatedComparator())
+                        .orElse(null));
+    }
+
+    private boolean shouldCreateSupplementalOrder(List<Order> activeOrders, Reservation reservation) {
+        if (activeOrders == null || activeOrders.isEmpty()) {
+            return false;
+        }
+
+        return activeOrders.stream()
+                .filter(order -> sameReservation(order, reservation))
+                .anyMatch(order -> order.getItems() != null && !order.getItems().isEmpty());
+    }
+
+    private boolean sameReservation(Order order, Reservation reservation) {
+        if (reservation == null) {
+            return order.getReservation() == null;
+        }
+
+        return order.getReservation() != null && reservation.getId().equals(order.getReservation().getId());
+    }
+
+    private List<Order> resolvePaymentGroup(Order order) {
+        if (order == null) {
+            return List.of();
+        }
+
+        if (order.getStatus() == OrderStatus.PAID) {
+            return List.of(order);
+        }
+
+        if (order.getReservation() != null && order.getReservation().getId() != null) {
+            return orderRepository.findByReservationIdAndStatusInOrderByCreatedDateAsc(
+                    order.getReservation().getId(),
+                    ACTIVE_ORDER_STATUSES
+            ).stream()
+                    .filter(groupOrder -> groupOrder.getItems() != null && !groupOrder.getItems().isEmpty())
+                    .toList();
+        }
+
+        return orderRepository.findByTableIdAndStatusInOrderByCreatedDateAsc(
+                order.getTable().getId(),
+                ACTIVE_ORDER_STATUSES
+        ).stream()
+                .filter(groupOrder -> groupOrder.getItems() != null && !groupOrder.getItems().isEmpty())
+                .toList();
+    }
+
+    private String composeDisplayLabel(Order order) {
+        if (order == null || order.getTable() == null) {
+            return "";
+        }
+
+        String tableName = order.getTable().getName();
+        return order.isSupplemental() ? tableName + " - bổ sung" : tableName;
     }
 
     private Order chooseCanonicalOrderForWrite(List<Order> activeOrders, Reservation reservation) {

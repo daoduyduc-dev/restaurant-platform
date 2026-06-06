@@ -15,16 +15,21 @@ public class OrderResponse {
 
     private UUID tableId;
     private String tableName;
+    private String displayLabel;
     private TableType tableType;
 
     private UUID reservationId;
 
     private String status;
+    private boolean supplemental;
 
     private BigDecimal totalAmount;
     private BigDecimal vipSurchargeAmount;
     private BigDecimal finalAmount;
     private Boolean loyaltyEligible;
+    private BigDecimal groupSubtotalAmount;
+    private BigDecimal groupVipSurchargeAmount;
+    private BigDecimal groupFinalAmount;
 
     private List<OrderItemResponse> items;
 
