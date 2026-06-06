@@ -47,6 +47,14 @@ function aggregateItems(orders: OrderDTO[]): OrderItemDTO[] {
   return Array.from(byItem.values());
 }
 
+function resolveGroupSubtotal(order: OrderDTO): number {
+  return order.groupSubtotalAmount ?? order.totalAmount ?? 0;
+}
+
+function resolveGroupFinalAmount(order: OrderDTO): number {
+  return order.groupFinalAmount ?? order.finalAmount ?? 0;
+}
+
 function buildPaymentGroups(orders: OrderDTO[], reservations: ReservationDTO[]): PaymentGroup[] {
   const groups = new Map<string, PaymentGroup>();
 
@@ -59,9 +67,9 @@ function buildPaymentGroups(orders: OrderDTO[], reservations: ReservationDTO[]):
     const existing = groups.get(groupKey);
     if (existing) {
       existing.orders.push(order);
-      existing.subtotal += order.totalAmount || 0;
+      existing.subtotal = Math.max(existing.subtotal, resolveGroupSubtotal(order));
       existing.vipSurchargeAmount = Math.max(existing.vipSurchargeAmount, order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0);
-      existing.finalAmount = Math.max(existing.finalAmount, order.groupFinalAmount ?? order.finalAmount ?? 0);
+      existing.finalAmount = Math.max(existing.finalAmount, resolveGroupFinalAmount(order));
       existing.loyaltyEligible = existing.loyaltyEligible || Boolean(order.loyaltyEligible);
       if (new Date(order.createdAt || order.createdDate).getTime() < new Date(existing.orders[0].createdAt || existing.orders[0].createdDate).getTime()) {
         existing.primaryOrderId = order.id;
@@ -81,9 +89,9 @@ function buildPaymentGroups(orders: OrderDTO[], reservations: ReservationDTO[]):
       orders: [order],
       items: aggregateItems([order]),
       status: order.status,
-      subtotal: order.groupSubtotalAmount ?? order.totalAmount ?? 0,
+      subtotal: resolveGroupSubtotal(order),
       vipSurchargeAmount: order.groupVipSurchargeAmount ?? order.vipSurchargeAmount ?? 0,
-      finalAmount: order.groupFinalAmount ?? order.finalAmount ?? 0,
+      finalAmount: resolveGroupFinalAmount(order),
       loyaltyEligible: Boolean(order.loyaltyEligible),
     });
   });

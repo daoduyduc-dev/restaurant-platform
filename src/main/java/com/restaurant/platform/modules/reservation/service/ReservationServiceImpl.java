@@ -70,13 +70,11 @@ public class ReservationServiceImpl implements ReservationService {
     private static final int SLOT_INTERVAL_MINUTES = 30;
     private static final int MAX_BOOKING_WINDOW_DAYS = 4;
 
-    // Keep interval overlaps blocked across all non-cancelled reservation states.
+    // Keep interval overlaps blocked only for reservations that still hold the table.
     private static final List<ReservationStatus> BLOCKING_STATUSES = List.of(
             com.restaurant.platform.modules.reservation.enums.ReservationStatus.PENDING,
             ReservationStatus.RESERVED,
-            ReservationStatus.CHECKED_IN,
-            ReservationStatus.COMPLETED,
-            ReservationStatus.NO_SHOW
+            ReservationStatus.CHECKED_IN
     );
 
     private LocalDateTime now() {
